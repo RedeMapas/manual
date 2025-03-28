@@ -21,7 +21,7 @@ Este manual está organizado nas seguintes seções:
 - **[Espaços culturais](/docs/espacos-culturais)**: Mapeamento e gestão de espaços culturais
 - **[Eventos](/docs/eventos)**: Divulgação e gestão de eventos culturais
 - **[Oportunidades](/docs/oportunidades)**: Criação e gestão de editais e chamadas públicas
-- **[Dúvidas Frequentes e como contribuir](/docs/duvidas-frequentes-e-como-contribuir)**: Respostas para perguntas comuns e informações sobre como contribuir
+- **[Dúvidas Frequentes e como contribuir](/docs/duvidas-frequentes)**: Respostas para perguntas comuns e informações sobre como contribuir
 - **[Referências](/docs/referencias)**: Recursos adicionais e materiais complementares
 
 ## Como usar este Manual
@@ -32,4 +32,4 @@ Se você está começando agora, recomendamos seguir a ordem das seções aprese
 
 ## Contribuindo com este Manual
 
-Este manual é um documento vivo, em constante evolução. Se você encontrar informações desatualizadas ou quiser contribuir com novos conteúdos, consulte a seção [Dúvidas Frequentes e como contribuir](/docs/duvidas-frequentes-e-como-contribuir) para saber como proceder.
+Este manual é um documento vivo, em constante evolução. Se você encontrar informações desatualizadas ou quiser contribuir com novos conteúdos, consulte a seção [Dúvidas Frequentes e como contribuir](/docs/duvidas-frequentes) para saber como proceder.
