@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Manual da Plataforma Mapas Culturais
+# Tutorial Mapas Culturais
 
 Bem-vindo ao Manual da Plataforma Mapas Culturais. Este documento serve como guia completo para usuários, gestores e desenvolvedores da plataforma.
 

@@ -5,12 +5,12 @@ import type * as Preset from '@docusaurus/preset-classic';
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
 const config: Config = {
-	title: 'My Site',
-	tagline: 'Dinosaurs are cool',
+	title: 'Tutorial',
+	tagline: 'Um jeito descomplicado de começar com o software mais usado pelo campo da Cultura Brasileira',
 	favicon: 'img/favicon.ico',
 
 	// Set the production url of your site here
-	url: 'https://your-docusaurus-site.example.com',
+	url: 'https://redemapas.github.io/',
 	// Set the /<baseUrl>/ pathname under which your site is served
 	// For GitHub pages deployment, it is often '/<projectName>/'
 	baseUrl: '/manual/',
@@ -40,7 +40,7 @@ const config: Config = {
 					// Please change this to your repo.
 					// Remove this to remove the "edit this page" links.
 					editUrl:
-						'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+						'https://github.com/redemapas/manual/tree/main/packages/create-docusaurus/templates/shared/',
 				},
 				blog: {
 					showReadingTime: true,
@@ -51,7 +51,7 @@ const config: Config = {
 					// Please change this to your repo.
 					// Remove this to remove the "edit this page" links.
 					editUrl:
-						'https://github.com/facebook/docusaurus/tree/main/packages/create-docusaurus/templates/shared/',
+						'https://github.com/redemapas/manual/tree/main/packages/create-docusaurus/templates/shared/',
 					// Useful options to enforce blogging best practices
 					onInlineTags: 'warn',
 					onInlineAuthors: 'warn',
@@ -66,12 +66,12 @@ const config: Config = {
 
 	themeConfig: {
 		// Replace with your project's social card
-		image: 'img/docusaurus-social-card.jpg',
+		image: 'img/logo-rede-mapas-squared.jpg',
 		navbar: {
-			title: 'Manual Rede Mapas',
+			title: 'Rede Mapas',
 			logo: {
 				alt: 'Logo Rede Mapas',
-				src: 'img/logo.svg',
+				src: 'img/logo-rede-mapas-squared.jpg',
 			},
 			items: [
 				{
@@ -131,7 +131,7 @@ const config: Config = {
 					],
 				},
 			],
-			copyright: `RedeMapas ${new Date().getFullYear()}.`,
+			copyright: `RedeMapas ${new Date().getFullYear()}`,
 		},
 		prism: {
 			theme: prismThemes.github,
