@@ -14,11 +14,11 @@ A Plataforma Mapas Culturais é uma ferramenta colaborativa de mapeamento, gest�
 
 Este manual está organizado nas seguintes seções:
 
-- **[Introdução](/docs/introducao)**: Visão geral da plataforma e seus principais recursos
+- **[Introdução](/docs/intro)**: Visão geral da plataforma e seus principais recursos
 - **[Home](/docs/home)**: Informações sobre a página inicial e navegação na plataforma
 - **[Agentes](/docs/agentes)**: Como gerenciar perfis de agentes culturais (individuais e coletivos)
-- **[Projetos culturais](/docs/projetos-culturais)**: Criação e gestão de projetos culturais
-- **[Espaços culturais](/docs/espacos-culturais)**: Mapeamento e gestão de espaços culturais
+- **[Projetos culturais](/docs/projetos)**: Criação e gestão de projetos culturais
+- **[Espaços culturais](/docs/espacos)**: Mapeamento e gestão de espaços culturais
 - **[Eventos](/docs/eventos)**: Divulgação e gestão de eventos culturais
 - **[Oportunidades](/docs/oportunidades)**: Criação e gestão de editais e chamadas públicas
 - **[Dúvidas Frequentes e como contribuir](/docs/duvidas-frequentes)**: Respostas para perguntas comuns e informações sobre como contribuir

@@ -1,5 +1,5 @@
 ---
-sidebar_position: 1
+sidebar_position: 10
 ---
 
 # Dúvidas Frequentes e como contribuir com a Comunidade Mapas
