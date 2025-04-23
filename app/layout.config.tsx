@@ -25,23 +25,23 @@ export const baseOptions: BaseLayoutProps = {
   },
   links: [
     {
-      text: 'Gestão',
+      text: 'Público',
       url: '/users',
       active: 'nested-url',
     },
     {
-      text: 'Dados',
-      url: '/data',
+      text: 'Gestoras',
+      url: '/gestoras',
       active: 'nested-url',
     },
     {
-      text: 'Desenvolvimento',
+      text: 'Desenvolvedoras',
       url: '/devs',
       active: 'nested-url',
     },
     {
-      text: 'Suporte',
-      url: '/users',
+      text: 'Administradoras',
+      url: '/suporte',
       active: 'nested-url',
     },
   ],
