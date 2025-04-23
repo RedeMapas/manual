@@ -1,0 +1,335 @@
+---
+title: Plugin de Autenticação
+description: Chapter 8
+---
+
+Olá! No [Capítulo 7: Métodos de Avaliação (Evaluation Methods)](07_métodos_de_avaliação__evaluation_methods__.md), vimos como as inscrições em editais podem ser analisadas usando critérios específicos, garantindo um processo de seleção justo. Agora que entendemos como boa parte da plataforma funciona internamente, vamos dar um passo atrás e olhar para algo fundamental: como os usuários entram na plataforma?
+
+Como garantimos que apenas usuários autorizados acessem suas informações e funcionalidades, como o [Painel de Controle (Panel)](05_painel_de_controle__panel__.md)? E como oferecemos diferentes maneiras para esses usuários entrarem, seja com email e senha, redes sociais ou até mesmo o CPF?
+
+É aqui que entra o **Plugin de Autenticação Múltipla Local (MultipleLocalAuth)**!
+
+## Para que serve o MultipleLocalAuth?
+
+Imagine a plataforma como um clube exclusivo ou um prédio com diferentes áreas. Para entrar, você precisa se identificar na portaria. O **MultipleLocalAuth** é como um **porteiro super moderno e flexível** para a nossa plataforma.
+
+Sua principal função é cuidar de todo o processo de **autenticação** (verificar quem você é - o login) e **registro** (criar uma nova conta). Ele não é um porteiro comum, pois oferece várias opções na entrada:
+
+1.  **Entrada Tradicional:** Você pode usar seu email e uma senha que criou, como na maioria dos sites.
+2.  **Entrada Rápida (Redes Sociais):** Se preferir, pode usar sua conta do Google, Facebook ou outras redes sociais para entrar, sem precisar criar outra senha.
+3.  **Entrada por Documento (CPF):** Em algumas configurações, você pode até usar seu CPF para fazer login ou criar sua conta.
+
+Além de controlar *quem* entra, ele também adiciona camadas de segurança e personalização:
+
+*   **Força da Senha:** Define regras para garantir que as senhas criadas pelos usuários sejam seguras (ex: exigir letras maiúsculas, números, caracteres especiais).
+*   **reCAPTCHA:** Adiciona aquele teste "Não sou um robô" para evitar cadastros e logins automáticos maliciosos.
+*   **Recuperação de Senha:** Oferece um fluxo seguro para usuários que esqueceram suas senhas.
+
+**Nosso Caso de Uso:** O João quer acessar a plataforma. Ele pode escolher: usar seu email e senha que já cadastrou, clicar no botão "Entrar com Google" ou, se habilitado, digitar seu CPF e senha. Como a plataforma gerencia todas essas opções de forma segura e unificada? É o plugin `MultipleLocalAuth` que orquestra tudo isso nos bastidores!
+
+## Entendendo os Conceitos
+
+Vamos detalhar as peças desse porteiro moderno:
+
+1.  **Plugin de Autenticação:** É um "módulo extra" que instalamos na plataforma para modificar ou estender o comportamento padrão de login e cadastro. O `MultipleLocalAuth` substitui o sistema de autenticação padrão por um mais completo.
+
+2.  **Autenticação Local:** É o método clássico de login usando um identificador (email ou CPF, neste caso) e uma senha que estão armazenados diretamente no banco de dados da plataforma.
+
+3.  **Autenticação Social (OAuth):** É o processo que permite que um usuário use sua conta existente em outro serviço (Google, Facebook, etc.) para fazer login na nossa plataforma. O `MultipleLocalAuth` usa um padrão chamado OAuth para fazer isso de forma segura, sem nunca ver a senha do usuário na rede social. Ele apenas recebe uma confirmação do Google ou Facebook dizendo "Sim, esse usuário é quem ele diz ser".
+
+4.  **Provedor de Autenticação (`Provider`):** Dentro da configuração da plataforma, definimos qual "porteiro" será o responsável. Ao configurar `auth.provider = '\MultipleLocalAuth\Provider'`, estamos dizendo: "Ei, plataforma, use as regras e a lógica do `MultipleLocalAuth` para cuidar do login e registro".
+
+5.  **Configurações (`auth.config`):** É aqui que personalizamos o comportamento do porteiro. No arquivo de configuração da plataforma (`config.php`), podemos definir coisas como:
+    *   Quais redes sociais permitir (Google, Facebook, etc.) e suas chaves de API.
+    *   Se o login por CPF está habilitado (`enableLoginByCPF`).
+    *   As regras de força de senha (`passwordMustHave...`, `minimumPasswordLength`).
+    *   As chaves do Google reCAPTCHA (`google-recaptcha-secret`, `google-recaptcha-sitekey`).
+    *   Textos e links para emails de recuperação de senha, termos de uso, etc.
+
+## Usando o Plugin (A Experiência do Usuário)
+
+Quando o `MultipleLocalAuth` está ativo e configurado, a tela de login e cadastro da plataforma muda para oferecer as opções definidas.
+
+**Tela de Login/Cadastro (Conceitual):**
+
+```
++-------------------------------------------+
+|               [ Logo ]                    |
+|                                           |
+|  Email ou CPF: [_____________________]    |
+|  Senha:       [_____________________] (*) |
+|                     [ Esqueci a Senha ]   |
+|                                           |
+|                [ Entrar ]                 |
+|                                           |
+|  ----------- OU ENTRE COM -----------     |
+|      [ G Google ]    [ f Facebook ]       |
+|                                           |
+|  Não tem conta? [ Crie sua conta ]        |
+|                                           |
+|  [ ] reCAPTCHA                            |
++-------------------------------------------+
+```
+
+**Exemplo 1: Login com Email/Senha**
+
+O João digita seu email e senha e clica em "Entrar".
+
+*   **Componente Vue:** A interface utiliza o componente `<login>` (definido pelo plugin).
+
+    ```html
+    <!-- Em algum template Vue da página de autenticação -->
+    <login config='@json($authConfig)'></login>
+    ```
+    A `prop` `config` passa as configurações do `auth.config` para o componente.
+
+*   **Ação:** Quando João clica em "Entrar", o método `doLogin` no `login/script.js` é chamado.
+
+    ```javascript
+    // Dentro de plugins/MultipleLocalAuth/components/login/script.js (simplificado)
+    async doLogin() {
+        let api = new API(); // Usa a Classe API global
+
+        let dataPost = {
+            'email': this.email, // Pega email (ou CPF) do campo
+            'password': this.password, // Pega senha do campo
+            'g-recaptcha-response': this.recaptchaResponse // Pega resposta do reCAPTCHA
+        }
+
+        try {
+            // Chama o endpoint de login definido pelo plugin
+            const response = await api.POST($MAPAS.baseURL + "autenticacao/login", dataPost);
+            const dataReturn = await response.json();
+
+            if (dataReturn.error) {
+                this.throwErrors(dataReturn.data); // Mostra erros (senha incorreta, usuário bloqueado, etc.)
+            } else {
+                // Se sucesso, redireciona o usuário para o painel ou outra página
+                window.location.href = dataReturn.redirectTo || Utils.createUrl('panel', 'index');
+            }
+        } catch (error) {
+            // Lida com erros de rede, etc.
+            console.error("Erro no login:", error);
+        }
+    }
+    ```
+    O script coleta os dados, inclui a resposta do reCAPTCHA e envia para o backend usando a [Classe API](03_classe_api_.md). O backend (o `Provider` do plugin) verifica as credenciais.
+
+**Exemplo 2: Criando uma Conta**
+
+A Maria clica em "Crie sua conta".
+
+*   **Componente Vue:** A interface usa o componente `<create-account>`.
+
+    ```html
+    <!-- Em algum template Vue da página de cadastro -->
+    <create-account config='@json($authConfig)'></create-account>
+    ```
+
+*   **Ação:** Maria passa por etapas:
+    1.  Informa email (ou CPF), senha (seguindo as regras de força) e confirma a senha. Passa pelo reCAPTCHA.
+    2.  Aceita os termos de uso (se configurado).
+    3.  Preenche informações básicas do seu perfil de [Agente](01_entidades__entities__.md) (nome, área de atuação, descrição).
+    Quando ela finaliza, o método `register` em `create-account/script.js` é chamado.
+
+    ```javascript
+    // Dentro de plugins/MultipleLocalAuth/components/create-account/script.js (simplificado)
+    async register() {
+        let api = new API();
+
+        // Valida se os campos do Agente estão preenchidos (ex: nome)
+        if (this.validateAgent()) {
+            let dataPost = {
+                'name': this.agent.name, // Nome do agente
+                'email': this.email,
+                'cpf': this.cpf, // CPF (se habilitado e preenchido)
+                'password': this.password,
+                'confirm_password': this.confirmPassword,
+                'slugs': this.slugs, // Termos aceitos
+                'g-recaptcha-response': this.recaptchaResponse,
+                'agentData': { // Dados básicos do agente a ser criado
+                    'name': this.agent.name,
+                    'terms:area': this.agent.terms.area,
+                    'shortDescription': this.agent.shortDescription,
+                },
+            }
+
+            try {
+                // Chama o endpoint de registro definido pelo plugin
+                const response = await api.POST($MAPAS.baseURL + "autenticacao/register", dataPost);
+                const dataReturn = await response.json();
+
+                if (dataReturn.error) {
+                    this.throwErrors(dataReturn.data); // Mostra erros (email já existe, senha fraca, etc.)
+                } else {
+                    // Sucesso! Mostra mensagem e talvez redireciona ou pede confirmação de email
+                    this.created = true;
+                    this.emailSent = dataReturn.emailSent; // Indica se email de confirmação foi enviado
+                    window.scrollTo(0, 0);
+                }
+            } catch (error) {
+                console.error("Erro no registro:", error);
+            }
+        }
+    }
+    ```
+    O script coleta todos os dados, incluindo as informações do agente, e envia para o backend (`/autenticacao/register`) via [Classe API](03_classe_api_.md). O `Provider` do plugin processa o registro.
+
+**Exemplo 3: Login Social (Google/Facebook)**
+
+O Pedro clica no botão "G Google".
+
+*   **Ação:** O navegador é redirecionado para a página de login do Google. Pedro faz login no Google (se já não estiver logado) e autoriza a plataforma a acessar informações básicas (nome, email). O Google então redireciona Pedro de volta para a plataforma, enviando um código especial. O `MultipleLocalAuth` (no backend) recebe esse código, confirma com o Google que ele é válido e, se tudo estiver certo, faz o login de Pedro na plataforma (ou cria uma conta para ele, se for o primeiro acesso). O mesmo fluxo acontece para o Facebook ou outras redes configuradas.
+
+**Exemplo 4: Força da Senha e Recuperação**
+
+*   **Força da Senha:** Enquanto Maria digita sua senha no formulário de cadastro, o componente `<password-strongness>` (usado dentro de `<create-account>`) analisa a senha em tempo real.
+
+    ```html
+    <!-- Dentro do template de create-account ou change-password -->
+    <password-strongness :password="senhaDigitada"></password-strongness>
+    ```
+    Este componente mostra visualmente se a senha atende às regras definidas no `auth.config` (tamanho mínimo, letras maiúsculas/minúsculas, números, especiais).
+
+    ```javascript
+    // Dentro de plugins/MultipleLocalAuth/components/password-strongness/script.js (simplificado)
+    // O método strongness() calcula a "força" baseado nas regras buscadas da API
+    strongness() {
+        if (this.password) {
+            // ... (lógica que busca as regras de this.passwordRules) ...
+            const minimumPasswordLength = this.passwordRules.minimumPasswordLength || 8;
+            const rules = this.rules(); // Pega as regras ativas (ex: /[A-Z]/, /[0-9]/)
+            let prog = 0; // Quantas regras foram cumpridas
+
+            // Verifica cada regra ativa contra a senha digitada
+            for(let rule of rules) {
+                if(rule.test(this.password)) {
+                    prog++;
+                }
+            }
+
+            // Calcula a porcentagem de força
+            let currentPercent = (prog / (rules.length + 1)) * 100;
+            if (this.password.length >= minimumPasswordLength) {
+                currentPercent += (1 / (rules.length + 1)) * 100;
+            }
+
+            return currentPercent.toFixed(0); // Retorna 0 a 100
+        }
+        return 0;
+    }
+    ```
+
+*   **Recuperação de Senha:** Se João esquecer a senha, ele clica em "Esqueci a Senha". O componente `<login>` muda para o modo de recuperação (`recoveryRequest = true`). João digita seu email e clica em "Recuperar". O método `requestRecover` é chamado, usando a [Classe API](03_classe_api_.md) para pedir ao backend (`/autenticacao/recover`) que envie um email com um link de recuperação. Quando João clica no link do email, ele volta para a plataforma em um modo especial (`recoveryMode = true`) onde pode definir uma nova senha usando o método `doRecover` (`/autenticacao/dorecover`).
+
+## Por Dentro do Plugin
+
+Como o `MultipleLocalAuth` realmente faz seu trabalho nos bastidores?
+
+**1. Configuração é Chave:**
+Tudo começa no arquivo `config.php` da plataforma.
+
+```php
+// Em config.php (simplificado)
+
+return [
+    // 1. Ativar o plugin
+    'plugins' => [
+        // ... outros plugins
+        'MultipleLocalAuth' => ['namespace' => 'MultipleLocalAuth'],
+    ],
+
+    // 2. Definir como o Provedor de Autenticação
+    'auth.provider' => '\MultipleLocalAuth\Provider',
+
+    // 3. Configurar o comportamento do plugin
+    'auth.config' => [
+        'salt' => 'SEU_SALT_SECRETO_E_LONGO', // Essencial para segurança da senha
+        'enableLoginByCPF' => true, // Permite login por CPF?
+        'metadataFieldCPF' => 'documento', // Onde guardar o CPF no perfil
+        'passwordMustHaveCapitalLetters' => true, // Exige maiúscula?
+        'minimumPasswordLength' => 8, // Tamanho mínimo da senha
+        'google-recaptcha-sitekey' => 'SUA_CHAVE_SITE_RECAPTCHA',
+        'google-recaptcha-secret' => 'SEU_SEGREDO_RECAPTCHA',
+        // Configs das redes sociais (Facebook, Google, etc.)
+        'strategies' => [
+            'Google' => [
+                'client_id' => 'SEU_GOOGLE_CLIENT_ID',
+                'client_secret' => 'SEU_GOOGLE_CLIENT_SECRET',
+                // ...
+            ],
+            // ... outras redes ...
+        ],
+        // ... outras configs (tempo de sessão, bloqueio, links de suporte) ...
+    ],
+    // ... resto da configuração ...
+];
+```
+*   **Ativação:** Incluir `MultipleLocalAuth` na lista de `plugins`.
+*   **Provedor:** Definir `auth.provider` para a classe principal do plugin.
+*   **Configuração Específica (`auth.config`):** Ajustar as opções como CPF, força de senha, reCAPTCHA e as chaves das redes sociais. O `salt` é crucial e deve ser uma string aleatória longa e secreta.
+
+**2. Fluxo de Login Local:**
+
+<Mermaid
+  chart='
+sequenceDiagram
+    participant Usuario
+    participant CompLogin as Componente Login (<login>)
+    participant API as Classe API
+    participant Servidor as Servidor (Plugin MultipleLocalAuth)
+    participant BD as Banco de Dados
+
+    Usuario->>CompLogin: Digita email/senha, clica Entrar
+    CompLogin->>API: Chama POST /autenticacao/login (com email, senha, recaptcha)
+    API->>Servidor: Envia requisição HTTP POST
+    Servidor->>Servidor: Verifica reCAPTCHA (usando chave secreta)
+    Servidor->>BD: Busca usuário pelo email (ou CPF)
+    Servidor->>Servidor: Compara hash da senha (usando o "salt")
+    alt Credenciais OK
+        Servidor->>Servidor: Cria sessão do usuário
+        Servidor-->>API: Retorna sucesso + redirectTo
+    else Credenciais Inválidas ou reCAPTCHA Falhou
+        Servidor-->>API: Retorna erro (ex: "Senha inválida")
+    end
+    API-->>CompLogin: Retorna resultado (sucesso ou erro)
+    alt Sucesso
+        CompLogin->>Usuario: Redireciona para o Painel
+    else Erro
+        CompLogin->>Usuario: Exibe mensagem de erro
+    end
+' />
+
+*   **Frontend:** O componente `<login>` (ou `<create-account>`) coleta os dados e usa a [Classe API](03_classe_api_.md) para enviar ao backend.
+*   **Backend (Plugin `MultipleLocalAuth`):**
+    *   As rotas (`/autenticacao/login`, `/autenticacao/register`, etc.) são gerenciadas pelo plugin.
+    *   A classe `Provider.php` (e outras classes auxiliares dentro do plugin) contém a lógica principal.
+    *   **Validação:** Verifica o reCAPTCHA usando a chave secreta configurada. Valida os dados (formato do email, CPF se habilitado).
+    *   **Senha:** Ao registrar, cria um *hash* seguro da senha usando o `salt`. Ao logar, compara o hash da senha digitada com o hash armazenado no banco de dados. **Nunca armazena a senha em texto puro!**
+    *   **CPF:** Se `enableLoginByCPF` for `true`, permite que o campo de email também aceite um CPF e busca o usuário por esse documento (armazenado no metadado definido por `metadataFieldCPF`).
+    *   **Regras de Senha:** Ao registrar ou trocar senha, verifica se a nova senha cumpre as regras (`passwordMustHave...`, `minimumPasswordLength`).
+    *   **Login Social:** Usa uma biblioteca interna (Opauth) para lidar com o fluxo OAuth das redes sociais configuradas em `strategies`.
+    *   **Sessão:** Se o login for bem-sucedido, cria uma sessão segura para o usuário.
+
+**3. Componentes Vue do Plugin:**
+O plugin inclui seus próprios [Componentes Vue](02_componentes_vue__vue_components__.md) que são usados nas páginas de autenticação:
+*   `login`: Formulário de login, recuperação de senha.
+*   `create-account`: Formulário de cadastro multi-etapas.
+*   `password-strongness`: Indicador de força de senha.
+*   `change-password`: Modal/formulário para alterar a senha (usado no perfil do usuário ou por administradores).
+
+Esses componentes usam a [Classe API](03_classe_api_.md) para se comunicar com os endpoints específicos definidos pelo plugin no backend.
+
+## Conclusão
+
+Neste capítulo, exploramos o **Plugin de Autenticação Múltipla Local (MultipleLocalAuth)**, o porteiro flexível e seguro da plataforma. Vimos como ele permite aos usuários fazer login ou se registrar usando email/senha, CPF (se habilitado) ou contas de redes sociais.
+
+Entendemos que ele é um módulo configurável (`config.php`) que adiciona funcionalidades importantes como regras de força de senha e verificação reCAPTCHA. Vimos como os componentes Vue fornecidos pelo plugin (`<login>`, `<create-account>`, etc.) interagem com a [Classe API](03_classe_api_.md) para se comunicar com a lógica do plugin no backend, que valida credenciais, gerencia sessões e lida com os diferentes métodos de autenticação.
+
+O `MultipleLocalAuth` é essencial para oferecer uma experiência de entrada moderna, segura e conveniente para os usuários da plataforma.
+
+Com isso, concluímos nossa jornada pelos principais conceitos e funcionalidades da plataforma! Esperamos que este tutorial tenha fornecido uma base sólida para você entender como as diferentes partes - das [Entidades](01_entidades__entities__.md) e [Componentes Vue](02_componentes_vue__vue_components__.md) à [Classe API](03_classe_api_.md), [Busca](04_busca__search__.md), [Painel de Controle](05_painel_de_controle__panel__.md), [Oportunidades](06_oportunidades_e_inscrições__opportunities___registrations__.md), [Avaliações](07_métodos_de_avaliação__evaluation_methods__.md) e Autenticação - se encaixam para criar um ambiente rico para a gestão cultural. Agora, encorajamos você a explorar o código-fonte com mais confiança e a experimentar construir ou personalizar funcionalidades!
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

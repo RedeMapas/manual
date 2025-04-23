@@ -1,0 +1,340 @@
+---
+title: Classe API
+description: Chapter 3
+---
+
+Olá! No capítulo anterior, sobre [Componentes Vue (Vue Components)](02_componentes_vue__vue_components__.md), vimos como construímos as peças visuais da nossa interface, como o cartão que exibe nosso "Centro Cultural Vila das Artes". Mas ficou uma pergunta no ar: como esses componentes conseguem os dados das [Entidades](01_entidades__entities__.md) para mostrar? E quando preenchemos um formulário, como esses dados são enviados para serem salvos no servidor?
+
+É aqui que entra a nossa **Classe API**, o nosso "carteiro" digital!
+
+## Para que serve a Classe API?
+
+Imagine que a interface do usuário (os [Componentes Vue](02_componentes_vue__vue_components__.md)) e o servidor (onde os dados realmente moram) falam "línguas" diferentes e vivem em casas separadas. A interface precisa pedir informações ("Ei, me traz os dados do Centro Cultural Vila das Artes!") ou enviar pacotes ("Aqui estão os novos dados para salvar!"). O servidor, por sua vez, processa esses pedidos e envia respostas ("Aqui estão os dados!" ou "Ok, salvo com sucesso!").
+
+A **Classe API** é a responsável por fazer essa comunicação acontecer de forma eficiente e organizada. Ela funciona como um carteiro ou um garçom:
+
+1.  **Pega o Pedido:** Quando um [Componente Vue](02_componentes_vue__vue_components__.md) precisa de dados ou quer salvar algo, ele entrega o pedido para a Classe API.
+2.  **Leva até o Servidor:** A Classe API traduz esse pedido para a "língua" da internet (requisições HTTP como GET, POST, PUT, DELETE) e o envia para o endereço certo no servidor.
+3.  **Busca a Resposta:** Ela espera o servidor processar o pedido e trazer a resposta.
+4.  **Entrega de Volta:** A Classe API entrega a resposta de volta para o componente que fez o pedido.
+
+Além disso, nossa Classe API é esperta! Ela também:
+
+*   **Abstrai a Complexidade:** Esconde os detalhes técnicos chatos das requisições HTTP. O componente não precisa saber exatamente como montar um cabeçalho `POST` ou `GET`.
+*   **Gerencia um "Cache":** Guarda uma cópia temporária das [Entidades](01_entidades__entities__.md) que já foram buscadas recentemente. Se pedirmos a mesma coisa de novo, ela pode entregar a cópia local (cache) em vez de ir buscar tudo de novo no servidor, tornando tudo mais rápido!
+*   **Organiza Listas:** Ajuda a gerenciar as listas de entidades que buscamos (por exemplo, uma lista de todos os espaços culturais).
+
+**Nosso Caso de Uso:** Como o [Componente Vue](02_componentes_vue__vue_components__.md) que mostra a página de detalhes do nosso "Centro Cultural Vila das Artes" (que criamos no Capítulo 1 e exibimos no Capítulo 2) busca as informações completas desse espaço no servidor? Ou como o formulário de edição envia as alterações para serem salvas? É a Classe API que faz essa mágica acontecer!
+
+## Entendendo a Classe API
+
+Vamos detalhar as responsabilidades do nosso carteiro digital:
+
+1.  **Comunicação HTTP:** O coração da Classe API. Ela sabe como "conversar" com o servidor usando os verbos padrão da web:
+    *   **GET:** Usado para *buscar* dados (Ex: "Me traga os dados do espaço com ID 123").
+    *   **POST:** Usado para *criar* novos dados (Ex: "Salve esta nova entidade de evento").
+    *   **PUT / PATCH:** Usados para *atualizar* dados existentes (Ex: "Atualize o nome deste espaço"). `PATCH` é geralmente usado para atualizações parciais (só o que mudou).
+    *   **DELETE:** Usado para *remover* dados (Ex: "Exclua este agente").
+
+2.  **Abstração:** Em vez de escrevermos código complexo de `fetch` (a função nativa do navegador para fazer requisições) toda vez, usamos métodos mais simples da Classe API, como `api.find()` ou `api.persistEntity()`.
+
+3.  **Cache de Entidades (`useEntitiesCache`):** Imagine uma pequena agenda onde a API anota os dados das entidades que já buscou. Se pedirmos a entidade de ID 123 e ela já estiver na agenda (cache), a API entrega na hora! Isso economiza tempo e recursos. Essa "agenda" é gerenciada por uma ferramenta chamada [Pinia](https://pinia.vuejs.org/) (um gerenciador de estado para Vue).
+
+4.  **Gerenciamento de Listas (`useEntitiesLists`):** Similar ao cache, mas para listas. Se buscamos "todos os eventos de música", a API pode guardar essa lista específica. Isso ajuda componentes que exibem essas listas a se manterem atualizados. Também usa Pinia.
+
+5.  **Instâncias por Tipo/Escopo:** Geralmente, criamos uma instância da Classe API para cada tipo de [Entidade](01_entidades__entities__.md) (`space`, `agent`, `event`, etc.). Isso ajuda a manter as coisas organizadas (`new API('space')` para lidar com espaços, `new API('event')` para eventos).
+
+## Usando a Classe API na Prática
+
+Normalmente, você não vai usar a Classe API *diretamente* dentro dos seus [Componentes Vue](02_componentes_vue__vue_components__.md) para tudo. Lembra da classe `Entity` do [Capítulo 1](01_entidades__entities__.md)? Ela já usa a Classe API por baixo dos panos para métodos como `save()`, `delete()`, `publish()`, etc.
+
+**Exemplo 1: Salvando nossa Entidade (Revisitado)**
+
+Quando fizemos isso no Capítulo 1:
+
+```javascript
+// No script de um Componente Vue que tem o formulário
+const meuNovoEspaco = new Entity('space');
+// ... preenche as propriedades ...
+meuNovoEspaco.name = "Centro Cultural Vila das Artes";
+meuNovoEspaco.shortDescription = "Descrição atualizada.";
+
+// Quando chamamos save()...
+meuNovoEspaco.save().then(resposta => {
+  console.log("Espaço salvo via API!", resposta);
+}).catch(erro => {
+  console.error("Erro ao salvar via API:", erro);
+});
+```
+
+O método `meuNovoEspaco.save()` internamente faz algo como:
+
+1.  Obtém (ou cria) uma instância da API específica para 'space': `const api = new API('space');`
+2.  Pega os dados modificados da entidade: `const dadosParaSalvar = this.data(true);`
+3.  Chama o método `persistEntity` da API: `api.persistEntity(this, dadosParaSalvar);` (onde `this` é a própria entidade `meuNovoEspaco`)
+4.  A API envia a requisição (`POST` se for novo, `PATCH` se for atualização) para o servidor.
+5.  A API recebe a resposta e a retorna para a entidade, que então resolve a `Promise` do `save()`.
+
+**Exemplo 2: Buscando uma Entidade específica**
+
+Imagine que queremos carregar os dados do nosso Centro Cultural (vamos supor que ele tem ID 123) para exibir em uma página de detalhes. Dentro do [Componente Vue](02_componentes_vue__vue_components__.md) dessa página, poderíamos fazer:
+
+```javascript
+// No script do Componente Vue da página de detalhes
+import { ref, onMounted } from 'vue'; // Funções do Vue
+// Assumindo que a classe API e Entity estão disponíveis globalmente
+
+const espacoCultural = ref(null); // Variável reativa para guardar a entidade
+const carregando = ref(true); // Para mostrar um indicador de loading
+
+onMounted(async () => { // Executa quando o componente é montado na tela
+  try {
+    // 1. Cria uma instância da API para 'space'
+    const apiEspacos = new API('space');
+    const idDoEspaco = 123; // Poderia vir da URL da página
+
+    // 2. Usa a API para buscar a entidade pelo ID
+    //    findOne retorna uma instância de Entity já populada
+    const entidadeEncontrada = await apiEspacos.findOne(idDoEspaco);
+
+    // 3. Atualiza nossa variável reativa com a entidade encontrada
+    espacoCultural.value = entidadeEncontrada;
+
+  } catch (error) {
+    console.error("Erro ao buscar o espaço:", error);
+    // Tratar o erro (mostrar mensagem para o usuário)
+  } finally {
+    carregando.value = false; // Esconde o loading
+  }
+});
+
+// No template HTML do componente, poderíamos usar:
+// <div v-if="carregando">Carregando...</div>
+// <div v-else-if="espacoCultural">
+//   <h1>{{ espacoCultural.name }}</h1>
+//   <p>{{ espacoCultural.shortDescription }}</p>
+//   <!-- Outros dados -->
+// </div>
+// <div v-else>Espaço não encontrado.</div>
+```
+
+**O que acontece aqui?**
+
+1.  `new API('space')`: Criamos nosso "carteiro" especializado em Espaços.
+2.  `apiEspacos.findOne(idDoEspaco)`: Pedimos ao carteiro: "Vá até o servidor e me traga todos os dados do espaço com ID 123". A API faz a requisição `GET`, recebe a resposta, cria um objeto `Entity` com esses dados e nos entrega. Se a entidade já estivesse no cache, a API poderia retornar a cópia local mais rapidamente.
+3.  `espacoCultural.value = ...`: Guardamos a entidade recebida para que o template do Vue possa exibi-la.
+
+**Exemplo 3: Buscando uma Lista de Entidades**
+
+Se quiséssemos buscar todos os espaços culturais cujo nome contém "Vila", poderíamos usar o método `find()`:
+
+```javascript
+// No script de um Componente Vue que lista espaços
+import { ref, onMounted } from 'vue';
+const apiEspacos = new API('space'); // API para espaços
+const listaDeEspacos = ref([]); // Lista reativa para guardar os resultados
+const carregando = ref(true);
+
+onMounted(async () => {
+  try {
+    // Define os critérios da busca
+    const query = {
+      '@select': 'id,name,shortDescription', // Quais campos queremos?
+      'name': 'LIKE(%Vila%)' // Filtro: nome contém "Vila"
+      // Poderia ter outros filtros, ordenação, paginação...
+    };
+
+    // Busca a lista de entidades que batem com a query
+    const resultados = await apiEspacos.find(query);
+
+    listaDeEspacos.value = resultados; // Atualiza a lista reativa
+    // 'resultados' é um array de objetos Entity
+
+  } catch (error) {
+    console.error("Erro ao buscar espaços:", error);
+  } finally {
+    carregando.value = false;
+  }
+});
+
+// No template:
+// <div v-if="carregando">Buscando...</div>
+// <ul v-else>
+//   <li v-for="espaco in listaDeEspacos" :key="espaco.id">
+//     {{ espaco.name }} - {{ espaco.shortDescription }}
+//   </li>
+// </ul>
+```
+
+Aqui, `apiEspacos.find(query)` pede ao carteiro para buscar uma *lista* de espaços que correspondam aos critérios definidos na `query`. A API faz a requisição `GET` adequada, processa a lista de resultados recebida do servidor, transforma cada item em um objeto `Entity` e retorna o array.
+
+## Por Dentro da Classe API
+
+Ok, mas como o carteiro realmente faz seu trabalho? Vamos espiar "debaixo do capô".
+
+**O Fluxo Simplificado (para buscar dados com `find()`):**
+
+1.  **Componente Vue:** Chama `api.find(query)`.
+2.  **Instância da API:** Recebe a chamada. Prepara a URL final com os parâmetros da `query` (ex: `/api/space/find?@select=name&name=LIKE(%Vila%)`).
+3.  **Verifica Cache (Opcional):** *(Nota: `find` geralmente não usa cache de lista diretamente, mas `findOne` sim. O cache principal é por entidade individual.)*
+4.  **Requisição HTTP:** Usa a função `fetch` do navegador para enviar uma requisição `GET` para a URL preparada.
+5.  **Servidor (Backend):** Recebe a requisição, consulta o banco de dados com base nos filtros, e envia de volta uma resposta JSON com a lista de entidades encontradas e metadados (ex: total de itens).
+6.  **Instância da API:** Recebe a resposta JSON.
+7.  **Processamento:** Para cada item na resposta:
+    *   Verifica se já existe uma `Entity` com aquele ID no cache (`useEntitiesCache`). Se sim, a atualiza. Se não, cria uma nova (`new Entity(...)`).
+    *   Popula a `Entity` com os dados recebidos.
+    *   Adiciona a `Entity` à lista de resultados.
+8.  **Retorno:** Retorna a lista de objetos `Entity` para o Componente Vue.
+
+**Diagrama de Sequência (Busca `find()`):**
+
+<Mermaid
+  chart="
+sequenceDiagram
+    participant CompVue as Componente Vue
+    participant APIInst as Instância API ('space')
+    participant Fetch as Navegador (fetch API)
+    participant Servidor
+
+    CompVue->>APIInst: Chama find({filtros})
+    APIInst->>APIInst: Monta URL da API (ex: /api/space/find?...)
+    APIInst->>Fetch: Chama fetch(url, {method: 'GET', ...})
+    Fetch->>Servidor: Envia requisição HTTP GET
+    Servidor->>Servidor: Processa requisição (consulta BD)
+    Servidor-->>Fetch: Retorna resposta HTTP (JSON com lista)
+    Fetch-->>APIInst: Entrega resposta
+    APIInst->>APIInst: Processa JSON (cria/atualiza Entities)
+    APIInst->>APIInst: Armazena/Atualiza Entities no Cache (useEntitiesCache)
+    APIInst-->>CompVue: Retorna array de Entities populadas
+" />
+
+**Mergulhando no Código (`modules/Components/assets/js/components-base/API.js`):**
+
+*   **Construtor (`constructor`)**:
+    ```javascript
+    // Trecho simplificado do construtor
+    class API {
+        constructor(objectType, scope = 'default', fetchOptions) {
+            // Garante que só exista uma instância por tipo/escopo (Singleton pattern)
+            const instanceId = `${objectType}:${scope}`;
+            if (apiInstances[instanceId]) {
+                return apiInstances[instanceId];
+            }
+            // Guarda o tipo (space, event, etc.) e o escopo
+            this.objectType = objectType;
+            this.scope = scope;
+            // Pega as instâncias dos stores de Cache e Listas do Pinia
+            this.cache = useEntitiesCache();
+            this.lists = useEntitiesLists();
+            // ... outras inicializações (AbortController, opções) ...
+            apiInstances[instanceId] = this; // Armazena a instância criada
+        }
+        // ... resto da classe
+    }
+    ```
+    Quando fazemos `new API('space')`, ele verifica se já existe uma API para 'space'. Se não, cria uma nova, conecta-se aos sistemas de cache (`useEntitiesCache`) e listas (`useEntitiesLists`) e guarda a si mesma para ser reutilizada.
+
+*   **Métodos HTTP (`GET`, `POST`, `PATCH`, `DELETE`)**:
+    ```javascript
+    // Trecho simplificado do GET
+    async GET(url, data, init) {
+        url = this.parseUrl(url); // Garante que a URL esteja completa
+        const requestInit = {
+            cache: this.options.cacheMode, // Define como o cache do navegador deve agir
+            headers: this.getHeaders(data), // Monta cabeçalhos HTTP
+            ...init
+        }
+        // Chama a função 'fetch' global (que pode ter sido interceptada)
+        return fetch(url, requestInit);
+    }
+
+    // Trecho simplificado do PATCH (usado para atualizar)
+    async PATCH(url, data, forceSave) {
+        url = this.parseUrl(url);
+        return fetch(url, {
+            method: 'PATCH', // Define o método HTTP
+            headers: this.getHeaders(data, forceSave), // Cabeçalhos (pode incluir 'MAPAS-Force-Save')
+            body: this.parseData(data) // Prepara o corpo da requisição (JSON ou FormData)
+        }).catch(/* ... trata erros de rede ... */);
+    }
+    // POST, PUT, DELETE são similares, mudando o 'method'
+    ```
+    Esses métodos são "wrappers" (embrulhos) em volta da função `fetch` nativa do navegador. Eles cuidam de montar a URL correta, definir o método HTTP (`GET`, `POST`, etc.), configurar os cabeçalhos (`Content-Type`, etc.) e formatar os dados a serem enviados (`body`).
+
+*   **Persistência (`persistEntity`)**:
+    ```javascript
+    // Trecho simplificado do persistEntity
+    async persistEntity(entity, forceSave) {
+        // Se a entidade NÃO tem ID (é nova)...
+        if (!entity[this.$PK]) { // $PK é a chave primária (geralmente 'id')
+            let url = Utils.createUrl(this.objectType, 'index'); // URL para criar (ex: /space/)
+            // ...chama this.POST com os dados da entidade
+            return this.POST(url, entity.data());
+        } else { // Se a entidade JÁ tem ID (está atualizando)...
+            // Chama this.PATCH com os dados modificados na URL específica da entidade
+            return this.PATCH(entity.singleUrl, entity.data(true), forceSave);
+        }
+    }
+    ```
+    Este método é usado pela classe `Entity` (no método `save()`). Ele decide se deve fazer um `POST` (para criar) ou um `PATCH` (para atualizar) com base na existência de um ID na entidade. Ele pega os dados da entidade usando `entity.data()` e chama os métodos `POST` ou `PATCH` correspondentes.
+
+*   **Busca (`findOne`, `find`)**:
+    ```javascript
+    // Trecho simplificado do findOne
+    async findOne(id, select) {
+        // Monta a URL da API para buscar um único item pelo ID
+        let url = this.createApiUrl('findOne', {id: `EQ(${id})`, '@select': select || '*'});
+        return this.GET(url).then(response => response.json().then(obj => {
+            // Pega (do cache) ou cria uma instância da Entity
+            let entity = this.getEntityInstance(id);
+            // Popula a entidade com os dados recebidos da API
+            return entity.populate(obj);
+        }));
+    }
+
+    // Trecho simplificado do find
+    async find(query, list, rawProcessor) {
+        // ... (lógica para processamento 'raw' omitida) ...
+        return this.fetch('find', query, {list /* ... */});
+    }
+
+    // Trecho simplificado do fetch (usado por find e outros)
+    async fetch(endpoint, query, {list, raw, rawProcessor, refresh}) {
+        let url = this.createApiUrl(endpoint, query); // Monta URL (ex: /api/space/find?...)
+        // ... (lógica de AbortController para cancelar buscas anteriores) ...
+        return this.GET(url, {}, /* ... */).then(response => response.json().then(objs => {
+            let result = list || []; // Usa a lista existente ou cria uma nova
+            objs.forEach(element => { // Para cada objeto de dados recebido...
+                // Determina o tipo e pega a API correta (pode ser misto em algumas buscas)
+                const api = new API(element['@entityType'], this.scope);
+                // Pega (do cache) ou cria a instância da Entity
+                const entity = api.getEntityInstance(element[api.$PK]);
+                // Popula/atualiza a entidade com os dados
+                entity.populate(element, !refresh);
+                result.push(entity); // Adiciona à lista de resultados
+                // ... (associa a entidade à lista para referência) ...
+            });
+            // Adiciona metadados (ex: total de itens) à lista
+            result.metadata = JSON.parse(response.headers.get('API-Metadata'));
+            return result; // Retorna a lista de Entities
+        }));
+    }
+    ```
+    Os métodos `findOne` e `find` montam a URL da API com os filtros e seleções desejadas usando `createApiUrl`. Eles chamam `this.GET` para fazer a requisição. Quando a resposta chega, o método `fetch` processa o JSON: para cada item, ele usa `getEntityInstance` (que interage com o cache `useEntitiesCache`) para obter ou criar o objeto `Entity` correspondente e o preenche com os dados usando `entity.populate()`. Finalmente, retorna a entidade única ou a lista de entidades.
+
+*   **Cache e Listas (`useEntitiesCache`, `useEntitiesLists`)**:
+    São definidos usando `Pinia.defineStore`. Eles basicamente fornecem um objeto (`state`) para guardar os dados (entidades cacheadas ou listas nomeadas) e `actions` (funções como `store`, `remove`, `fetch`) para manipular esses dados de forma centralizada. A classe API usa essas actions para guardar e recuperar entidades do cache.
+
+## Conclusão
+
+Neste capítulo, desvendamos a **Classe API**, nossa ferramenta essencial para a comunicação entre a interface do usuário ([Componentes Vue](02_componentes_vue__vue_components__.md)) e o servidor. Vimos que ela funciona como um carteiro ou garçom, levando requisições (buscar, salvar, deletar) e trazendo respostas, enquanto esconde a complexidade das chamadas HTTP.
+
+Aprendemos como ela é usada, muitas vezes indiretamente através da classe [Entity](01_entidades__entities__.md) (para salvar ou deletar) ou diretamente (com métodos como `find` e `findOne`) para buscar dados específicos ou listas. Também entendemos seu papel crucial no gerenciamento de cache (`useEntitiesCache`) para otimizar o desempenho.
+
+A Classe API é a ponte que conecta o que o usuário vê e interage na tela com os dados armazenados no backend. Sem ela, nossos componentes não teriam como obter ou modificar as informações culturais da plataforma.
+
+Com esse conhecimento sobre como buscar dados, estamos prontos para explorar como implementar funcionalidades mais complexas. No próximo capítulo, mergulharemos na [Busca (Search)](04_busca__search__.md), vendo como combinamos Componentes Vue e a Classe API para criar experiências de busca poderosas e flexíveis para os usuários.
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

@@ -1,0 +1,315 @@
+---
+title: Vue Components
+description: Chapter 2
+---
+
+No [Capítulo 1: Entidades (Entities)](01_entidades__entities__.md), vimos como a plataforma organiza as informações sobre agentes, espaços, eventos e outros itens culturais usando as Entidades. Criamos até uma representação para o nosso "Centro Cultural Vila das Artes". Mas como mostramos essas informações na tela para o usuário? É aí que entram os **Componentes Vue**!
+
+## Para que servem os Componentes Vue?
+
+Imagine que você tem as peças de LEGO (nossas Entidades) que representam o Centro Cultural. Agora, você precisa construir a *vitrine* onde essa peça será exibida no seu mapa cultural digital. Você não quer construir uma vitrine nova do zero toda vez que tiver um Centro Cultural, certo? Você quer um modelo de vitrine que possa ser reutilizado.
+
+Os **Componentes Vue** são exatamente isso: são como *modelos de vitrines* ou *blocos de construção* reutilizáveis para a interface do usuário (UI). Eles nos permitem pegar os dados de uma Entidade (como nosso Centro Cultural) e mostrá-los de forma organizada e bonita na tela.
+
+Cada componente cuida de uma parte específica da interface:
+
+*   Um cartão para mostrar um resumo de uma entidade (`entity-card`).
+*   Um mapa interativo (`mc-map`).
+*   Abas para organizar conteúdo (`mc-tabs`).
+*   Um formulário para cadastrar um novo evento.
+*   Uma janela pop-up (`mc-modal`).
+
+Eles encapsulam o HTML, o JavaScript (lógica) e o CSS (estilo) necessários para aquela pequena parte da tela funcionar. Isso torna o desenvolvimento muito mais organizado, fácil de manter e rápido, pois podemos reutilizar esses blocos em vários lugares. No nosso projeto, os Componentes Vue são a tecnologia moderna que substitui a abordagem antiga baseada em AngularJS (usada na BaseV1).
+
+**Nosso Caso de Uso:** Como exibir as informações do nosso "Centro Cultural Vila das Artes" (a Entidade que criamos no capítulo anterior) em um cartão na página de resultados de busca? É isso que vamos entender!
+
+## Entendendo os Componentes Vue
+
+Vamos detalhar os ingredientes de um Componente Vue:
+
+1.  **O que é um Componente Vue?**
+    É um pedaço autônomo e reutilizável da interface. Pense nele como um widget customizado. Ele tem sua própria estrutura (HTML), sua própria lógica (JavaScript) e seu próprio visual (CSS).
+
+2.  **Estrutura (`<template>`):**
+    Define como o componente deve ser desenhado na tela, usando HTML. É o esqueleto do componente.
+
+    ```html
+    <!-- Exemplo MUITO simplificado de um template de cartão -->
+    <template>
+      <div class="cartao-entidade">
+        <h3>{{ nomeDaEntidade }}</h3>
+        <p>{{ descricaoCurta }}</p>
+        <!-- Outros elementos HTML -->
+      </div>
+    </template>
+    ```
+
+3.  **Lógica (`<script>` ou `<script setup>`):**
+    O cérebro do componente. Aqui fica o código JavaScript que controla o comportamento:
+    *   **Dados (`data` ou `reactive`):** Informações que o componente precisa guardar (ex: o nome a ser exibido).
+    *   **Métodos (`methods`):** Funções que executam ações (ex: o que fazer quando um botão é clicado).
+    *   **Propriedades Computadas (`computed`):** Dados derivados de outros dados (ex: formatar uma data).
+    *   **Ciclo de Vida (`mounted`, `created`, etc.):** Funções especiais que rodam em momentos específicos (ex: quando o componente aparece na tela).
+
+    ```javascript
+    // Exemplo MUITO simplificado de um script de cartão
+    <script setup>
+    import { defineProps, computed } from 'vue'; // Importa funções do Vue
+
+    // Define que este componente espera receber uma 'entidade'
+    const props = defineProps({
+      entidade: Object // Espera um objeto entidade
+    });
+
+    // Calcula o nome a partir da entidade recebida
+    const nomeDaEntidade = computed(() => props.entidade?.name || 'Nome Indisponível');
+    // Calcula a descrição curta
+    const descricaoCurta = computed(() => props.entidade?.shortDescription || '');
+
+    // ... outra lógica, como buscar mais dados, etc. ...
+    </script>
+    ```
+
+4.  **Estilo (`<style>` ou arquivos `.scss` separados):**
+    Define a aparência do componente usando CSS (ou Sass, como no nosso projeto). Muitas vezes, esses estilos são "escopados", o que significa que só afetam este componente específico, evitando conflitos com o resto da página.
+
+    ```scss
+    /* Exemplo MUITO simplificado de estilo para o cartão */
+    /* Geralmente em um arquivo .scss separado na pasta 'components' */
+    .cartao-entidade {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+
+      h3 { /* Estilo para o título dentro do cartão */
+        margin-top: 0;
+        color: var(--mc-primary-color); /* Usa variável CSS do tema */
+      }
+    }
+    ```
+
+5.  **Props (Propriedades):**
+    São como "parâmetros" que você passa para um componente quando o utiliza. É a forma principal de enviar dados *de fora para dentro* do componente. No nosso caso, passaríamos o objeto `Entity` do Centro Cultural para o componente de cartão através de uma prop.
+
+6.  **Eventos (`$emit`):**
+    São a forma do componente filho se comunicar *de dentro para fora* com o componente pai. Por exemplo, se o cartão tivesse um botão "Ver detalhes", ao clicar, ele poderia emitir um evento `verDetalhesClicado` para que o componente pai soubesse e tomasse uma ação (como abrir uma nova página ou um modal).
+
+## Usando Componentes na Prática: Exibindo nosso Centro Cultural
+
+Lembra do `meuNovoEspaco`, a [Entidade](01_entidades__entities__.md) que criamos no capítulo anterior?
+```javascript
+// Recapitulando do Capítulo 1 (simplificado)
+const meuNovoEspaco = new Entity('space');
+meuNovoEspaco.name = "Centro Cultural Vila das Artes";
+meuNovoEspaco.shortDescription = "Um novo espaço dedicado à arte e cultura local.";
+// ... outras propriedades ...
+// (Vamos assumir que ele foi salvo e agora tem dados)
+```
+
+Agora, queremos exibir essa entidade em uma página que lista vários espaços culturais. Essa página seria, ela mesma, um Componente Vue. Dentro do *template* dessa página, usaríamos o componente `entity-card` (nosso cartão reutilizável) assim:
+
+```html
+<!-- Dentro do template de um componente PAI (ex: PaginaDeBusca.vue) -->
+<template>
+  <div>
+    <h1>Espaços Culturais Encontrados</h1>
+
+    <!-- Aqui usamos o componente entity-card -->
+    <!-- Passamos o objeto 'meuNovoEspaco' para a prop 'entity' -->
+    <entity-card :entity="meuNovoEspaco"></entity-card>
+
+    <!-- Poderíamos ter um loop para mostrar vários cartões -->
+    <!-- <entity-card v-for="espaco in listaDeEspacos" :key="espaco.id" :entity="espaco"></entity-card> -->
+
+  </div>
+</template>
+
+<script setup>
+// Importaria o componente EntityCard se não for global
+// import EntityCard from './EntityCard.vue'; // Ou caminho similar
+
+// Importaria a classe Entity e buscaria os dados...
+// const meuNovoEspaco = ... (lógica para obter a entidade)
+// const listaDeEspacos = ... (lógica para obter uma lista)
+</script>
+```
+
+**O que acontece aqui?**
+
+1.  `<entity-card ...>`: Estamos dizendo ao Vue: "Neste lugar, renderize o componente chamado `entity-card`".
+2.  `:entity="meuNovoEspaco"`: Esta é a parte crucial. O `:` antes de `entity` é uma abreviação do Vue (`v-bind:entity`) que diz: "Pegue o valor da variável `meuNovoEspaco` (que está no *script* do componente pai) e passe-o para a *propriedade* chamada `entity` do componente `entity-card`".
+
+O componente `entity-card` recebe esse objeto `meuNovoEspaco` através da sua `prop` `entity` e usa as informações dele (nome, descrição, etc.) para preencher seu próprio *template* e exibir o cartão na tela. Mágica da reutilização!
+
+## Por Dentro dos Componentes
+
+Como o sistema sabe quais componentes existem e como eles funcionam?
+
+**O Fluxo Simplificado:**
+
+1.  **Inicialização (Carregamento da Página):** Quando a página carrega, o JavaScript principal (influenciado por `modules/Components/assets-src/js/vue-init.js`) inicializa o Vue.js.
+2.  **Registro de Componentes:** Durante a inicialização, componentes globais (como `mc-tabs`, `mc-map`, `entity-card`, etc.) são registrados usando `app.component('nome-do-componente', definicaoDoComponente)`. Isso os torna disponíveis para uso em qualquer template.
+3.  **Renderização do Componente Pai:** O Vue começa a renderizar o componente principal da página (ex: a página de busca).
+4.  **Encontrando um Componente Filho:** Ao processar o template do pai, o Vue encontra a tag `<entity-card :entity="meuNovoEspaco">`.
+5.  **Criação da Instância do Filho:** O Vue localiza a definição registrada do `entity-card` e cria uma nova instância desse componente.
+6.  **Passagem das Props:** O Vue avalia a expressão `:entity="meuNovoEspaco"`, pega o objeto `Entity` correspondente e o passa para a `prop` `entity` da nova instância do `entity-card`.
+7.  **Renderização do Filho:** A instância do `entity-card` executa sua própria lógica (`script`), calcula seus dados (como `nomeDaEntidade`) e renderiza seu próprio template (`<template>`) com as informações recebidas.
+8.  **Montagem no DOM:** O HTML resultante do `entity-card` é inserido no lugar correto dentro do HTML do componente pai na árvore DOM do navegador, tornando-o visível para o usuário.
+9.  **Estilização:** O navegador aplica as regras CSS/Sass definidas para o `.cartao-entidade` e seus elementos internos.
+
+**Diagrama de Sequência (Simplificado):**
+
+<Mermaid
+  chart="
+sequenceDiagram
+    participant Navegador
+    participant VueInit as vue-init.js
+    participant VueJS as Vue.js Core
+    participant CompPai as Componente Pai (ex: Página)
+    participant CompFilho as Componente Filho (ex: entity-card)
+
+    Navegador->>VueInit: Carrega script
+    VueInit->>VueJS: Cria app Vue (createApp)
+    VueInit->>VueJS: Registra Componentes Globais (app.component)
+    VueInit->>VueJS: Monta app no #main-app (app.mount)
+    VueJS->>CompPai: Inicia renderização
+    CompPai->>VueJS: Encontra <entity-card :entity='dados'> no template
+    VueJS->>CompFilho: Cria instância do entity-card
+    VueJS->>CompFilho: Passa 'dados' como prop 'entity'
+    CompFilho->>CompFilho: Executa script (setup, computed, etc.)
+    CompFilho->>VueJS: Retorna HTML renderizado do template interno
+    VueJS->>CompPai: Insere HTML do filho no HTML do pai
+    VueJS->>Navegador: Atualiza o DOM final
+    Navegador->>Navegador: Aplica estilos CSS/Sass
+" />
+
+**Mergulhando no Código:**
+
+*   **Inicialização e Registro (`modules/Components/assets-src/js/vue-init.js`):**
+    Este arquivo é o ponto de partida para o Vue no frontend. Ele importa o Vue e outras bibliotecas, cria a aplicação Vue e registra componentes que serão usados em várias partes do sistema.
+
+    ```javascript
+    // Trecho simplificado de vue-init.js
+    import * as Vue from 'vue';
+    // ... importa outros plugins e componentes base ...
+    import { Icon } from '@iconify/vue'; // Exemplo de componente importado
+
+    const app = Vue.createApp({}); // Cria a instância principal do Vue
+    // ... usa plugins (Pinia, VueFinalModal) ...
+
+    // Registra um componente globalmente
+    app.component('Iconify', Icon);
+    // Nossos componentes customizados (mc-tabs, entity-card, etc.)
+    // são registrados de forma similar em seus próprios arquivos .js,
+    // que são carregados e executam app.component('nome-do-componente', {...});
+
+    // ... outras configurações ...
+
+    globalThis.app = app; // Torna a app Vue acessível globalmente (se necessário)
+    globalThis.Vue = Vue; // Torna o Vue acessível globalmente
+
+    document.addEventListener('DOMContentLoaded', () => {
+        app.mount('#main-app'); // Inicia o Vue na div com id="main-app" do HTML
+    });
+    ```
+    A linha `app.component('NomeDoComponente', Definicao)` torna `<nome-do-componente>` utilizável em qualquer template HTML gerenciado pelo Vue, sem precisar importar explicitamente em cada um.
+
+*   **Definição de um Componente (`modules/Components/components/entity-card/script.js`):**
+    Vamos ver uma versão *super simplificada* de como o `entity-card` é definido.
+
+    ```javascript
+    // Trecho MUITO simplificado de entity-card/script.js
+    app.component('entity-card', { // Registra o componente 'entity-card' globalmente
+        template: $TEMPLATES['entity-card'], // Indica que o HTML está em uma variável global
+
+        props: { // Define as propriedades que o componente aceita
+            entity: { // Nome da propriedade: 'entity'
+                type: Entity, // Espera receber um objeto da classe Entity
+                required: true // É obrigatório passar essa propriedade
+            },
+            // ... outras props como 'portrait', 'tag', etc.
+        },
+
+        setup(props) { // Função de configuração (alternativa moderna ao 'data', 'methods', 'computed')
+            // Lógica para calcular valores baseados nas props
+            const nomeCurto = Vue.computed(() => { // Exemplo de propriedade computada
+                return props.entity?.name?.substring(0, 50) + '...';
+            });
+
+            const descricaoVisivel = Vue.computed(() => {
+                return props.entity?.shortDescription || 'Sem descrição.';
+            });
+
+            // Retorna os valores que o template poderá usar
+            return {
+                nomeCurto,
+                descricaoVisivel
+                // ... outros valores e funções
+            }
+        },
+        // Poderia ter 'data()', 'methods: {}', 'computed: {}' em vez de 'setup'
+    });
+    ```
+    Aqui vemos como ele declara a `prop` `entity` para receber os dados e como usa `computed` (propriedades computadas) dentro de `setup` para preparar os dados para exibição no `template`. O `template: $TEMPLATES['entity-card']` indica que o HTML real está pré-carregado em uma variável JavaScript (uma otimização comum).
+
+*   **Estilização com BEM (`themes/BaseV2/assets-src/sass/README.md`):**
+    Para manter os estilos organizados e evitar conflitos, o projeto usa Sass e uma convenção chamada BEM (Block, Element, Modifier). Veja o arquivo `README.md` do Sass para detalhes, mas a ideia básica é:
+    *   **Block:** O nome do componente (`.entity-card`).
+    *   **Element:** Uma parte interna do componente (`.entity-card__title`, `.entity-card__image`).
+    *   **Modifier:** Uma variação do componente ou elemento (`.entity-card--featured`, `.entity-card__button--disabled`).
+
+    ```scss
+    /* Exemplo BEM simplificado (arquivo .scss do componente) */
+    .entity-card { /* Bloco */
+      border: 1px solid #eee;
+      /* ... outros estilos do bloco ... */
+
+      &__title { /* Elemento: Título dentro do cartão */
+        font-size: 1.2em;
+        color: blue;
+      }
+
+      &__description { /* Elemento: Descrição dentro do cartão */
+        font-size: 0.9em;
+        color: #555;
+      }
+
+      /* Modificador: Um cartão em destaque */
+      &--featured {
+        border-color: gold;
+        background-color: #fff8e1;
+
+        .entity-card__title { /* Estilo específico para o título no cartão em destaque */
+           color: darkorange;
+        }
+      }
+    }
+    ```
+    Isso ajuda a criar CSS mais específico e fácil de entender, especialmente em projetos grandes com muitos componentes. Os arquivos Sass para componentes ficam geralmente na pasta `themes/BaseV2/assets-src/sass/components/`.
+
+## Outros Componentes Úteis no
+
+A plataforma vem com vários componentes Vue prontos para uso, como:
+
+*   **`mc-map`** (`modules/Components/components/mc-map/script.js`): Exibe um mapa interativo (usando Leaflet) e pode mostrar marcadores para entidades.
+*   **`mc-tabs`** (`modules/Components/components/mc-tabs/script.js`): Cria uma interface com abas para organizar conteúdo.
+*   **`mc-modal`** (`modules/Components/components/mc-modal/script.js`): Exibe conteúdo em uma janela modal (popup).
+*   **`mc-entities`** (`modules/Components/components/mc-entities/script.js`): Um componente mais avançado para buscar e exibir listas de entidades, lidando com paginação e filtros (vamos ver mais sobre busca no [Capítulo 4: Busca (Search)](04_busca__search__.md)).
+*   **`entity-field`** (`modules/Entities/components/entity-field/script.js`): Renderiza um campo de formulário específico para uma propriedade de uma entidade, adaptando-se ao tipo de dado (texto, número, data, seleção, etc.).
+
+Cada um desses componentes encapsula uma funcionalidade específica da UI, tornando o desenvolvimento mais rápido e consistente. Você pode explorar as pastas `modules/Components/components/` e `modules/Entities/components/` para encontrar mais exemplos.
+
+## Conclusão
+
+Neste capítulo, descobrimos os **Componentes Vue**, os blocos de construção reutilizáveis da interface do usuário no. Vimos que eles combinam HTML (`template`), JavaScript (`script`) e CSS (`style`) para criar partes independentes da tela, como cartões, mapas e formulários.
+
+Entendemos como usar um componente (ex: `<entity-card>`) dentro de outro e como passar dados para ele usando `props` (ex: `:entity="meuNovoEspaco"`). Também vimos um pouco de como eles são registrados e como funcionam internamente.
+
+Os componentes são essenciais para criar interfaces modernas, modulares e fáceis de manter. Eles pegam as [Entidades](01_entidades__entities__.md) e as transformam em algo que o usuário pode ver e interagir.
+
+Mas de onde vêm os dados que esses componentes exibem? Muitas vezes, eles precisam ser buscados do servidor. No próximo capítulo, vamos explorar a [Classe API](03_classe_api_.md), a ferramenta que nossos componentes usam para se comunicar com o backend e buscar ou salvar dados.
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

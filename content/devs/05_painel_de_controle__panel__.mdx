@@ -1,0 +1,275 @@
+---
+title: Painel de Controle
+description: Chapter 5
+---
+
+Olá! No [Capítulo 4: Busca (Search)](04_busca__search__.md), exploramos como os usuários podem encontrar informações na plataforma usando palavras-chave e filtros, como se estivessem usando um "Google Cultural". Mas e quando um usuário quer gerenciar *suas próprias* criações e tarefas dentro da plataforma?
+
+É aí que entra o **Painel de Controle (Panel)**!
+
+## Para que serve o Painel de Controle?
+
+Imagine que a plataforma é uma grande oficina cultural colaborativa. Enquanto a [Busca](04_busca__search__.md) é a ferramenta para explorar tudo o que está sendo feito na oficina, o **Painel de Controle** é a sua **mesa de trabalho pessoal** dentro dessa oficina.
+
+É a área exclusiva do usuário que fez login, onde ele pode:
+
+*   **Ver e gerenciar suas criações:** Acessar rapidamente os [Agentes](01_entidades__entities__.md), [Espaços](01_entidades__entities__.md), [Eventos](01_entidades__entities__.md) e [Projetos](01_entidades__entities__.md) que ele mesmo cadastrou.
+*   **Organizar por status:** Verificar quais de suas criações estão publicadas, quais ainda são rascunhos ou quais foram para a lixeira.
+*   **Acompanhar inscrições:** Ver em quais [Oportunidades](06_oportunidades_e_inscrições__opportunities___registrations__.md) ele se inscreveu.
+*   **Verificar tarefas pendentes:** Saber se há alguma avaliação de inscrição que ele precisa fazer (caso seja um avaliador).
+*   **Acessar rapidamente:** Ter atalhos para as ações mais comuns e ver um resumo de suas atividades.
+
+**Nosso Caso de Uso:** A Ana, uma produtora cultural, acabou de entrar na plataforma. Ela quer ver a lista de todos os eventos que ela cadastrou, verificar se o evento "Festival de Artes Urbanas" ainda está como rascunho e checar se ela tem alguma avaliação pendente para o edital "Cultura na Praça". Como ela faz isso de forma organizada? Usando o Painel de Controle!
+
+## Entendendo os Componentes do Painel
+
+O Painel de Controle não é uma única "coisa", mas sim uma coleção de [Componentes Vue](02_componentes_vue__vue_components__.md) que trabalham juntos para criar essa experiência personalizada. Vamos conhecer os principais:
+
+1.  **Navegação (`panel--nav`):** O menu principal do Painel. Ele oferece links para as diferentes seções: Meus Agentes, Meus Espaços, Meus Eventos, Minhas Inscrições, etc. Ele se adapta se está sendo exibido na barra lateral ou no topo.
+
+2.  **Abas de Entidades (`panel--entity-tabs`):** Um componente muito útil que organiza as entidades do usuário (Agentes, Espaços, etc.) em abas por status: Publicados, Rascunhos, Lixeira, Arquivados, etc. Facilita muito a gestão.
+
+3.  **Resumo das Entidades (`panel--entities-summary`):** Mostra um resumo rápido de quantas entidades de cada tipo (Agentes, Espaços, Eventos, Projetos) o usuário possui.
+
+4.  **Últimos Editados (`panel--last-edited`):** Exibe um carrossel com as entidades que o usuário editou mais recentemente, permitindo acesso rápido para continuar o trabalho.
+
+5.  **Últimas Inscrições (`panel--last-registrations`):** Mostra as últimas [Inscrições](06_oportunidades_e_inscrições__opportunities___registrations__.md) que o usuário realizou em Oportunidades.
+
+6.  **Avaliações Pendentes (`panel--pending-evaluations`):** Se o usuário for um avaliador em alguma [Oportunidade](06_oportunidades_e_inscrições__opportunities___registrations__.md), este componente lista as inscrições que estão aguardando sua avaliação.
+
+## Usando o Painel na Prática: A Experiência da Ana
+
+Quando a Ana faz login e acessa o Painel de Controle (geralmente clicando no nome dela ou em um link "Painel" no menu principal), ela vê uma página montada com esses componentes.
+
+**1. Navegação:** A Ana usa o `panel--nav` para ir até a seção "Meus Eventos".
+
+**2. Gerenciando Eventos:** Ao clicar em "Meus Eventos", a página provavelmente carrega o componente `panel--entity-tabs` configurado para o tipo `event`.
+
+```html
+<!-- Exemplo simplificado de como usar panel--entity-tabs -->
+<panel--entity-tabs type="event"></panel--entity-tabs>
+```
+
+Este componente vai automaticamente:
+*   Criar abas como "Publicados", "Rascunhos", "Lixeira".
+*   Dentro de cada aba, usar a [Classe API](03_classe_api_.md) para buscar **apenas os eventos da Ana** que correspondem àquele status (ex: na aba "Rascunhos", busca eventos com `status: EQ(0)` e `user: EQ(@me)`).
+*   Exibir a lista de eventos em cada aba, provavelmente usando o componente `mc-entities` ou `search-list`.
+
+A Ana clica na aba "Rascunhos" e encontra o "Festival de Artes Urbanas" lá, pronto para ser editado e publicado.
+
+**3. Verificando Avaliações Pendentes:** Na página inicial do Painel, a Ana vê o componente `panel--pending-evaluations`.
+
+```html
+<!-- Exemplo de uso do panel--pending-evaluations -->
+<panel--pending-evaluations></panel--pending-evaluations>
+```
+
+Este componente busca (usando a [Classe API](03_classe_api_.md)) as oportunidades em que a Ana é avaliadora e que possuem inscrições aguardando sua análise. Se o edital "Cultura na Praça" estiver nessa situação, ele aparecerá listado ali, com um link para a Ana começar as avaliações.
+
+**4. Acesso Rápido:** A Ana também pode usar o `panel--last-edited` para rapidamente voltar a editar um espaço cultural que ela estava atualizando ontem.
+
+```html
+<!-- Exemplo de uso do panel--last-edited -->
+<panel--last-edited :limit="10"></panel--last-edited>
+```
+
+Este componente busca as últimas 10 entidades (de qualquer tipo: agente, espaço, evento, etc.) que a Ana editou e as exibe em um carrossel.
+
+## Por Dentro do Painel: Como Funciona?
+
+A mágica do Painel de Controle está em como esses componentes usam a [Classe API](03_classe_api_.md) de forma inteligente para buscar *apenas* os dados relevantes para o usuário logado.
+
+**O Fluxo Simplificado (Ex: Aba "Rascunhos" em `panel--entity-tabs`):**
+
+1.  **Usuário Navega:** Clica em "Meus Eventos" e depois na aba "Rascunhos".
+2.  **Componente `panel--entity-tabs`:** Sabe que está configurado para `type="event"` e que a aba atual é "Rascunhos" (`draft`).
+3.  **Define a Query:** Monta uma consulta específica para a API:
+    *   `type`: `event`
+    *   `status`: `EQ(0)` (código para Rascunho)
+    *   `user`: `EQ(@me)` (palavra mágica que a API entende como "o usuário logado")
+    *   `@permissions`: `view` (garante que só traga o que o usuário pode ver)
+    *   `@order`: `updateTimestamp DESC` (ordena pelos mais recentes)
+4.  **Chama Componente de Lista:** Passa essa `query` para um componente interno (como `mc-entities`) que sabe como exibir listas.
+5.  **Componente de Lista Chama a API:** O componente de lista usa a [Classe API](03_classe_api_.md) (`new API('event')`) e chama o método `find()` ou `fetch()` com a `query` definida no passo 3.
+6.  **API e Servidor:** A API envia a requisição para o servidor. O servidor filtra os eventos para retornar apenas aqueles que pertencem ao usuário `@me`, têm `status == 0` e que o usuário tem permissão de ver.
+7.  **Resultados:** A API recebe a lista de eventos filtrada e a retorna para o componente de lista.
+8.  **Exibição:** O componente de lista renderiza os eventos encontrados na aba "Rascunhos".
+
+**Diagrama de Sequência (Aba "Rascunhos"):**
+
+<Mermaid
+  chart='
+sequenceDiagram
+    participant Usuario
+    participant AbaRascunhos as panel--entity-tabs (Rascunhos)
+    participant CompLista as mc-entities (ou similar)
+    participant APIEventos as API ("event")
+    participant Servidor
+
+    Usuario->>AbaRascunhos: Clica na aba "Rascunhos"
+    AbaRascunhos->>AbaRascunhos: Define query {status: 0, user: "@me", ...}
+    AbaRascunhos->>CompLista: Passa query para exibir
+    CompLista->>APIEventos: Chama find(query)
+    APIEventos->>Servidor: Envia requisição GET /api/event/find?status=EQ(0)&user=EQ(@me)...
+    Servidor->>Servidor: Filtra eventos do usuário @me com status 0
+    Servidor-->>APIEventos: Retorna JSON com eventos filtrados
+    APIEventos-->>CompLista: Retorna array de Entities (Eventos)
+    CompLista->>Usuario: Exibe lista de eventos rascunho
+' />
+
+**Mergulhando no Código:**
+
+*   **Abas Inteligentes (`modules/Panel/components/panel--entity-tabs/script.js`):**
+    Veja como ele define as `queries` para cada aba, incluindo automaticamente o filtro pelo usuário (`@me`) e o status correto.
+
+    ```javascript
+    // Trecho simplificado de panel--entity-tabs/script.js
+    app.component('panel--entity-tabs', {
+        // ... template, props (type, user='@me') ...
+        data() {
+            let query = { // Query base
+                '@order': 'updateTimestamp DESC',
+                '@permissions': 'view'
+            };
+            // Adiciona filtro pelo usuário (default é @me)
+            if (this.user) {
+                query.user = `EQ(${this.user})`;
+            }
+            // Para Oportunidades, exclui modelos na query padrão
+            if (this.type == 'opportunity') {
+                query.isModel = 'OR(NULL(), EQ(0))';
+            }
+
+            // Define as queries específicas para cada aba
+            return {
+                description: $DESCRIPTIONS[this.type], // Infos sobre o tipo de entidade
+                queries: {
+                    publish: { status: 'GTE(1)', ...query }, // Publicados (status >= 1)
+                    draft:   { status: 'EQ(0)', ...query },  // Rascunhos (status == 0)
+                    // Aba 'granted' busca entidades que o usuário tem controle mas não é dono
+                    granted: { ...query, '@permissions': '@control', status: 'GTE(0)', user: '!EQ(@me)' },
+                    // Aba 'mymodels' só para oportunidades que são modelos
+                    mymodels:{ status: 'EQ(-1)', isModel: 'EQ(1)', /*...*/},
+                    trash:   { status: 'EQ(-10)', ...query }, // Lixeira (status == -10)
+                    archived:{ status: 'EQ(-2)', ...query },  // Arquivados (status == -2)
+                },
+                // ...
+            }
+        },
+        methods: {
+            // Lógica para mostrar/esconder abas baseado nas permissões e tipo
+            showTab(status) { /* ... */ },
+            // Lógica para mover entidade entre listas quando status muda
+            moveEntity(entity, event) { /* ... usa useEntitiesLists ... */ }
+        },
+    });
+    ```
+    A chave aqui é o objeto `queries`. Cada chave (`publish`, `draft`, `trash`) contém a consulta específica que será usada pela [Classe API](03_classe_api_.md) para buscar os itens daquela aba, sempre filtrando pelo usuário (`user: EQ(@me)`).
+
+*   **Navegação do Painel (`modules/Panel/components/panel--nav/script.js`):**
+    Este componente lê a configuração de navegação (`$MAPAS.config.panelNav`) e monta o menu. Ele também verifica qual a rota atual (`$MAPAS.route.route`) para destacar o item ativo.
+
+    ```javascript
+    // Trecho simplificado de panel--nav/script.js
+    app.component('panel--nav', {
+        // ... template, props (sidebar, viewport) ...
+        data() {
+            const global = useGlobalState(); // Acesso ao estado global (usuário logado)
+            const sidebar = this.sidebar;
+
+            // Filtra os grupos de links baseado se é sidebar ou não
+            const leftGroups = $MAPAS.config.panelNav.filter(group => {
+                // Lógica para exibir na coluna esquerda ou na sidebar
+                return (group.column == 'left' || sidebar) && !(group.column == 'user' && sidebar);
+            });
+            const rightGroups = $MAPAS.config.panelNav.filter(group => {
+                // Lógica para exibir na coluna direita (não na sidebar)
+                return group.column == 'right' && !sidebar;
+            });
+            const userGroup = $MAPAS.config.panelNav.find(group => group.column == 'user');
+
+            return {
+                entity: global.auth.user?.profile, // Pega o perfil do usuário logado
+                leftGroups,
+                rightGroups,
+                userGroup,
+            }
+        },
+        methods: {
+            // Verifica se um item do menu corresponde à rota atual
+            active(item) {
+                const route = $MAPAS.route.route; // Rota atual da página
+                // $MAPAS.activeNav pode ser definido por outros componentes
+                return $MAPAS.activeNav == item.route || route == item.route;
+            }
+        }
+    })
+    ```
+    Ele usa `$MAPAS.config.panelNav`, que é uma configuração global definindo quais links aparecem no painel, para quem, e em qual coluna. O método `active` ajuda a dar o destaque visual ao link da página atual.
+
+*   **Últimos Editados (`modules/Panel/components/panel--last-edited/script.js`):**
+    Este componente faz várias chamadas à API, uma para cada tipo de entidade habilitada, e depois junta e ordena os resultados.
+
+    ```javascript
+    // Trecho simplificado de panel--last-edited/script.js
+    app.component('panel--last-edited', {
+        // ... template, setup (textos), components (carousel) ...
+        props: { limit: { type: Number, default: 15 } },
+        async created() {
+            // Cria instâncias da API para cada tipo
+            const agentAPI = new API('agent');
+            const spaceAPI = new API('space');
+            // ... outras APIs (event, project, opportunity) ...
+
+            // Query base para buscar entidades do usuário, não deletadas
+            const query = {
+                '@select': 'id,type,name,shortDescription,singleUrl,updateTimestamp,status',
+                '@order': 'updateTimestamp DESC', // Ordena pelos mais recentes
+                'user': `EQ(@me)`,             // Apenas do usuário logado
+                '@permissions': 'view',
+                'status': 'GTE(0)'             // Apenas publicados ou rascunhos
+            };
+            if (this.limit) { query['@limit'] = this.limit; }
+
+            // Faz as buscas em paralelo
+            Promise.all([
+                this.global.enabledEntities.spaces ? spaceAPI.find(query) : [],
+                this.global.enabledEntities.agents ? agentAPI.find(query) : [],
+                // ... outras buscas (event, project, opportunity) ...
+            ]).then(values => {
+                // Guarda os resultados (considerando entidades habilitadas)
+                this.spaces = values[0];
+                this.agents = values[1];
+                // ... outros tipos ...
+                this.loading = false;
+            });
+        },
+        data() { return { loading: true, query: {}, agents: [], spaces: [], /*...*/ }; },
+        computed: {
+            // Junta todos os resultados e ordena pela data de atualização
+            entities() {
+                const entities = [
+                    ...this.projects, ...this.spaces, ...this.agents,
+                    ...this.opportunities, ...this.events
+                ];
+                // Ordena por data de atualização (mais recente primeiro)
+                entities.sort((a, b) => b.updateTimestamp._date - a.updateTimestamp._date);
+                return entities.slice(0, this.limit); // Aplica o limite final
+            }
+        },
+        // ... methods (showShort, resizeSlides) ...
+    });
+    ```
+    Ele busca separadamente agentes, espaços, eventos, etc., usando a mesma `query` base (`user: EQ(@me)`, `status: GTE(0)`). Depois, a propriedade computada `entities` junta todos esses resultados em uma única lista, ordena por data de modificação (`updateTimestamp`) e pega apenas os `limit` mais recentes para exibir no carrossel.
+
+## Conclusão
+
+Neste capítulo, conhecemos o **Painel de Controle (Panel)**, a "mesa de trabalho" pessoal do usuário logado na plataforma. Vimos que ele é composto por diversos [Componentes Vue](02_componentes_vue__vue_components__.md) especializados (`panel--nav`, `panel--entity-tabs`, `panel--last-edited`, etc.) que utilizam a [Classe API](03_classe_api_.md) com filtros específicos (como `user: EQ(@me)`) para exibir e permitir o gerenciamento das [Entidades](01_entidades__entities__.md), inscrições e avaliações pertencentes àquele usuário.
+
+Entender o Painel de Controle é fundamental para saber como os usuários interagem com o conteúdo que eles mesmos criam ou pelo qual são responsáveis dentro da plataforma.
+
+Agora que vimos como as entidades básicas e o painel do usuário funcionam, vamos mergulhar em um tipo especial de entidade que conecta muitas outras: as [Oportunidades e Inscrições (Opportunities & Registrations)](06_oportunidades_e_inscrições__opportunities___registrations__.md). Veremos como elas são criadas, como os usuários se inscrevem e como esse processo é gerenciado.
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

@@ -1,0 +1,324 @@
+---
+title: Métodos de Avaliação
+description: Chapter 7
+---
+
+Olá! No [Capítulo 6: Oportunidades e Inscrições (Opportunities & Registrations)](06_oportunidades_e_inscrições__opportunities___registrations__.md), acompanhamos como a Clara inscreveu seu grupo de teatro no edital "Arte nos Bairros". Vimos como a Secretaria de Cultura criou a Oportunidade, definiu um formulário dinâmico e agora tem a inscrição da Clara (e de muitos outros!) em mãos.
+
+Mas como a Secretaria decide quem será selecionado? Simplesmente escolher ao acaso não seria justo, certo? É preciso ter um processo claro e organizado para analisar cada proposta. É exatamente para isso que servem os **Métodos de Avaliação**!
+
+## Para que servem os Métodos de Avaliação?
+
+Imagine que o edital "Arte nos Bairros" é uma competição. As inscrições são os trabalhos entregues pelos competidores. Os **Métodos de Avaliação** são as **regras e critérios** que os juízes (avaliadores) usarão para decidir quem vence.
+
+Sem um método definido, cada avaliador poderia usar critérios diferentes, tornando o processo injusto e inconsistente. Os Métodos de Avaliação garantem que:
+
+*   **Todos sejam avaliados da mesma forma:** Usando os mesmos critérios e formulários.
+*   **O processo seja transparente:** As regras de avaliação são claras.
+*   **A seleção seja baseada em mérito:** De acordo com os objetivos do edital.
+
+Eles definem *como* uma inscrição será analisada. É como escolher o tipo de prova para uma matéria na escola: pode ser uma prova de múltipla escolha (mais simples), uma prova dissertativa (com notas por critério), ou uma verificação de pré-requisitos (aprovado/reprovado).
+
+**Nosso Caso de Uso:** A Secretaria de Cultura precisa definir *como* avaliar as inscrições do edital "Arte nos Bairros". Eles decidem que precisam de uma avaliação detalhada, com notas para diferentes aspectos do projeto. Como eles configuram esses critérios (ex: Mérito Artístico, Viabilidade) e como o Carlos, um dos avaliadores designados, preenche a "nota" para o projeto da Clara? É isso que vamos entender!
+
+## Entendendo os Conceitos Principais
+
+Para que a avaliação do "Arte nos Bairros" aconteça, precisamos entender algumas peças:
+
+1.  **O que são Métodos de Avaliação?**
+    São modelos ou *tipos* de avaliação que podem ser aplicados a uma fase de uma [Oportunidade](06_oportunidades_e_inscrições__opportunities___registrations__.md). Pense neles como diferentes tipos de "gabaritos" ou "rubricas de avaliação".
+
+2.  **Tipos de Métodos:**
+    A plataforma oferece alguns métodos pré-definidos, cada um com um propósito:
+    *   **Simplificada (`Simple`):** O mais básico. O avaliador geralmente marca um status (Ex: Aprovado, Reprovado, Suplente) e pode adicionar uma observação. É como um "joinha" ou "não joinha" com um comentário.
+    *   **Documental (`Documentary`):** Focada em verificar documentos ou informações específicas. O avaliador verifica se um documento está correto, se falta alguma informação, etc., geralmente campo por campo. Útil para a fase de habilitação.
+    *   **Qualificação (`Qualification`):** Verifica se o candidato atende a certos requisitos ou critérios de qualificação (sim/não). Ex: "O proponente mora na cidade?" (Sim/Não), "Possui experiência comprovada?" (Sim/Não). Se não atender a um critério eliminatório, pode ser inabilitado.
+    *   **Técnica (`Technical`):** Permite uma avaliação mais detalhada com notas e pesos. O administrador define critérios (Ex: "Qualidade Artística", "Originalidade"), a pontuação máxima para cada um (Ex: 0 a 10) e um peso (Ex: Peso 2 para Qualidade Artística, Peso 1 para Originalidade). O avaliador dá as notas, e o sistema calcula a pontuação final. É ideal para avaliar o mérito do projeto.
+
+3.  **Configuração da Avaliação (`EvaluationMethodConfiguration`):**
+    Para cada fase da [Oportunidade](06_oportunidades_e_inscrições__opportunities___registrations__.md) que precisa de avaliação (Ex: "Avaliação de Mérito"), o administrador precisa:
+    *   Escolher *qual* método usar (Simplificada, Técnica, etc.).
+    *   *Configurar* esse método: definir os critérios específicos, as perguntas, as faixas de pontuação, os pesos, etc. Essa configuração é uma [Entidade](01_entidades__entities__.md) especial, geralmente ligada à fase da oportunidade.
+
+4.  **Formulário de Avaliação:**
+    É a tela que o avaliador vê para *cada* inscrição que ele precisa analisar. Esse formulário é **gerado dinamicamente** com base no método escolhido e na *configuração* feita pelo administrador. Se o método for Técnico, o formulário mostrará os campos para dar nota em cada critério definido.
+
+5.  **Avaliador:**
+    É o usuário (ou grupo de usuários) que tem a permissão para analisar as inscrições de uma determinada fase ou oportunidade.
+
+## Usando Métodos de Avaliação na Prática
+
+Vamos voltar ao nosso edital "Arte nos Bairros".
+
+**1. Gestor Configura a Fase de Avaliação:**
+O gestor da Secretaria, ao configurar as fases da Oportunidade (como vimos no Capítulo 6), decide que a fase de "Avaliação de Mérito" usará o método **Técnico**. Ele utiliza um componente como o `opportunity-phase-config-evaluation` para definir os detalhes:
+
+*   **Seleciona o Método:** Escolhe "Técnico" na lista de métodos disponíveis.
+*   **Define Critérios:** Adiciona os critérios de avaliação:
+    *   Critério 1: "Mérito Artístico", Mínimo 0, Máximo 10, Peso 2.
+    *   Critério 2: "Viabilidade Financeira", Mínimo 0, Máximo 5, Peso 1.
+    *   Critério 3: "Impacto na Comunidade", Mínimo 0, Máximo 10, Peso 1.5.
+*   **Salva a Configuração:** Essas definições são salvas na [Entidade](01_entidades__entities__.md) `EvaluationMethodConfiguration` associada a essa fase.
+
+```html
+<!-- Dentro do componente de configuração da fase (simplificado) -->
+<!-- Supondo que 'faseDeMerito' é a entidade EvaluationMethodConfiguration -->
+<opportunity-phase-config-evaluation :phase="faseDeMerito" :phases="todasAsFases">
+    <!-- Interface para escolher o método e adicionar/editar critérios -->
+    <!-- Ex: Campos para nome, min, max, peso de cada critério -->
+</opportunity-phase-config-evaluation>
+```
+
+O código por trás disso (como em `opportunity-phase-config-evaluation/script.js`) permite ao gestor modificar as propriedades da entidade `faseDeMerito` e salvá-las usando `faseDeMerito.save()`.
+
+**2. Atribuição de Avaliadores:**
+O gestor (ou o sistema) atribui avaliadores para esta fase. Vamos supor que Carlos foi designado para avaliar algumas inscrições, incluindo a da Clara.
+
+**3. Carlos, o Avaliador, Acessa a Tarefa:**
+Carlos faz login e vai ao seu [Painel de Controle (Panel)](05_painel_de_controle__panel__.md). Ele vê um card ou uma lista de "Avaliações Pendentes" (gerado pelo componente `panel--pending-evaluations`). Ele clica na inscrição da Clara para o edital "Arte nos Bairros".
+
+**4. Carlos Preenche o Formulário de Avaliação:**
+Carlos é direcionado para a página de avaliação da inscrição da Clara. Como o método configurado foi o **Técnico**, a página exibe o formulário correspondente, provavelmente usando o componente `technical-evaluation-form`.
+
+```html
+<!-- Na página de avaliação da inscrição da Clara (simplificado) -->
+<!-- 'inscricaoDaClara' é a entidade Registration -->
+<!-- 'dadosDaAvaliacao' é um objeto para guardar as notas e obs -->
+<technical-evaluation-form
+  :entity="inscricaoDaClara"
+  :form-data="dadosDaAvaliacao"
+  :editable="true"
+>
+  <!-- O componente renderiza internamente: -->
+  <!-- Campo para nota de Mérito Artístico (0-10) -->
+  <!-- Campo para nota de Viabilidade Financeira (0-5) -->
+  <!-- Campo para nota de Impacto na Comunidade (0-10) -->
+  <!-- Campo para observações gerais -->
+  <!-- Mostra pontuações parciais e total (calculadas com pesos) -->
+</technical-evaluation-form>
+
+<button @click="salvarAvaliacao">Salvar Avaliação</button>
+```
+
+O componente `technical-evaluation-form` lê a configuração que o gestor fez (critérios, notas mín/máx) e mostra os campos corretos. Carlos analisa o projeto da Clara e preenche as notas:
+*   Mérito Artístico: 8
+*   Viabilidade Financeira: 4
+*   Impacto na Comunidade: 9
+*   Observações: "Projeto muito consistente e com boa proposta de interação comunitária."
+
+O componente pode exibir o cálculo da pontuação total ponderada enquanto Carlos preenche.
+
+**5. Carlos Salva a Avaliação:**
+Carlos clica no botão "Salvar Avaliação". O que acontece?
+
+```javascript
+// No script que contém o botão 'salvarAvaliacao' (simplificado)
+import { ref } from 'vue';
+// Supondo que temos a inscrição (inscricaoDaClara) e o objeto com os dados (dadosDaAvaliacao)
+const inscricaoDaClara = ref(/* ... entidade registration ... */);
+const dadosDaAvaliacao = ref({ data: {}, uid: /* id de Carlos */ }); // Inicializado pelo technical-evaluation-form
+
+async function salvarAvaliacao() {
+  // 1. Validação (o technical-evaluation-form pode ter feito isso internamente)
+  //    Ex: Dispara um evento para o form validar, ou chama um método dele.
+  const temErros = window.dispatchEvent(new CustomEvent('processErrors')); // Exemplo
+  // Se houver erros (global.validateEvaluationErrors = true), interrompe.
+  // if (global.validateEvaluationErrors) return;
+
+  // 2. Preparar chamada para API
+  const api = new API('registration'); // Pode usar a API de registration para salvar a avaliação
+  const registrationId = inscricaoDaClara.value.id;
+  // A URL pode ser algo como /registration/{id}/evaluation/{configId}
+  // Ou a API pode ter um método específico: api.saveEvaluation(...)
+
+  try {
+    // 3. Chamar a API para salvar os dados contidos em 'dadosDaAvaliacao'
+    //    O objeto 'dadosDaAvaliacao' foi preenchido pelo componente do formulário.
+    const resposta = await api.request('POST', `registration/${registrationId}/evaluation`, dadosDaAvaliacao.value);
+
+    // 4. Processar resposta
+    console.log("Avaliação salva!", resposta);
+    // Atualizar UI: desabilitar formulário, mostrar mensagem de sucesso.
+    // O formulário (technical-evaluation-form) pode ouvir um evento de sucesso.
+    window.dispatchEvent(new CustomEvent('responseEvaluation', { detail: { response: { status: 1 } } })); // Exemplo
+
+  } catch (erro) {
+    console.error("Erro ao salvar avaliação:", erro);
+    // Mostrar mensagem de erro para Carlos.
+  }
+}
+```
+
+O código acima (simplificado) mostra a ideia geral:
+1.  Valida os dados preenchidos (o componente do formulário ajuda nisso).
+2.  Prepara a chamada para a [Classe API](03_classe_api_.md), indicando qual inscrição está sendo avaliada.
+3.  Envia os dados (`dadosDaAvaliacao`, que contém as notas e observações) para o servidor.
+4.  O servidor salva esses dados associados à inscrição e ao avaliador Carlos.
+5.  A interface é atualizada para refletir que a avaliação foi salva.
+
+## Por Dentro dos Métodos de Avaliação
+
+Como o sistema garante que o formulário certo seja exibido e que os dados sejam salvos corretamente?
+
+**O Fluxo Simplificado (Carlos salva a avaliação técnica):**
+
+1.  **Avaliador (Carlos):** Preenche o formulário (`technical-evaluation-form`) e clica em "Salvar".
+2.  **Componente Vue (`technical-evaluation-form`):** O componente já atualizou o objeto `formData` (que chamamos de `dadosDaAvaliacao` no exemplo) com as notas e observações. Ele pode ter uma lógica interna de validação (`validateErrors`).
+3.  **Página/Componente Pai:** Chama a função `salvarAvaliacao()`.
+4.  **`salvarAvaliacao()`:**
+    *   Instancia a [Classe API](03_classe_api_.md) (ex: `new API('registration')`).
+    *   Identifica o ID da inscrição (`registrationId`).
+    *   Chama um método da API (ex: `api.request('POST', url, dados)`), passando os dados da avaliação.
+5.  **Classe API:** Envia a requisição `POST` ou `PATCH` para o endpoint correto no servidor (ex: `/api/registration/123/evaluation`). A requisição contém os dados da avaliação no corpo (body).
+6.  **Servidor (Backend):**
+    *   Recebe a requisição.
+    *   Verifica as permissões (Carlos pode avaliar esta inscrição?).
+    *   Carrega a configuração da avaliação (método Técnico, critérios, pesos) para esta fase.
+    *   Valida os dados recebidos contra a configuração (Ex: a nota de "Mérito Artístico" está entre 0 e 10?).
+    *   Salva os dados da avaliação no banco de dados, associando-os à `registration` (ID 123), ao `EvaluationMethodConfiguration` da fase, e ao `user` (Carlos). Pode calcular e salvar a pontuação ponderada total.
+    *   Envia uma resposta de sucesso (ou erro) de volta.
+7.  **Classe API:** Recebe a resposta do servidor.
+8.  **`salvarAvaliacao()`:** Recebe a resposta da API e atualiza a interface (desabilita o formulário, mostra mensagem). O componente `technical-evaluation-form` pode "ouvir" um evento (`responseEvaluation`) para saber que foi salvo e se tornar não editável.
+
+**Diagrama de Sequência (Salvar Avaliação Técnica):**
+
+<Mermaid
+  chart='
+sequenceDiagram
+    participant Carlos as Avaliador
+    participant FormTecnico as technical-evaluation-form
+    participant PaginaAval as Página de Avaliação
+    participant API as Classe API
+    participant Servidor
+
+    Carlos->>FormTecnico: Preenche notas (8, 4, 9) e obs
+    FormTecnico->>FormTecnico: Atualiza objeto formData interno
+    Carlos->>PaginaAval: Clica em "Salvar Avaliação"
+    PaginaAval->>FormTecnico: (Opcional) Dispara validação interna
+    FormTecnico-->>PaginaAval: (Opcional) Retorna se é válido
+    PaginaAval->>API: Chama request("POST", "/reg/123/eval", formData)
+    API->>Servidor: Envia requisição HTTP POST com dados da avaliação
+    Servidor->>Servidor: Valida permissão, dados vs config, salva no BD
+    Servidor-->>API: Retorna resposta HTTP (sucesso)
+    API-->>PaginaAval: Retorna sucesso
+    PaginaAval->>FormTecnico: Dispara evento "responseEvaluation" (sucesso)
+    FormTecnico->>FormTecnico: Muda estado para não-editável
+    PaginaAval->>Carlos: Exibe mensagem "Avaliação salva!"
+' />
+
+**Mergulhando no Código:**
+
+*   **Configuração da Fase (`modules/Opportunities/components/opportunity-phase-config-evaluation/script.js`):**
+    Este componente lida com a entidade `EvaluationMethodConfiguration` (representada pela `prop` `phase`). Ele permite ao administrador definir as propriedades dessa entidade, como os critérios (`phase.criteria`), pesos, etc. Quando o administrador salva, o método `savePhase()` é chamado.
+
+    ```javascript
+    // Trecho simplificado de opportunity-phase-config-evaluation/script.js
+    // (Dentro do componente)
+    props: {
+        phase: { // Esta 'phase' é a entidade EvaluationMethodConfiguration
+            type: Entity,
+            required: true
+        }
+    },
+    methods: {
+        savePhase () {
+            // Chama o método save() da entidade, que usa a API internamente
+            // O '3000' é um debounce para evitar saves múltiplos rápidos
+            this.phase.save(3000);
+        },
+        async deletePhase (event, item, index) {
+            // ... lógica para deletar a fase/configuração via API ...
+            await item.delete();
+            this.phases.splice(index, 1); // Remove da lista local
+        }
+    }
+    ```
+    O `this.phase.save()` utiliza a [Classe API](03_classe_api_.md) por baixo dos panos para enviar as configurações (critérios, pesos, etc.) para o servidor e salvá-las.
+
+*   **Formulário de Avaliação Técnica (`modules/EvaluationMethodTechnical/components/technical-evaluation-form/script.js`):**
+    Este componente é responsável por exibir o formulário e coletar os dados.
+
+    ```javascript
+    // Trecho simplificado de technical-evaluation-form/script.js
+    app.component('technical-evaluation-form', {
+        // ... template, setup ...
+        props: {
+            entity: { type: Object, required: true }, // A Inscrição sendo avaliada
+            editable: { type: Boolean, default: true },
+            formData: { type: Object, required: true } // Objeto para guardar os dados
+        },
+        computed: {
+            // Acessa a configuração (critérios, seções) vinda do backend ($MAPAS)
+            sections() { return $MAPAS.config.technicalEvaluationForm.sections; },
+            // Acessa a avaliação atual (se já existir)
+            currentEvaluation() { return $MAPAS.config.technicalEvaluationForm.currentEvaluation; },
+            // ... outros computeds (enableViability, etc.)
+        },
+        created() {
+            // Inicializa o formData com os dados existentes ou um esqueleto
+            this.formData.data = this.evaluationData || this.skeleton();
+            this.handleCurrentEvaluationForm(); // Define se é editável
+        },
+        mounted() {
+            // Ouve eventos para saber quando validar ou quando a avaliação foi salva
+            window.addEventListener('responseEvaluation', this.processResponse);
+            window.addEventListener('processErrors', this.validateErrors);
+        },
+        methods: {
+            // Chamado quando uma nota é alterada
+            handleInput(sectionIndex, criterionId) {
+                // Valida a nota (ex: não maior que o máximo)
+                // ... (lógica de validação mostrada no snippet original) ...
+                // Atualiza o objeto formData.data[criterionId]
+            },
+            // Calcula subtotais e total (usados no template)
+            subtotal(sectionIndex) { /* ... calcula ... */ },
+            // Valida todos os campos obrigatórios antes de salvar
+            validateErrors() {
+                let isValid = false;
+                // ... (lógica para verificar notas e observações) ...
+                if (!this.formData.data.obs) { // Ex: verifica observação obrigatória
+                    this.messages.error(this.text('technical-mandatory'));
+                    isValid = true;
+                }
+                // ... (outras validações) ...
+                useGlobalState().validateEvaluationErrors = isValid; // Sinaliza se há erros
+                return isValid;
+            },
+            // Chamado quando recebe resposta do save (via evento)
+            processResponse(data) {
+                if (data.detail.response.status > 0) { // Status > 0 significa salvo/enviado
+                    this.isEditable = false; // Torna o formulário não editável
+                } else {
+                    this.isEditable = true;
+                }
+            },
+            // Prepara um objeto formData vazio
+            skeleton() { return { uid: this.userId }; }
+            // ... outros métodos ...
+        }
+    });
+    ```
+    Este componente lê a configuração (`$MAPAS.config.technicalEvaluationForm`), exibe os campos, atualiza o objeto `formData` conforme o avaliador digita, realiza validações (`validateErrors`) e reage a eventos externos (`responseEvaluation`, `processErrors`). A ação de *salvar* em si é geralmente disparada por um componente pai, que pega o `formData` preenchido e o envia via API.
+
+*   **Outros Formulários (Simplificada, Documental, Qualificação):**
+    Os outros métodos seguem uma estrutura muito similar:
+    *   `simple-evaluation-form`: Coleta um status e uma observação.
+    *   `documentary-evaluation-form`: Foca em campos específicos (geralmente relacionados a arquivos ou dados) e permite marcar se estão corretos ou adicionar observações por campo.
+    *   `qualification-evaluation-form`: Apresenta critérios de sim/não ou atende/não atende, muitas vezes com lógica para determinar um resultado consolidado (Habilitado/Inabilitado).
+
+    Todos eles recebem a configuração via `$MAPAS.config...`, preenchem um objeto `formData`, possuem métodos de validação e reagem a eventos para se tornarem não-editáveis após o salvamento.
+
+## Conclusão
+
+Neste capítulo, desvendamos os **Métodos de Avaliação**, as ferramentas essenciais para analisar as [Inscrições](06_oportunidades_e_inscrições__opportunities___registrations__.md) de forma justa e estruturada na plataforma. Vimos que existem diferentes "tipos de prova" (Simplificada, Documental, Qualificação, Técnica), cada um adequado a um propósito diferente.
+
+Aprendemos como um administrador configura esses métodos para uma fase específica de uma [Oportunidade](06_oportunidades_e_inscrições__opportunities___registrations__.md) (definindo critérios, notas, pesos) e como um avaliador utiliza o formulário gerado dinamicamente (como o `technical-evaluation-form`) para registrar sua análise, que é então salva usando a [Classe API](03_classe_api_.md).
+
+Esses métodos são cruciais para garantir a transparência e a eficiência dos processos seletivos realizados na plataforma.
+
+Com o entendimento das Entidades, Componentes, API, Busca, Painel, Oportunidades, Inscrições e Avaliações, cobrimos grande parte do funcionamento central da plataforma. No próximo capítulo, vamos olhar para um aspecto técnico importante: como diferentes tipos de usuários podem se autenticar (fazer login) na plataforma usando o [Plugin de Autenticação Múltipla Local (MultipleLocalAuth)](08_plugin_de_autenticação_múltipla_local__multiplelocalauth__.md).
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)
