@@ -1,0 +1,248 @@
+---
+title: Entidades
+description: Chapter 1
+---
+
+Neste primeiro capítulo, vamos explorar um dos conceitos mais fundamentais da nossa plataforma: as **Entidades**.
+
+## Para que servem as Entidades?
+
+Imagine que você está construindo um grande mapa cultural da sua cidade ou região usando peças de LEGO. Cada tipo de peça representa algo diferente: uma peça vermelha pode ser um museu, uma azul um artista, uma verde um show, e assim por diante.
+
+Na nossa plataforma, as **Entidades** são como essas peças de LEGO. Elas são a forma como o sistema representa os diferentes tipos de informações culturais importantes. Sem elas, não teríamos como organizar e conectar os dados sobre:
+
+*   **Agentes:** Pessoas ou grupos (artistas, produtores culturais, coletivos).
+*   **Espaços:** Locais onde a cultura acontece (teatros, centros culturais, museus).
+*   **Eventos:** Acontecimentos culturais (shows, exposições, peças de teatro).
+*   **Projetos:** Iniciativas culturais.
+*   **Oportunidades:** Editais, chamadas públicas, prêmios.
+
+As Entidades são os "tijolos" essenciais que nos permitem construir o mapa cultural digital. Elas definem *o que* pode ser cadastrado na plataforma e *como* essas informações se relacionam.
+
+**Nosso Caso de Uso:** Como a plataforma representa e armazena as informações sobre um novo Centro Cultural que acabou de abrir na cidade? É isso que vamos entender!
+
+## Entendendo as Entidades
+
+Vamos detalhar um pouco mais:
+
+1.  **O que é uma Entidade?**
+    É um objeto dentro do código que representa um item do mundo real (um agente, um espaço, etc.). Cada entidade guarda as informações específicas daquele item. Por exemplo, uma entidade do tipo "Espaço" vai guardar o nome do espaço, seu endereço, descrição, horário de funcionamento, etc.
+
+2.  **Tipos de Entidades:**
+    Como vimos, existem tipos diferentes, cada um com seu propósito: `agent`, `space`, `event`, `project`, `opportunity`. Saber o tipo da entidade nos diz quais informações (propriedades) ela pode ter.
+
+3.  **Propriedades:**
+    São os campos de informação de uma entidade. Pense como os campos de um formulário. Uma entidade `space` tem propriedades como `name` (nome), `shortDescription` (descrição curta), `location` (endereço), `terms` (termos como área de atuação). Uma entidade `event` terá propriedades como `name`, `occurrence` (datas e horários), `location`, etc.
+
+4.  **Relações:**
+    Entidades não vivem isoladas! Elas se conectam. Um `event` pode acontecer em um `space`. Um `agent` pode ser o responsável por um `project`. Essas conexões são chamadas de relações e ajudam a construir a teia de informações culturais.
+
+## Usando Entidades na Prática
+
+No código da plataforma (especificamente no lado do navegador, o *frontend*), usamos uma classe JavaScript chamada `Entity` para trabalhar com esses dados. Essa classe nos ajuda a criar, ler, atualizar e deletar entidades.
+
+**Exemplo: Criando nosso Centro Cultural (Espaço)**
+
+Vamos ver como criar uma representação para o nosso novo Centro Cultural. Em algum lugar no código, provavelmente dentro de um [Componente Vue](02_componentes_vue__vue_components__.md) responsável por um formulário de cadastro, faríamos algo assim:
+
+```javascript
+// 1. Importar a classe Entity (geralmente já está disponível globalmente)
+
+// 2. Criar uma nova instância de Entidade do tipo 'space'
+//    Note que ainda não tem ID, pois é novo.
+const meuNovoEspaco = new Entity('space');
+
+// 3. Preencher as propriedades (como preencher um formulário)
+meuNovoEspaco.name = "Centro Cultural Vila das Artes";
+meuNovoEspaco.shortDescription = "Um novo espaço dedicado à arte e cultura local.";
+// ... outras propriedades como endereço, tipo de espaço, etc.
+
+// 4. Salvar a entidade (enviar os dados para o servidor)
+meuNovoEspaco.save().then(resposta => {
+  console.log("Espaço salvo com sucesso!", resposta);
+  // Agora 'meuNovoEspaco' provavelmente terá um ID e outras infos do servidor.
+}).catch(erro => {
+  console.error("Ops, algo deu errado ao salvar:", erro);
+});
+```
+
+**O que acontece aqui?**
+
+1.  `new Entity('space')`: Criamos um objeto "formulário" em branco, especificando que ele é para um `space`.
+2.  `meuNovoEspaco.name = ...`: Preenchemos os campos desse formulário virtual.
+3.  `meuNovoEspaco.save()`: Enviamos esse formulário preenchido para o "arquivo central" (o servidor, usando a [Classe API](03_classe_api_.md)). Se tudo der certo, o servidor confirma o salvamento e pode até nos devolver o número de identificação (ID) desse novo espaço.
+
+Você pode ver exemplos de como os componentes Vue usam a classe `Entity` para criar novos itens culturais nos arquivos como:
+
+*   `modules/Entities/components/create-space/script.js`: Lida com a criação de Espaços.
+*   `modules/Entities/components/create-event/script.js`: Lida com a criação de Eventos.
+*   `modules/Entities/components/create-agent/script.js`: Lida com a criação de Agentes.
+*   `modules/Entities/components/create-project/script.js`: Lida com a criação de Projetos.
+*   `modules/Entities/components/create-opportunity/script.js`: Lida com a criação de Oportunidades.
+
+Esses scripts usam `new Entity(...)` e `entity.save()` de forma muito parecida com o exemplo acima, geralmente dentro de funções que são chamadas quando o usuário clica em botões como "Salvar Rascunho" ou "Publicar".
+
+## Por Dentro da Classe `Entity`
+
+Ok, mas o que acontece quando chamamos `new Entity()` ou `entity.save()`? Vamos espiar um pouco "debaixo do capô".
+
+**O Fluxo Simplificado:**
+
+1.  **Interface do Usuário (Componente Vue):** O usuário preenche um formulário (por exemplo, para criar um novo Espaço) e clica em "Salvar".
+2.  **Componente Vue:** O código do componente pega os dados do formulário.
+3.  **Criação do Objeto `Entity`:** O componente cria uma instância da classe `Entity` (ex: `new Entity('space')`) e preenche suas propriedades com os dados do formulário.
+4.  **Chamada `save()`:** O componente chama o método `save()` no objeto `Entity`.
+5.  **Objeto `Entity`:** O método `save()` prepara os dados.
+6.  **Chamada à API:** O objeto `Entity` usa a [Classe API](03_classe_api_.md) para enviar os dados para o servidor (backend).
+7.  **Servidor (Backend):** Recebe os dados, valida, salva no banco de dados e envia uma resposta de volta (sucesso ou erro).
+8.  **Classe API:** Recebe a resposta do servidor.
+9.  **Objeto `Entity`:** A classe API repassa a resposta para o objeto `Entity`, que se atualiza (por exemplo, recebe o ID se for uma criação) ou registra erros.
+10. **Interface do Usuário:** O componente Vue pode então mostrar uma mensagem de sucesso, fechar o formulário ou exibir erros.
+
+**Diagrama de Sequência (Simplificado):**
+
+<Mermaid
+  chart="
+sequenceDiagram
+    participant Usuario
+    participant CompVue as Componente Vue
+    participant EntObj as Objeto Entity
+    participant API as Classe API
+    participant Servidor
+
+    Usuario->>CompVue: Preenche formulário e clica Salvar
+    CompVue->>EntObj: Cria instância (new Entity('tipo'))
+    CompVue->>EntObj: Define propriedades (nome, desc, etc.)
+    CompVue->>EntObj: Chama save()
+    EntObj->>API: Chama persistEntity(dados)
+    API->>Servidor: Envia requisição HTTP (POST/PUT)
+    Servidor->>Servidor: Valida dados e salva no BD
+    Servidor-->>API: Retorna resposta HTTP (sucesso/erro + dados)
+    API-->>EntObj: Processa resposta
+    EntObj-->>CompVue: Retorna Promise (resolvida/rejeitada)
+    CompVue->>Usuario: Exibe mensagem (Sucesso/Erro)
+" />
+
+**Mergulhando no Código (`modules/Components/assets/js/components-base/Entity.js`):**
+
+*   **Construtor (`constructor`)**:
+    ```javascript
+    // Trecho simplificado do construtor
+    class Entity {
+        constructor(objectType, id, scope = 'default') {
+            this.__objectType = objectType; // Guarda o TIPO (agent, space, etc.)
+            this.id = id; // Guarda o ID (se já existir)
+            this.__scope = scope; // Contexto (geralmente 'default')
+            // ... outras inicializações (erros, mensagens)
+        }
+        // ... resto da classe
+    }
+    ```
+    Quando fazemos `new Entity('space')`, esse código é executado para criar o objeto inicial, guardando que ele é do tipo `space`.
+
+*   **Popular (`populate`)**:
+    ```javascript
+    // Trecho simplificado do populate
+    populate(obj, preserveValues = true) {
+        // Pega a descrição das propriedades e relações para este tipo de entidade
+        const __properties = this.$PROPERTIES;
+        const __relations = this.$RELATIONS;
+
+        // Para cada propriedade definida para este TIPO de entidade...
+        for (let prop in __properties) {
+            // ... pega o valor vindo do 'obj' (geralmente dados do servidor)
+            let val = obj[prop];
+            // ... (lógica para tratar datas, listas, etc.) ...
+            // Atualiza a propriedade no objeto 'this' (a própria entidade)
+            this[prop] = val;
+        }
+        // ... (lógica similar para relações, arquivos, etc.) ...
+        this.__originalValues = this.data(); // Guarda uma cópia para saber o que mudou
+        return this;
+    }
+    ```
+    Esse método é usado para preencher o objeto `Entity` com dados, seja quando carregamos uma entidade existente do servidor ou após salvarmos uma nova e recebermos os dados completos de volta.
+
+*   **Obter Dados (`data`)**:
+    ```javascript
+    // Trecho simplificado do data
+    data(onlyModifiedFields) {
+        const result = {};
+        const $PROPERTIES = this.$PROPERTIES;
+
+        // Para cada propriedade...
+        for (let prop in $PROPERTIES) {
+            // ... (ignora algumas propriedades internas como ID, timestamps) ...
+            let val = this[prop];
+            // ... (lógica para formatar datas, etc.) ...
+            result[prop] = val; // Adiciona ao objeto de resultado
+        }
+        // ... (lógica similar para relações) ...
+
+        // Se onlyModifiedFields for true, compara com __originalValues
+        // e remove os campos que não mudaram.
+
+        return result; // Retorna um objeto simples com os dados prontos para enviar
+    }
+    ```
+    Antes de salvar, o método `save()` chama `data()` para pegar apenas os dados que precisam ser enviados ao servidor, possivelmente filtrando apenas o que foi modificado.
+
+*   **Salvar (`save`)**:
+    ```javascript
+    // Trecho simplificado do save
+    async save(delay = 300, preserveValues = true, forceSave) {
+        // ... (lógica de debounce para evitar saves múltiplos rápidos) ...
+
+        return new Promise((resolve, reject) => {
+            // ... (guarda os callbacks resolve/reject) ...
+
+            this.__saveTimeout = setTimeout(async () => {
+                try {
+                    // Pega os dados a serem salvos (apenas modificados)
+                    const data = this.data(true);
+                    
+                    // Se nada mudou, resolve a promessa imediatamente
+                    if(JSON.stringify(data) == '{}' && !forceSave) { 
+                        // ... resolve ... 
+                        return; 
+                    }
+
+                    // Chama a API para persistir (salvar/atualizar)
+                    const res = await this.API.persistEntity(this, forceSave);
+                    
+                    // Processa a resposta da API
+                    this.doPromise(res, (entityData) => {
+                        // Se sucesso, popula o objeto com os dados retornados
+                        this.populate(entityData, preserveValues); 
+                    }).then(resolve).catch(reject); // Resolve ou rejeita a promessa original
+
+                } catch (error) {
+                   // ... trata erros ...
+                   reject(error);
+                }
+            }, delay);
+        });
+    }
+    ```
+    O método `save()` orquestra o processo: pega os dados modificados usando `data()`, chama o método `persistEntity` da [Classe API](03_classe_api_.md) para fazer a comunicação real com o servidor, e depois processa a resposta usando `doPromise` (que por sua vez chama `populate` para atualizar o objeto local se o save for bem-sucedido).
+
+A classe `Entity` também possui muitos outros métodos úteis para lidar com diferentes aspectos das entidades, como:
+
+*   `delete()`: Para marcar uma entidade como excluída.
+*   `publish()` / `unpublish()`: Para alterar o status entre rascunho e publicado.
+*   `upload()`: Para lidar com o envio de arquivos associados à entidade.
+*   Métodos para gerenciar relações (como `addAdmin`, `removeAgentRelation`, `createSealRelation`).
+
+## Conclusão
+
+Neste capítulo, aprendemos que as **Entidades** são os blocos de construção fundamentais da plataforma. Elas representam os principais tipos de dados culturais (Agentes, Espaços, Eventos, Projetos, Oportunidades) e suas características (propriedades) e conexões (relações).
+
+Vimos que a classe JavaScript `Entity` é a ferramenta principal no *frontend* para interagir com esses dados: criar novas entidades, preencher suas propriedades e salvá-las no servidor através da [Classe API](03_classe_api_.md).
+
+Entender as Entidades é crucial, pois elas são a base sobre a qual toda a informação da plataforma é organizada.
+
+No próximo capítulo, vamos ver como essas entidades são apresentadas e manipuladas na interface do usuário através dos [Componentes Vue (Vue Components)](02_componentes_vue__vue_components__.md).
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

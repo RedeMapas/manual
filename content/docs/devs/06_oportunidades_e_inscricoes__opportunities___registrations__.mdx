@@ -1,0 +1,304 @@
+---
+title: Oportunidades e Inscrições
+description: Chapter 6
+---
+
+Olá! No [Capítulo 5: Painel de Controle (Panel)](05_painel_de_controle__panel__.md), vimos como os usuários gerenciam suas próprias criações e tarefas em sua "mesa de trabalho" pessoal. Agora, vamos explorar um tipo especial de [Entidade](01_entidades__entities__.md) que atua como um ponto de encontro crucial na plataforma: as **Oportunidades e Inscrições**.
+
+## Para que servem as Oportunidades e Inscrições?
+
+Imagine a plataforma cultural como uma grande praça pública digital. As **Oportunidades** são como os **editais, chamadas públicas, concursos ou prêmios** afixados em um grande quadro de avisos nessa praça. Gestores culturais (governo, fundações, empresas) publicam esses "avisos" convidando artistas, produtores e grupos a participarem.
+
+As **Inscrições**, por sua vez, são os **formulários preenchidos** que os agentes culturais (artistas, músicos, coletivos) entregam para participar dessas oportunidades. É a forma como eles dizem: "Ei, eu quero participar disso! Aqui estão minhas informações e meu projeto."
+
+Essa funcionalidade é vital porque organiza todo o processo de seleção, desde o lançamento do edital até a divulgação dos resultados:
+
+*   **Publicação da Oportunidade:** Define as regras, prazos, quem pode participar e o que precisa ser enviado.
+*   **Período de Inscrição:** Permite que os interessados enviem seus formulários.
+*   **Gerenciamento das Inscrições:** Organiza todas as candidaturas recebidas.
+*   **Avaliação:** Permite que avaliadores analisem as inscrições com base em critérios definidos (veremos mais sobre isso no [Capítulo 7: Métodos de Avaliação](07_métodos_de_avaliação__evaluation_methods__.md)).
+*   **Resultados:** Divulga quem foi selecionado.
+
+**Nosso Caso de Uso:** A Secretaria de Cultura lançou um edital (Oportunidade) chamado "Arte nos Bairros" para financiar projetos culturais locais. A Clara, líder de um grupo de teatro comunitário (um [Agente](01_entidades__entities__.md)), encontra esse edital na plataforma. Como ela faz para se inscrever (criar uma Inscrição) e como a Secretaria gerencia todas as propostas recebidas? É isso que vamos desvendar!
+
+## Entendendo os Conceitos
+
+Para que o edital "Arte nos Bairros" funcione, precisamos de algumas peças-chave:
+
+1.  **Oportunidade (`opportunity`):** É a própria [Entidade](01_entidades__entities__.md) que representa o edital. Ela contém:
+    *   Nome, descrição, regras.
+    *   Datas importantes: período de inscrição, período de avaliação, data de resultado.
+    *   Quem pode se inscrever (tipos de agentes, requisitos).
+    *   **Formulário de Inscrição:** Quais campos e perguntas os candidatos precisam responder? Quais documentos precisam anexar? Isso é configurado aqui.
+    *   **Fases:** As etapas do processo (Inscrição, Avaliação Documental, Avaliação de Mérito, Resultado).
+
+2.  **Inscrição (`registration`):** Também é uma [Entidade](01_entidades__entities__.md), mas representa a *candidatura* de um agente a uma oportunidade específica. Ela contém:
+    *   Link para a Oportunidade.
+    *   Link para o Agente que se inscreveu.
+    *   Respostas do formulário preenchido.
+    *   Arquivos anexados.
+    *   **Status:** Em qual pé está essa inscrição (Rascunho, Enviada, Em Avaliação, Selecionada, Não Selecionada, Inválida).
+
+3.  **Fases da Oportunidade:** O ciclo de vida de um edital. As fases mais comuns são:
+    *   **Inscrição:** Período em que os agentes podem se candidatar.
+    *   **Avaliação:** Período em que as inscrições são analisadas. Pode haver múltiplas fases de avaliação (documental, mérito, etc.).
+    *   **Resultado:** Publicação dos selecionados.
+    O sistema gerencia a transição entre essas fases, controlando o que pode ser feito em cada uma.
+
+4.  **Formulário de Inscrição Dinâmico:** Uma das partes mais poderosas. O administrador que cria a Oportunidade pode montar o formulário de inscrição arrastando e soltando campos (texto, número, data, seleção múltipla, upload de arquivo, etc.). Ele pode até criar campos condicionais (que só aparecem se uma resposta anterior for específica).
+
+## Usando Oportunidades e Inscrições na Prática
+
+Vamos seguir a jornada da Clara e da Secretaria de Cultura.
+
+**1. Gestor da Secretaria Cria a Oportunidade:**
+Um gestor acessa o [Painel de Controle](05_painel_de_controle__panel__.md), vai em "Minhas Oportunidades" e clica em "Criar Nova". Ele preenche os dados básicos (nome "Arte nos Bairros", descrição, datas). Crucialmente, ele usa a interface de configuração para:
+*   **Definir as Fases (`opportunity-phases-config`):** Configura as datas de início e fim para Inscrição, Avaliação e Resultado.
+*   **Montar o Formulário:** Adiciona campos como "Nome do Projeto", "Descrição Detalhada", "Orçamento (PDF)", "Vídeo de Apresentação (link)".
+
+```html
+<!-- Dentro da página de edição da Oportunidade (simplificado) -->
+<!-- Componente para configurar as fases -->
+<opportunity-phases-config :entity="minhaOportunidade"></opportunity-phases-config>
+
+<!-- Interface para adicionar campos ao formulário (conceitual) -->
+<configurador-de-formulario :oportunidade="minhaOportunidade">
+  <!-- ... drag and drop de campos, configurações ... -->
+</configurador-de-formulario>
+```
+
+**2. Clara Encontra e se Inscreve:**
+Clara navega pela plataforma, talvez usando a [Busca](04_busca__search__.md), e encontra o edital "Arte nos Bairros". Na página da oportunidade, ela vê um botão ou seção para inscrição, provavelmente gerenciado pelo componente `opportunity-subscription`.
+
+```html
+<!-- Na página de visualização da Oportunidade (simplificado) -->
+<opportunity-subscription :entity="oportunidadeArteNosBairros">
+  <!-- Este componente mostra o status (aberta/fechada), -->
+  <!-- permite selecionar o agente proponente (se o usuário tiver vários) -->
+  <!-- e tem o botão "Inscrever-se" -->
+</opportunity-subscription>
+```
+
+Ao clicar em "Inscrever-se", o componente `opportunity-subscription` executa uma ação importante:
+
+```javascript
+// Dentro do método 'subscribe' em opportunity-subscription/script.js (simplificado)
+async subscribe() {
+    // ... (validações: selecionou agente? categoria? etc.) ...
+    this.processing = true;
+
+    // 1. Cria uma nova entidade 'registration' VAZIA
+    const registration = new Entity('registration');
+    // 2. Associa a Oportunidade e o Agente (proponente)
+    registration.opportunity = this.entity; // A oportunidade atual
+    registration.owner = this.agent;      // O agente selecionado pela Clara
+    // ... (associa categoria, faixa, tipo de proponente se houver) ...
+
+    try {
+        // 3. Salva a inscrição (ainda vazia) no servidor via API
+        await registration.save(); // Isso cria a inscrição com status 'Rascunho' (0)
+
+        // 4. Redireciona Clara para a página de edição do formulário
+        window.location.href = registration.editUrl;
+
+    } catch (error) {
+        // ... (trata erros, mostra mensagens) ...
+        this.processing = false;
+    }
+}
+```
+*   **O que acontece:** O clique no botão cria um "rascunho" da inscrição da Clara no sistema e a leva direto para a página onde ela preencherá o formulário.
+
+**3. Clara Preenche o Formulário:**
+Clara agora está na página de edição da sua inscrição. Essa página usa o componente `registration-edition` que, por sua vez, utiliza o `registration-form` para mostrar os campos definidos pela Secretaria.
+
+```html
+<!-- Na página de edição da Inscrição (simplificado) -->
+<registration-edition :entity="inscricaoDaClara">
+  <!-- Este componente gerencia as etapas (se houver) -->
+  <!-- e contém o formulário -->
+  <registration-form :registration="inscricaoDaClara" :step="etapaAtual">
+      <!-- Renderiza os campos dinamicamente -->
+      <!-- Ex: <entity-field :entity="inscricaoDaClara" fieldName="field_123_nome_projeto"></entity-field> -->
+  </registration-form>
+</registration-edition>
+```
+O `registration-form` é inteligente: ele lê a configuração da Oportunidade e renderiza cada campo ("Nome do Projeto", "Descrição", "Orçamento", etc.) usando o componente `entity-field`. Conforme Clara preenche, os dados são salvos automaticamente no objeto `inscricaoDaClara` (uma [Entidade](01_entidades__entities__.md) do tipo `registration`). Quando ela termina, ela clica em "Enviar Inscrição", o que muda o status da inscrição de Rascunho (0) para Enviada (1).
+
+**4. Gestor da Secretaria Gerencia as Inscrições:**
+Após o fim do prazo, o gestor da Secretaria acessa a página da Oportunidade "Arte nos Bairros" e vai para a aba de gerenciamento de inscrições. Lá, ele vê uma tabela com todas as candidaturas, provavelmente usando o componente `opportunity-registrations-table`.
+
+```html
+<!-- Na página de gerenciamento da Oportunidade (simplificado) -->
+<opportunity-registrations-table
+  :phase="faseAtualDaOportunidade"
+  identifier="tabela-principal"
+  :visible-columns="['agent', 'status', 'category', 'score']"
+>
+  <!-- Esta tabela busca as inscrições da oportunidade/fase via API -->
+  <!-- e exibe colunas configuráveis com filtros e ordenação -->
+</opportunity-registrations-table>
+```
+Este componente usa a [Classe API](03_classe_api_.md) para buscar todas as [Entidades](01_entidades__entities__.md) `registration` associadas a esta oportunidade e fase, permitindo ao gestor ver o status de cada uma, filtrar por categoria, etc. É aqui que o processo de avaliação começará (assunto do próximo capítulo!).
+
+**5. Clara Acompanha sua Inscrição:**
+Clara pode ir ao seu [Painel de Controle](05_painel_de_controle__panel__.md), na seção "Minhas Inscrições", e ver o status da sua inscrição para "Arte nos Bairros" (Enviada, Em Avaliação, etc.). Ela pode usar o componente `registration-card` para ver um resumo.
+
+```html
+<!-- No Painel de Controle da Clara, em "Minhas Inscrições" -->
+<registration-card :entity="inscricaoDaClara"></registration-card>
+```
+
+## Por Dentro das Oportunidades e Inscrições
+
+Como o sistema orquestra tudo isso? A chave é a interação entre os [Componentes Vue](02_componentes_vue__vue_components__.md) e a [Classe API](03_classe_api_.md), usando as [Entidades](01_entidades__entities__.md) `opportunity` e `registration`.
+
+**O Fluxo Simplificado (Clara se inscreve):**
+
+1.  **Usuário (Clara):** Clica em "Inscrever-se" no componente `opportunity-subscription`.
+2.  **`opportunity-subscription`:** Chama seu método `subscribe()`.
+3.  **`subscribe()`:**
+    *   Cria um objeto `new Entity('registration')`.
+    *   Define as propriedades básicas (`opportunity`, `owner`).
+    *   Chama `registration.save()`.
+4.  **`registration.save()`:** (Método da classe `Entity`)
+    *   Vê que a entidade não tem ID (é nova).
+    *   Usa a [Classe API](03_classe_api_.md) (`new API('registration')`) para chamar `api.persistEntity(this)`.
+5.  **`api.persistEntity()`:**
+    *   Chama o método `api.POST()` para enviar os dados da nova inscrição para o endpoint do servidor (ex: `/api/registration/`).
+6.  **Servidor:**
+    *   Recebe os dados.
+    *   Valida (A oportunidade existe? O agente pode se inscrever? As inscrições estão abertas?).
+    *   Cria o registro da inscrição no banco de dados com status "Rascunho".
+    *   Retorna os dados da inscrição criada (com ID) e a URL de edição.
+7.  **API e `Entity`:** A resposta volta pela API até o objeto `registration`, que é atualizado com o ID e outros dados. A `Promise` do `save()` é resolvida.
+8.  **`opportunity-subscription`:** Recebe a confirmação do `save()` e redireciona o navegador da Clara para a `registration.editUrl`.
+
+**Diagrama de Sequência (Inscrição):**
+
+<Mermaid
+  chart='
+sequenceDiagram
+    participant Clara as Usuário
+    participant OppSubscription as opportunity-subscription
+    participant RegEntity as Entidade Registration
+    participant RegAPI as API ("registration")
+    participant Servidor
+
+    Clara->>OppSubscription: Clica em "Inscrever-se"
+    OppSubscription->>RegEntity: Cria instância (new Entity("registration"))
+    OppSubscription->>RegEntity: Define opportunity, owner, etc.
+    OppSubscription->>RegEntity: Chama save()
+    RegEntity->>RegAPI: Chama persistEntity(this)
+    RegAPI->>Servidor: Envia requisição POST /api/registration/
+    Servidor->>Servidor: Valida e cria Inscrição (Rascunho) no BD
+    Servidor-->>RegAPI: Retorna JSON (Inscrição criada + editUrl)
+    RegAPI-->>RegEntity: Popula entidade com dados e ID
+    RegEntity-->>OppSubscription: Resolve Promise do save()
+    OppSubscription->>Clara: Redireciona para registration.editUrl
+' />
+
+**Mergulhando no Código:**
+
+*   **Configuração das Fases (`opportunity-phases-config/script.js`):**
+    Este componente busca as fases existentes da oportunidade (incluindo as configurações de avaliação) usando uma classe API especializada (`OpportunitiesAPI`) ou a [Classe API](03_classe_api_.md) padrão. Ele permite visualizar e editar as datas e configurações de cada fase.
+
+    ```javascript
+    // Trecho simplificado de opportunity-phases-config/script.js - created()
+    async created() {
+        // Se as fases já foram carregadas globalmente ($MAPAS), usa elas.
+        if($MAPAS.opportunityPhases && $MAPAS.opportunityPhases.length > 0) {
+            this.phases = $MAPAS.opportunityPhases;
+        } else {
+            // Senão, busca as fases usando a API
+            const api = new OpportunitiesAPI(); // API específica para Oportunidades
+            // getPhases busca a oportunidade e suas fases de avaliação associadas
+            this.phases = await api.getPhases(this.entity.id);
+        }
+    }
+    ```
+    Ele obtém os dados das fases para que o template possa exibir os campos de data e outras configurações para o gestor editar.
+
+*   **Renderização do Formulário (`registration-form/script.js`):**
+    Este componente é crucial para a flexibilidade dos editais. Ele não tem os campos fixos no código! Ele lê a configuração de campos armazenada na Oportunidade e os renderiza dinamicamente.
+
+    ```javascript
+    // Trecho simplificado de registration-form/script.js - computed.fields
+    computed: {
+        fields () {
+            const registration = this.registration; // A inscrição atual
+            // Pega a lista de campos configurada para esta oportunidade
+            const fields = [...$MAPAS.config.registrationForm.fields, ...$MAPAS.config.registrationForm.files];
+            // Ordena pela ordem definida na configuração
+            fields.sort((a,b) => a.displayOrder - b.displayOrder);
+
+            // Filtra campos baseados em condições (categoria, tipo proponente, etc.)
+            return fields.filter((field) => {
+                // Se o campo exige categoria X e a inscrição é Y, não mostra.
+                if (field.categories?.length && !field.categories.includes(registration.category)) {
+                    return false;
+                }
+                // ... (outras condições: range, proponentType, campo condicional) ...
+
+                // Se passou por todas as condições, mostra o campo
+                return true;
+            });
+        },
+        // ...
+    }
+    ```
+    A propriedade computada `fields` determina *quais* campos devem aparecer no formulário para *esta* inscrição específica, com base nas regras definidas na Oportunidade. O template depois usa um `v-for` para iterar sobre `fields` e renderizar cada um (provavelmente com `<entity-field>`).
+
+*   **Tabela de Inscrições (`opportunity-registrations-table/script.js`):**
+    Este componente usa `mc-entities` (ou uma lógica similar) para buscar e exibir as inscrições. Ele monta a `query` para a [Classe API](03_classe_api_.md) com base nos filtros selecionados pelo usuário (status, categoria, etc.) e nas configurações da fase.
+
+    ```javascript
+    // Trecho simplificado de opportunity-registrations-table/script.js - data()
+    data() {
+        // ... (definição de colunas disponíveis, opções de ordenação) ...
+        return {
+            // ...
+            // Query base para buscar inscrições desta oportunidade/fase
+            query: {
+                '@opportunity': this.phase.id, // Filtra pela oportunidade/fase atual
+                'status': 'GTE(0)',           // Pega status >= 0 (ignora lixeira)
+                '@permission': 'view'         // Garante permissão
+            },
+            // Variáveis para guardar filtros selecionados pelo usuário
+            selectedCategories: [],
+            selectedStatus: [],
+            // ... (outros filtros) ...
+            order: 'status DESC,consolidatedResult DESC', // Ordenação padrão
+            visible: this.visibleColumns.join(','), // Colunas visíveis
+            // ...
+        }
+    },
+    methods: {
+        // Exemplo: filtrar por status quando o usuário seleciona algo
+        filterByStatus(entitiesComponent) { // 'entitiesComponent' é o mc-entities interno
+            if (this.selectedStatus.length > 0) {
+                // Adiciona o filtro de status à query
+                this.query['status'] = `IN(${this.selectedStatus.toString()})`;
+            } else {
+                // Remove o filtro se nada estiver selecionado
+                delete this.query['status'];
+            }
+            // Pede ao componente de lista para atualizar os dados com a nova query
+            entitiesComponent.refresh();
+        },
+        // ... (métodos similares para outros filtros: filterByCategories, etc.)
+    }
+    ```
+    O componente mantém um objeto `query` reativo. Quando o usuário aplica um filtro (ex: seleciona "Enviada" no filtro de Status), o método `filterByStatus` atualiza a `query.status` e chama `entitiesComponent.refresh()`, que por sua vez usará a [Classe API](03_classe_api_.md) para buscar os dados com a `query` atualizada.
+
+## Conclusão
+
+Neste capítulo, mergulhamos no mundo das **Oportunidades e Inscrições**, o coração de muitos processos interativos na plataforma. Vimos como as Oportunidades funcionam como editais ou chamadas públicas digitais, com fases e formulários configuráveis. Entendemos que as Inscrições são as candidaturas enviadas pelos agentes culturais.
+
+Exploramos o fluxo, desde a criação de uma oportunidade pelo gestor, passando pela inscrição de um agente (como a Clara), o preenchimento do formulário dinâmico, até o gerenciamento das inscrições pela entidade promotora. Vimos como os [Componentes Vue](02_componentes_vue__vue_components__.md) (`opportunity-subscription`, `registration-form`, `opportunity-registrations-table`, etc.) trabalham juntos, usando a [Classe API](03_classe_api_.md) e as [Entidades](01_entidades__entities__.md) `opportunity` e `registration` para orquestrar todo o processo.
+
+Agora que sabemos como as inscrições são feitas e gerenciadas, falta uma peça importante: como elas são avaliadas? No próximo capítulo, vamos explorar os [Métodos de Avaliação (Evaluation Methods)](07_métodos_de_avaliação__evaluation_methods__.md) e como eles se integram às fases das Oportunidades para permitir a seleção dos projetos.
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)

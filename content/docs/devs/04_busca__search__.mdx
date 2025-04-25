@@ -1,0 +1,346 @@
+---
+title: Busca
+description: Capítulo 3
+---
+
+Olá! No [Capítulo 3: Classe API](03_classe_api_.md), vimos como a plataforma conversa com o servidor para buscar e salvar dados usando a nossa "carteira digital", a Classe API. Agora que sabemos como obter as informações das [Entidades](01_entidades__entities__.md), como podemos permitir que os usuários encontrem exatamente o que procuram na vasta quantidade de dados culturais?
+
+É aí que entra a funcionalidade de **Busca (Search)**!
+
+## Para que serve a Busca?
+
+Imagine a plataforma como uma imensa biblioteca cheia de informações sobre artistas, espaços culturais, eventos e oportunidades. Encontrar algo específico poderia ser como procurar uma agulha no palheiro!
+
+A **Busca** é a ferramenta que transforma essa biblioteca gigante em algo navegável e útil. Ela funciona como o motor de busca do Google, mas totalmente focada no nosso universo cultural. Com ela, os usuários podem:
+
+*   **Procurar por palavras-chave:** Buscar por "teatro", "show de rock", "exposição de arte", "museu no centro", etc.
+*   **Filtrar resultados:** Refinar a busca aplicando filtros específicos, como área de atuação (música, teatro, artes visuais), tipo de espaço (galeria, centro cultural), datas de eventos, bairros ou cidades, e muito mais.
+*   **Visualizar como preferir:** Ver os resultados em uma lista detalhada ou diretamente em um mapa interativo.
+
+**Nosso Caso de Uso:** Como um usuário pode encontrar todos os "Espaços Culturais" do tipo "Teatro" que estão localizados no bairro "Centro" e que possuem eventos agendados para a "próxima semana"? É isso que a funcionalidade de Busca nos permite fazer!
+
+## Entendendo os Conceitos da Busca
+
+Para construir essa experiência de busca poderosa, combinamos vários elementos:
+
+1.  **Palavra-chave (`keyword`):** O termo principal que o usuário digita na barra de busca. O sistema procura essa palavra nos nomes, descrições e outros campos relevantes das entidades.
+
+2.  **Filtros:** São opções adicionais para refinar a busca. Cada tipo de entidade ([Agent](01_entidades__entities__.md), [Space](01_entidades__entities__.md), [Event](01_entidades__entities__.md), [Opportunity](01_entidades__entities__.md)) tem seus próprios filtros possíveis:
+    *   **Agente:** Área de atuação.
+    *   **Espaço:** Área de atuação, Tipo de Espaço.
+    *   **Evento:** Linguagem/Área, Data (início e fim), Classificação Etária.
+    *   **Oportunidade:** Área, Tipo, Período de Inscrição.
+    *   **Localização:** Muitos filtros incluem a busca por proximidade ou em uma área específica do mapa.
+
+3.  **`pseudoQuery` (Pseudo-Consulta):** Este é um termo técnico importante! É um objeto JavaScript que representa *todos* os critérios de busca atuais: a palavra-chave, os filtros selecionados, a ordenação desejada, etc. Ele é "pseudo" porque ainda não é a consulta final enviada para a [Classe API](03_classe_api_.md), mas contém todas as informações necessárias para montá-la. Pense nele como a "receita" da busca.
+
+    ```javascript
+    // Exemplo de um objeto pseudoQuery para buscar espaços
+    let pseudoQueryParaEspacos = {
+      'keyword': 'teatro', // Palavra-chave
+      'space:term:area': ['Teatro'], // Filtro: Área de atuação é Teatro
+      'space:type': ['Espaço Cultural'], // Filtro: Tipo de espaço
+      '@page': 1, // Qual página de resultados?
+      '@orderBy': 'name ASC' // Ordenar por nome ascendente
+    };
+    ```
+    À medida que o usuário aplica filtros, esse objeto `pseudoQuery` é atualizado.
+
+4.  **Visualização (Lista vs. Mapa):** A busca geralmente oferece duas formas de ver os resultados:
+    *   **Lista (`search-list`):** Mostra as entidades encontradas como uma lista de cartões ou itens, com informações resumidas. Ideal para ver detalhes rápidos.
+    *   **Mapa (`search-map`):** Exibe as entidades como marcadores em um mapa interativo. Ótimo para entender a distribuição geográfica dos resultados.
+
+## Usando a Busca na Prática: Os Componentes em Ação
+
+A funcionalidade de busca é construída usando vários [Componentes Vue](02_componentes_vue__vue_components__.md) que trabalham juntos. O componente principal é o `<search>`, que orquestra os outros.
+
+**Estrutura Típica:**
+
+Imagine uma página de busca de Espaços Culturais. O código dela poderia se parecer com algo assim (simplificado):
+
+```html
+<!-- Em um arquivo de template Vue (ex: PaginaBuscaEspacos.vue) -->
+<template>
+  <div>
+    <!-- O componente principal 'search' organiza tudo -->
+    <search
+      page-title="Buscar Espaços Culturais"
+      entity-type="space"
+      :initial-pseudo-query="configuracaoInicialDaBusca"
+    >
+      <!-- Dentro do 'search', definimos as abas (Lista e Mapa) -->
+      <template #tabs>
+        <mc-tabs @update:modelValue="changeTab">
+          <mc-tab slug="list" title="Lista">
+            <!-- Conteúdo da Aba Lista -->
+            <div class="search-list-container">
+              <!-- Filtros específicos para Espaços -->
+              <search-filter :pseudo-query="pseudoQuery">
+                  <search-filter-space :pseudo-query="pseudoQuery"></search-filter-space>
+              </search-filter>
+
+              <!-- A lista de resultados -->
+              <search-list
+                type="space"
+                :pseudo-query="pseudoQuery"
+                select="id,name,shortDescription,singleUrl,location"
+              ></search-list>
+            </div>
+          </mc-tab>
+
+          <mc-tab slug="map" title="Mapa">
+            <!-- Conteúdo da Aba Mapa -->
+            <div class="search-map-container">
+                <!-- Filtros (podem ser os mesmos ou diferentes no mapa) -->
+                <search-filter :pseudo-query="pseudoQuery" position="map">
+                    <search-filter-space :pseudo-query="pseudoQuery"></search-filter-space>
+                </search-filter>
+
+                <!-- O mapa de resultados -->
+                <search-map
+                  type="space"
+                  :pseudo-query="pseudoQuery"
+                ></search-map>
+            </div>
+          </mc-tab>
+        </mc-tabs>
+      </template>
+    </search>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+// Importar os componentes necessários (search, mc-tabs, search-filter, etc.)
+// se não forem globais
+
+// Configuração inicial da busca (pode vir da URL, etc.)
+const configuracaoInicialDaBusca = ref({
+  '@orderBy': 'createTimestamp DESC', // Ordenar por mais recente
+  // outros filtros iniciais...
+});
+
+// O objeto pseudoQuery reativo (gerenciado pelo componente 'search')
+// Acessível aqui se necessário, ou gerenciado internamente pelo <search>
+// const pseudoQuery = ref(configuracaoInicialDaBusca.value);
+
+// Função para lidar com a troca de abas (exemplo)
+const changeTab = (tabInfo) => {
+  console.log("Trocou para a aba:", tabInfo.tab.slug);
+  // Poderia ajustar o layout ou estado global aqui
+};
+</script>
+```
+
+**O que acontece aqui?**
+
+1.  **`<search>`:** É o componente "maestro". Ele recebe o tipo de entidade (`entity-type="space"`) e a configuração inicial (`initial-pseudo-query`). Ele mantém o estado atual da `pseudoQuery` (a receita da busca).
+2.  **`<mc-tabs>`:** Cria as abas "Lista" e "Mapa".
+3.  **`<search-filter>`:** Um contêiner para os filtros. Ele recebe a `pseudoQuery` atual.
+4.  **`<search-filter-space>`:** Contém os controles *específicos* para filtrar espaços (área de atuação, tipo). Quando o usuário muda um filtro aqui, ele **modifica** o objeto `pseudoQuery` que recebeu como `prop`.
+5.  **`<search-list>`:** Responsável por exibir os resultados em formato de lista. Ele também recebe a `pseudoQuery`. Quando a `pseudoQuery` muda (porque o usuário aplicou um filtro), este componente reage, pede os novos dados (usando a [Classe API](03_classe_api_.md) internamente, geralmente através de outro componente como `mc-entities`) e atualiza a lista.
+6.  **`<search-map>`:** Similar à lista, mas exibe os resultados no mapa. Ele também "ouve" as mudanças na `pseudoQuery` e busca os dados atualizados para exibir os marcadores corretos.
+
+A chave aqui é o objeto **`pseudoQuery`**. Ele é passado como `prop` para os componentes de filtro, lista e mapa. Os filtros *modificam* esse objeto, e a lista/mapa *reagem* a essas modificações buscando e exibindo os novos resultados. É como se todos estivessem olhando para a mesma "receita" de busca, e quando alguém atualiza a receita, os cozinheiros (lista e mapa) preparam o prato novamente.
+
+## Por Dentro da Busca: Como Funciona?
+
+Vamos seguir o fluxo quando um usuário aplica um filtro.
+
+**O Fluxo Simplificado:**
+
+1.  **Usuário Interage:** O usuário clica em um checkbox de filtro no `<search-filter-space>` (por exemplo, seleciona a área "Música").
+2.  **Componente Filtro (`search-filter-space`):** O código JavaScript do componente detecta a mudança e atualiza a propriedade correspondente no objeto `pseudoQuery` (ex: `this.pseudoQuery['space:term:area'].push('Música')`). Como o objeto `pseudoQuery` foi passado como `prop` e é reativo, essa mudança é comunicada.
+3.  **Componente `search` (Orquestrador):** Percebe a mudança na `pseudoQuery`.
+4.  **Componentes de Resultado (`search-list` / `search-map`):** Eles têm um "observador" (`watch`) na `prop` `pseudoQuery`. Quando detectam a mudança:
+    *   Preparam a consulta para a API: Usam uma função utilitária (`Utils.parsePseudoQuery`) para transformar a "receita" (`pseudoQuery`) na consulta real que a [Classe API](03_classe_api_.md) entende.
+    *   Chamam a API: Fazem a chamada `api.find()` ou `api.fetch()` com a consulta preparada.
+    *   Recebem os Resultados: A API retorna a lista de entidades que correspondem aos novos critérios.
+    *   Atualizam a Exibição: Renderizam novamente a lista ou o mapa com os novos dados.
+
+**Diagrama de Sequência (Aplicando um Filtro):**
+
+<Mermaid
+  chart="
+sequenceDiagram
+    participant Usuario
+    participant FiltroComp as Filtro (search-filter-space)
+    participant SearchComp as Search (orquestrador)
+    participant ResultComp as Lista/Mapa (search-list/map)
+    participant API as Classe API
+    participant Servidor
+
+    Usuario->>FiltroComp: Seleciona filtro (ex: Área 'Música')
+    FiltroComp->>SearchComp: Atualiza objeto pseudoQuery (prop)
+    SearchComp-->>ResultComp: Prop pseudoQuery é atualizada (reatividade Vue)
+    ResultComp->>ResultComp: Watcher detecta mudança na pseudoQuery
+    ResultComp->>ResultComp: Chama Utils.parsePseudoQuery(pseudoQuery)
+    ResultComp->>API: Chama find(queryFormatada) ou fetch(queryFormatada)
+    API->>Servidor: Envia requisição HTTP GET com filtros
+    Servidor->>Servidor: Busca no BD
+    Servidor-->>API: Retorna JSON com resultados
+    API-->>ResultComp: Retorna array de Entities
+    ResultComp->>ResultComp: Atualiza dados internos (lista/marcadores)
+    ResultComp->>Usuario: Exibe resultados atualizados
+" />
+
+**Mergulhando no Código:**
+
+*   **Orquestração (`modules/Search/components/search/script.js`):**
+    Este componente geralmente inicializa a `pseudoQuery` (baseada nas `props` recebidas) e a torna disponível para os componentes filhos (filtros, lista, mapa).
+
+    ```javascript
+    // Trecho simplificado de search/script.js
+    app.component('search', {
+        // ... template, setup ...
+        props: {
+            entityType: { type: String, required: true },
+            initialPseudoQuery: { type: Object, required: true }
+        },
+        data() {
+            // Combina a query inicial global com a específica da página
+            let pseudoQuery = { ...$MAPAS.initialPseudoQuery, ...this.initialPseudoQuery };
+            return { pseudoQuery }; // Torna pseudoQuery reativa e acessível no template
+        },
+        // ... methods (ex: changeTab) ...
+    });
+    ```
+    O `data()` retorna o objeto `pseudoQuery`, que será passado para os componentes filhos via `:pseudo-query="pseudoQuery"` no template.
+
+*   **Modificando a Query (`modules/Search/components/search-filter-space/script.js`):**
+    Os componentes de filtro recebem a `pseudoQuery` e a modificam diretamente quando o usuário interage.
+
+    ```javascript
+    // Trecho simplificado de search-filter-space/script.js
+    app.component('search-filter-space', {
+        // ... template, setup, data (com termos e tipos) ...
+        props: {
+            pseudoQuery: { type: Object, required: true } // Recebe a query
+        },
+        methods: {
+            // Exemplo: Limpar filtros específicos de espaço
+            clearFilters() {
+                // Limpa arrays ou deleta chaves no objeto pseudoQuery
+                this.pseudoQuery['space:term:area'] = [];
+                delete this.pseudoQuery['space:type'];
+                // ... etc ...
+            },
+            // Interações com checkboxes/selects modificariam this.pseudoQuery diretamente
+            // ex: ao marcar um tipo: this.pseudoQuery['space:type'].push('NovoTipo')
+        },
+    });
+    ```
+    Quando um método como `clearFilters` ou um evento de clique num filtro altera `this.pseudoQuery`, a mágica da reatividade do Vue garante que os outros componentes que usam essa mesma `pseudoQuery` sejam notificados.
+
+*   **Reagindo à Query (Mapa) (`modules/Search/components/search-map/script.js`):**
+    O componente de mapa observa a `pseudoQuery` e dispara uma nova busca quando ela muda.
+
+    ```javascript
+    // Trecho simplificado de search-map/script.js
+    app.component('search-map', {
+        // ... template, setup, emits ...
+        props: {
+            type: { type: String, required: true }, // Tipo da entidade (space, event...)
+            pseudoQuery: { type: Object, default: {} } // Recebe a query
+        },
+        data() {
+            return { loading: false, entities: [], api: null, refreshTimeout: null };
+        },
+        async mounted(){
+            // Cria instância da API para o tipo de entidade
+            this.api = new API(this.type);
+            this.fetchEntities(); // Busca inicial
+        },
+        watch: {
+            // Observa mudanças profundas no objeto pseudoQuery
+            pseudoQuery: {
+                handler(newPseudoQuery){
+                    this.entities = []; // Limpa resultados antigos
+                    this.loading = true;
+                    clearTimeout(this.refreshTimeout); // Evita buscas múltiplas rápidas
+
+                    // Espera um pouco antes de buscar (debounce)
+                    this.refreshTimeout = setTimeout(() => {
+                        this.fetchEntities(); // Chama a função que busca os dados
+                    }, 500);
+                },
+                deep: true, // Observa mudanças dentro do objeto
+            }
+        },
+        methods: {
+            async fetchEntities() {
+                // Transforma a pseudoQuery na query real para a API
+                const query = Utils.parsePseudoQuery(this.pseudoQuery);
+                query['@select'] = 'id,type,name,location,singleUrl'; // Campos necessários para o mapa
+                query['location'] = query['location'] || '!EQ([0,0])'; // Garante que só venham entidades com localização
+
+                this.loading = true;
+                try {
+                    // Usa a API para buscar os dados
+                    // 'fetch' pode lidar com processamento 'raw' se necessário
+                    this.entities = await this.api.fetch(this.endpoint || 'find', query, {
+                        raw: true, // Pede dados brutos para processamento customizado
+                        rawProcessor: this.entityRawProcessor // Função para processar cada entidade
+                    });
+                } catch (error) {
+                  console.error("Erro ao buscar entidades para o mapa:", error);
+                } finally {
+                  this.loading = false;
+                }
+            },
+            // ... openPopUp, closePopUp ...
+        },
+    });
+    ```
+    A função `watch` é crucial aqui. Ela detecta qualquer mudança na `pseudoQuery`, e o `handler` chama `fetchEntities`. `fetchEntities` usa `Utils.parsePseudoQuery` para converter a "receita" em uma consulta que a [Classe API](03_classe_api_.md) entende (com a sintaxe correta de filtros, seleção de campos, etc.) e então chama `this.api.fetch` para buscar os dados e atualizar os marcadores no mapa (`this.entities`).
+
+*   **Reagindo à Query (Lista) (`modules/Search/components/search-list/script.js`):**
+    A lista funciona de forma similar ao mapa, observando a `pseudoQuery`. No código fornecido, ela parece delegar a busca real para outro componente (provavelmente `mc-entities`, que não está detalhado aqui), mas o princípio é o mesmo: reagir à `pseudoQuery` e exibir os resultados.
+
+    ```javascript
+    // Trecho simplificado de search-list/script.js
+    app.component('search-list', {
+        // ... template, setup ...
+        props: {
+            type: { type: String, required: true },
+            pseudoQuery: { type: Object, required: true }, // Recebe a query
+            select: { type: String, required: true }, // Campos a selecionar
+            limit: { type: Number, default: 20 } // Itens por página
+        },
+        data() {
+            return { query: {} }; // Query formatada para passar ao componente filho
+        },
+        mounted() {
+            // Converte a pseudoQuery inicial na query formatada
+            this.query = Utils.parsePseudoQuery(this.pseudoQuery);
+        },
+        watch: {
+            // Observa a pseudoQuery
+            pseudoQuery: {
+                handler(newPseudoQuery) {
+                    // Atualiza a query formatada quando a pseudoQuery muda
+                    this.query = Utils.parsePseudoQuery(newPseudoQuery);
+                    // O componente interno (ex: mc-entities) usará this.query
+                    // para fazer a busca na API.
+                },
+                deep: true,
+            }
+        },
+        // ... computed (entityType) ...
+    });
+    ```
+    Aqui, o `watch` atualiza a `this.query` (a versão formatada). O template do `search-list` provavelmente usa essa `query` ao renderizar o componente que efetivamente busca e mostra a lista (ex: `<mc-entities :query="query" ...>`).
+
+## Conclusão
+
+Neste capítulo, exploramos a funcionalidade de **Busca (Search)**, o "Google Cultural" da plataforma. Vimos como ela permite aos usuários encontrar [Entidades](01_entidades__entities__.md) usando palavras-chave e filtros específicos.
+
+Entendemos o papel central do objeto `pseudoQuery` como a "receita" da busca, e como os diferentes [Componentes Vue](02_componentes_vue__vue_components__.md) (`search`, `search-filter-*`, `search-list`, `search-map`) colaboram: os filtros modificam a `pseudoQuery`, e os componentes de resultado (lista e mapa) reagem a essas mudanças, utilizando a [Classe API](03_classe_api_.md) para buscar e exibir os dados atualizados.
+
+Dominar a busca é essencial para oferecer uma boa experiência ao usuário, permitindo que ele navegue e descubra facilmente a riqueza cultural da plataforma.
+
+Agora que sabemos como os usuários podem encontrar informações, como os administradores e proprietários de conteúdo gerenciam suas próprias entidades? No próximo capítulo, vamos conhecer o [Painel de Controle (Panel)](05_painel_de_controle__panel__.md), a área administrativa da plataforma.
+
+---
+
+Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)
