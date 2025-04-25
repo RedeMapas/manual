@@ -23,26 +23,26 @@ export const baseOptions: BaseLayoutProps = {
       </>
     ),
   },
-  links: [
-    {
-      text: 'Público',
-      url: '/users',
-      active: 'nested-url',
-    },
-    {
-      text: 'Gestoras',
-      url: '/gestoras',
-      active: 'nested-url',
-    },
-    {
-      text: 'Desenvolvedoras',
-      url: '/devs',
-      active: 'nested-url',
-    },
-    {
-      text: 'Administradoras',
-      url: '/suporte',
-      active: 'nested-url',
-    },
-  ],
+  // links: [
+  //   {
+  //     text: 'Público',
+  //     url: '/users',
+  //     active: 'nested-url',
+  //   },
+  //   {
+  //     text: 'Gestoras',
+  //     url: '/gestoras',
+  //     active: 'nested-url',
+  //   },
+  //   {
+  //     text: 'Desenvolvedoras',
+  //     url: '/devs',
+  //     active: 'nested-url',
+  //   },
+  //   {
+  //     text: 'Administradoras',
+  //     url: '/suporte',
+  //     active: 'nested-url',
+  //   },
+  // ],
 };

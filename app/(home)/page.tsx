@@ -7,10 +7,10 @@ export default function HomePage() {
       <p className="text-fd-muted-foreground">
         Você pode abrir{' '}
         <Link
-          href="/devs"
+          href="/docs/gestoras/intro"
           className="text-fd-foreground font-semibold underline"
         >
-          /devs
+          /docs
         </Link>{' '}
         e ver a documentação para pessoas desenvolvedoras.
       </p>

@@ -24,7 +24,7 @@ export default async function Page(props: {
       repo: 'manual',
       sha: 'feat/new-ui',
       // file path, make sure it's valid
-      path: `content/devs/${page.file.path}`,
+      path: `content/docs/${page.file.path}`,
     }}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
