@@ -7,7 +7,7 @@ export default function HomePage() {
       <p className="text-fd-muted-foreground">
         Você pode abrir{' '}
         <Link
-          href="/docs/gestoras/intro"
+          href="/docs/usuarios/intro"
           className="text-fd-foreground font-semibold underline"
         >
           /docs

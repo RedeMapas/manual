@@ -1,5 +1,5 @@
 {
-    "title": "Gestoras",
+    "title": "Usuários",
     "description": "The description of root folder (optional)",
     "root": true,
     "pages": ["intro", "home", "agents", "projects", "spaces", "events", "oportunidades", "---My Separator---", "duvidas-frequentes", "referencias" ]

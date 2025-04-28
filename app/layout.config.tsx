@@ -30,8 +30,8 @@ export const baseOptions: BaseLayoutProps = {
   //     active: 'nested-url',
   //   },
   //   {
-  //     text: 'Gestoras',
-  //     url: '/gestoras',
+  //     text: 'Usuários',
+  //     url: '/usuarios',
   //     active: 'nested-url',
   //   },
   //   {
