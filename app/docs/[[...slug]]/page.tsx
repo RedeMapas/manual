@@ -8,6 +8,7 @@ import {
 import { notFound } from 'next/navigation';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
 import { getMDXComponents } from '@/mdx-components';
+import Footer from '@/components/Footer';
 
 export default async function Page(props: {
   params: Promise<{ slug?: string[] }>;
@@ -17,9 +18,13 @@ export default async function Page(props: {
   if (!page) notFound();
 
   const MDXContent = page.data.body;
+  const optionsFooter = {
+    enabled: true,
+    component: <Footer />,
+  };
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full}   editOnGithub={{
+    <DocsPage toc={page.data.toc} full={page.data.full} footer={optionsFooter} editOnGithub={{
       owner: 'redemapas',
       repo: 'manual',
       sha: 'feat/new-ui',
