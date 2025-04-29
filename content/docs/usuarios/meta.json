@@ -1,0 +1,6 @@
+{
+    "title": "Usuários",
+    "description": "The description of root folder (optional)",
+    "root": true,
+    "pages": ["intro", "home", "agents", "opportunities", "projects", "spaces", "events", "---My Separator---", "duvidas-frequentes", "referencias" ]
+  }
