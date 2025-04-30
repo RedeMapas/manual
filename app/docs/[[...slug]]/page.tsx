@@ -27,7 +27,7 @@ export default async function Page(props: {
     <DocsPage toc={page.data.toc} full={page.data.full} footer={optionsFooter} editOnGithub={{
       owner: 'redemapas',
       repo: 'manual',
-      sha: 'feat/new-ui',
+      sha: 'main',
       // file path, make sure it's valid
       path: `content/docs/${page.file.path}`,
     }}>
@@ -57,7 +57,7 @@ export async function generateMetadata(props: {
   if (!page) notFound();
 
   return {
-    title: page.data.title,
+    title: `Manual Mapas - ${page.data.title}`,
     description: page.data.description,
   };
 }
