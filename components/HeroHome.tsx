@@ -8,7 +8,7 @@ export default function Example() {
             <strong>Mapas</strong>
             </h2>
             <p className="mt-6 text-lg/8 text-pretty text-gray-300">
-            Um jeito descomplicado de começar com o software mais usado pela cultura brasileira.
+            Um jeito descomplicado de começar com o software mais utilizado pela cultura brasileira.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
               <a
