@@ -1,8 +1,8 @@
 import Image from 'next/image';
 
-import imgMountain from "./img/home/undraw_mountain.svg";
-import imgReact from "./img/home/undraw_react.svg";
-import imgTree from "./img/home/undraw_tree.svg";
+import imgAgents from "./img/home/agents.svg";
+import imgDevelopers from "./img/home/developers.svg";
+import imgManagers from "./img/home/managers.svg";
 
 export default function Example() {
   return (
@@ -17,12 +17,12 @@ export default function Example() {
             <div className="absolute inset-px rounded-lg lg:rounded-l-[2rem]"></div>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
               <div className="px-8 pt-8 pb-3 sm:px-10 sm:pt-10 sm:pb-0">
-                <Image className="w-auto h-36 mx-auto" alt="Montanhas" src={imgMountain} />
+                <Image className="w-auto h-36 mx-auto" alt="Pessoa dançando com o sol ao fundo" src={imgAgents} />
                 <h3 className="mt-10 mb-5 text-2xl font-bold">
-                  Público Final
+                  Agentes Artísticos
                 </h3>
                 <p className="my-5 max-w-lg text-sm/6  max-lg:text-center">
-                  Cidadão comum gostaria de ter opções para conhecer melhor a agenda de eventos, as oportunidades, os espaços e agentes culturais.
+                  Pessoas que desejam divulgar a agenda de seus circuitos artísticos, eventos e outras oportunidades.
                 </p>
                 <a
                   href="/docs/usuarios/intro"
@@ -47,12 +47,12 @@ export default function Example() {
             <div className="absolute inset-px rounded-lg"></div>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-l-[calc(2rem+1px)]">
               <div className="px-8 pt-8 pb-3 sm:px-10 sm:pt-10 sm:pb-0">
-                <Image className="w-auto h-36 mx-auto" alt="Montanhas" src={imgTree} />
+                <Image className="w-auto h-36 mx-auto" alt="Pintora criando em tela com pincéis" src={imgManagers} />
                 <h3 className="mt-10 mb-5 text-2xl font-bold">
                   Gestores
                 </h3>
                 <p className="my-5 max-w-lg text-sm/6  max-lg:text-center">
-                  Coordenação do processo de editais e projetos, publicação dos resultados e monitoramento da execução de editais.
+                  Coordenação do processo de editais e iniciativas, publicação dos resultados e monitoramento da execução de editais.
                 </p>
                 <a
                   href="#"
@@ -79,12 +79,12 @@ export default function Example() {
             <div className="absolute inset-px rounded-lg max-lg:rounded-b-[2rem] lg:rounded-r-[2rem]"></div>
             <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-r-[calc(2rem+1px)]">
               <div className="px-8 pt-8 pb-3 sm:px-10 sm:pt-10 sm:pb-0">
-                <Image className="w-auto h-36 mx-auto" alt="Montanhas" src={imgReact} />
+                <Image className="w-auto h-36 mx-auto" alt="Equipe trabalhando com tecnologia e engrenagens" src={imgDevelopers} />
                 <h3 className="mt-10 mb-5 text-2xl font-bold">
                   Desenvolvedores
                 </h3>
                 <p className="my-5 max-w-lg text-sm/6  max-lg:text-center">
-                  Pessoa responsável por manter a infraestrutura e dar manutenção nas tecnologias digitais utilizadas pelas secretarias de cultura.
+                  Pessoa responsável por manter a infraestrutura e dar manutenção nas tecnologias digitais utilizadas pela Rede das Artes.
                 </p>
                 <a
                   href="/docs/devs"
