@@ -9,8 +9,8 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
  */
 import Image from 'next/image';
 
-import LogoRedeMapas from '../public/img/light-logo-rede-mapas-squared.png';
-import LogoRedeMapasDark from '../public/img/dark-logo-rede-mapas-squared.png';
+import LogoRedeMapas from '../public/svg/dark-logo-rede-das-artes.svg';
+import LogoRedeMapasDark from '../public/svg/light-logo-rede-das-artes.svg';
 
 export const baseOptions: BaseLayoutProps = {
   githubUrl: 'https://github.com/redemapas/manual',
@@ -25,10 +25,10 @@ export const baseOptions: BaseLayoutProps = {
         >
           <circle cx={12} cy={12} r={12} fill="currentColor" />
         </svg> */}
-        <Image alt="M" src={LogoRedeMapas} className="w-auto h-14 object-contain mx-auto block dark:hidden" />
-        <Image alt="M" src={LogoRedeMapasDark} className="w-auto h-14 object-contain mx-auto hidden dark:block" />
+        <Image alt="M" src={LogoRedeMapas} className="w-25 object-contain mx-auto block dark:hidden" />
+        <Image alt="M" src={LogoRedeMapasDark} className="w-25 object-contain mx-auto hidden dark:block" />
         
-        <h1>Manual Mapas</h1>
+        <h1>Manual Rede das Artes</h1>
       </>
     ),
   },
