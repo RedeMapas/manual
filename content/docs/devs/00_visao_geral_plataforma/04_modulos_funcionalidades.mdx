@@ -9,30 +9,31 @@ A arquitetura modular do Mapas Culturais, evidente no diretório `src/modules`, 
 
 ## Visão Geral da Arquitetura Modular
 
-```mermaid
+<Mermaid
+  chart="
 graph TB
-    subgraph "Core Modules"
+    subgraph Core Modules
         ENTITIES[Entities]
         AUTH[Authentication]
         SEARCH[Search]
         NOTIFICATIONS[Notifications]
     end
     
-    subgraph "Feature Modules"
+    subgraph Feature Modules
         OPPORTUNITIES[Opportunities]
         EVALUATIONS[Evaluation Methods]
         REPORTS[Reports]
         CHARTS[Charts]
     end
     
-    subgraph "UI Modules"
+    subgraph UI Modules
         COMPONENTS[Components]
         THEMES[Theme Customizer]
         PANELS[Panel]
         HOME[Home]
     end
     
-    subgraph "Integration Modules"
+    subgraph Integration Modules
         LGPD[LGPD Compliance]
         SPREADSHEETS[Spreadsheets]
         GEOLOCATION[Geo Divisions]
@@ -48,7 +49,7 @@ graph TB
     COMPONENTS --> THEMES
     PANELS --> ENTITIES
     HOME --> ENTITIES
-```
+" />
 
 ## Módulos Principais
 

@@ -9,32 +9,29 @@ A capacidade de personalizar a interface do usuário (UI) e o comportamento da p
 
 ## Visão Geral da Personalização
 
-```mermaid
+<Mermaid
+  chart="
 graph TB
-    subgraph "Visual Customization"
+    subgraph Visual Customization
         BRANDING[Branding & Logos]
         THEMES[Colors & Themes]
         LAYOUT[Layout & Structure]
     end
-    
-    subgraph "Content Customization"
+    subgraph Content Customization
         FIELDS[Custom Fields]
         ENTITIES[Entity Types]
         TAXONOMIES[Taxonomies]
     end
-    
-    subgraph "Workflow Customization"
+    subgraph Workflow Customization
         PROCESSES[Registration Processes]
         EVALUATIONS[Evaluation Flows]
         NOTIFICATIONS[Notification Templates]
     end
-    
-    subgraph "Integration Customization"
+    subgraph Integration Customization
         SSO[Authentication Providers]
         APIS[External APIs]
         LOCALIZATION[Language & Region]
     end
-    
     BRANDING --> THEMES
     THEMES --> LAYOUT
     FIELDS --> ENTITIES
@@ -43,14 +40,16 @@ graph TB
     EVALUATIONS --> NOTIFICATIONS
     SSO --> APIS
     APIS --> LOCALIZATION
-```
+" />
 
 ## Tipos de Configurações de Personalização
 
 ### 1. Branding e Aparência Visual
 
 #### Logotipos e Identidade Visual
+
 **Funcionalidades disponíveis:**
+
 - Upload de logotipos personalizados (principal, secundário, favicon)
 - Configuração de ícones para diferentes seções
 - Imagens de fundo e banners customizáveis

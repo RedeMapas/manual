@@ -9,37 +9,34 @@ A arquitetura do Mapas Culturais segue os princípios de **separação de respon
 
 ## Visão Geral da Arquitetura
 
-```mermaid
+<Mermaid
+  chart="
 graph TB
-    subgraph "Frontend Layer"
+    subgraph Frontend Layer
         UI[Interface do Usuário<br/>HTML, CSS, JavaScript]
         VUE[Componentes Vue.js<br/>Reativos e Modulares]
         API_CLIENT[Cliente API<br/>Comunicação REST]
         WEBPACK[Webpack + Laravel Mix<br/>Build e Assets]
     end
-    
-    subgraph "Backend Layer - PHP Slim Framework"
+    subgraph Backend Layer - PHP Slim Framework
         API[API REST<br/>Endpoints CRUD]
         AUTH[Autenticação<br/>JWT + Multi-Provider]
         BUSINESS[Lógica de Negócio<br/>Regras e Validações]
         MODULES[Módulos<br/>Extensibilidade]
         TEMPLATES[Templating<br/>Mustache]
     end
-    
-    subgraph "Data Layer"
+    subgraph Data Layer
         ORM[Doctrine ORM<br/>Mapeamento O-R]
         DB[(PostgreSQL<br/>Dados Principais)]
         CACHE[(Redis<br/>Cache e Sessões)]
         FILES[Armazenamento<br/>Arquivos e Imagens]
     end
-    
-    subgraph "External Services"
+    subgraph External Services
         EMAIL[Serviços de Email<br/>Symfony Mailer]
         SSO[Provedores SSO<br/>OpenID, Login Cidadão]
         SPREADSHEET[Processamento<br/>PHPSpreadsheet]
         MARKDOWN[Renderização<br/>Markdown Parser]
     end
-    
     UI --> VUE
     VUE --> API_CLIENT
     WEBPACK --> UI
@@ -56,7 +53,7 @@ graph TB
     BUSINESS --> EMAIL
     BUSINESS --> SPREADSHEET
     BUSINESS --> MARKDOWN
-```
+" />
 
 ### Explicação do Diagrama
 
@@ -145,14 +142,15 @@ graph TB
 
 ### 1. Fluxo de Autenticação
 
-```mermaid
+<Mermaid
+  chart="
 sequenceDiagram
     participant U as Usuário
     participant F as Frontend
     participant A as API
     participant S as SSO Provider
     participant D as Database
-    
+
     U->>F: Login Request
     F->>A: POST /auth/login
     A->>S: Validate Credentials
@@ -160,18 +158,19 @@ sequenceDiagram
     A->>D: Store/Update User
     A->>F: JWT Token
     F->>U: Redirect to Dashboard
-```
+" />
 
 ### 2. Fluxo de Criação de Entidade
 
-```mermaid
+<Mermaid
+  chart="
 sequenceDiagram
     participant U as Usuário
     participant F as Frontend
     participant A as API
     participant B as Business Logic
     participant D as Database
-    
+
     U->>F: Create Entity Form
     F->>A: POST /entities
     A->>A: Validate JWT
@@ -182,18 +181,19 @@ sequenceDiagram
     B->>A: Success Response
     A->>F: Entity Created
     F->>U: Success Message
-```
+" />
 
 ### 3. Fluxo de Busca
 
-```mermaid
+<Mermaid
+  chart="
 sequenceDiagram
     participant U as Usuário
     participant F as Frontend
     participant A as API
     participant C as Cache
     participant D as Database
-    
+
     U->>F: Search Query
     F->>A: GET /search?q=...
     A->>C: Check Cache
@@ -206,7 +206,7 @@ sequenceDiagram
     end
     A->>F: Search Results
     F->>U: Display Results
-```
+" />
 
 ## Módulos e Plugins
 
