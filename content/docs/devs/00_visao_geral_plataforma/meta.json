@@ -3,6 +3,9 @@
   "description": "Arquitetura, tecnologias e conceitos fundamentais",
   "pages": [
     "01_funcoes_tecnologias",
-    "02_arquitetura_sistema"
+    "02_arquitetura_sistema",
+    "03_casos_uso_implementacoes",
+    "04_modulos_funcionalidades",
+    "05_personalizacao_configuracao"
   ]
 }

@@ -12,43 +12,68 @@ A arquitetura do Mapas Culturais segue os princípios de **separação de respon
 ```mermaid
 graph TB
     subgraph "Frontend Layer"
-        UI[Interface do Usuário]
-        VUE[Componentes Vue.js]
-        API_CLIENT[Cliente API]
+        UI[Interface do Usuário<br/>HTML, CSS, JavaScript]
+        VUE[Componentes Vue.js<br/>Reativos e Modulares]
+        API_CLIENT[Cliente API<br/>Comunicação REST]
+        WEBPACK[Webpack + Laravel Mix<br/>Build e Assets]
     end
     
-    subgraph "Backend Layer"
-        API[API REST]
-        AUTH[Autenticação]
-        BUSINESS[Lógica de Negócio]
-        MODULES[Módulos]
+    subgraph "Backend Layer - PHP Slim Framework"
+        API[API REST<br/>Endpoints CRUD]
+        AUTH[Autenticação<br/>JWT + Multi-Provider]
+        BUSINESS[Lógica de Negócio<br/>Regras e Validações]
+        MODULES[Módulos<br/>Extensibilidade]
+        TEMPLATES[Templating<br/>Mustache]
     end
     
     subgraph "Data Layer"
-        ORM[Doctrine ORM]
-        DB[(PostgreSQL)]
-        CACHE[(Redis)]
+        ORM[Doctrine ORM<br/>Mapeamento O-R]
+        DB[(PostgreSQL<br/>Dados Principais)]
+        CACHE[(Redis<br/>Cache e Sessões)]
+        FILES[Armazenamento<br/>Arquivos e Imagens]
     end
     
     subgraph "External Services"
-        EMAIL[Serviços de Email]
-        SSO[Provedores SSO]
-        FILES[Armazenamento]
+        EMAIL[Serviços de Email<br/>Symfony Mailer]
+        SSO[Provedores SSO<br/>OpenID, Login Cidadão]
+        SPREADSHEET[Processamento<br/>PHPSpreadsheet]
+        MARKDOWN[Renderização<br/>Markdown Parser]
     end
     
     UI --> VUE
     VUE --> API_CLIENT
+    WEBPACK --> UI
     API_CLIENT --> API
     API --> AUTH
     API --> BUSINESS
     BUSINESS --> MODULES
+    BUSINESS --> TEMPLATES
     BUSINESS --> ORM
     ORM --> DB
     API --> CACHE
+    BUSINESS --> FILES
     AUTH --> SSO
     BUSINESS --> EMAIL
-    BUSINESS --> FILES
+    BUSINESS --> SPREADSHEET
+    BUSINESS --> MARKDOWN
 ```
+
+### Explicação do Diagrama
+
+**Interface do Usuário (Frontend):** Esta camada representa a aplicação do lado do cliente com a qual os usuários interagem através de navegadores web. Ela é construída usando tecnologias web padrão (HTML, CSS, JavaScript) e seu fluxo de trabalho de desenvolvimento é gerenciado por ferramentas como Webpack e Laravel Mix para compilação e empacotamento eficiente de ativos.
+
+**Backend (PHP - Slim Framework):** Este é o núcleo da aplicação, construído usando o PHP Slim Framework. Ele abriga a camada de API e serviços web, que lida com toda a lógica de negócios, processamento de dados e interações com outros serviços. Os componentes chave incluem:
+- **Lógica de Aplicação Central:** As principais funcionalidades e regras de negócio da plataforma
+- **Módulos e Plugins:** Fornecem extensibilidade, permitindo que novas funcionalidades sejam adicionadas
+- **Autenticação:** Gerencia autenticação e autorização de usuários com múltiplos provedores
+- **Serviços de E-mail:** Lida com envio de e-mails para notificações e comunicações
+- **Processamento de Planilhas:** Permite importação e exportação de dados
+- **Renderização de Markdown:** Processa conteúdo Markdown para exibição
+- **Templating:** Usa motor de template (Mustache) para gerar conteúdo HTML dinâmico
+
+**Camada de Dados:** Responsável pela persistência dos dados. O backend interage com o banco de dados principalmente através do Doctrine ORM, que abstrai as operações do banco de dados e permite que os desenvolvedores trabalhem com objetos em vez de SQL bruto.
+
+**Serviços/Integrações Externas:** Sistemas externos com os quais o Mapas Culturais interage, incluindo provedores de autenticação, serviços de e-mail, processamento de documentos e renderização de conteúdo.
 
 ## Camadas da Arquitetura
 
