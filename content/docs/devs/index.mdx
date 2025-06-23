@@ -1,61 +1,111 @@
 ---
-title: Início
-description: Visão geral para desenvolvimento
+title: Documentação para Desenvolvedores
+description: Guia completo para desenvolvimento na plataforma Mapas Culturais
 ---
 
-O projeto Mapas Culturais é uma plataforma para *mapear e conectar* agentes, espaços, eventos, projetos e oportunidades culturais. Ele permite que usuários cadastrem suas **Entidades** culturais (como artistas, locais, shows), formando um mapa interativo e uma base de dados cultural. A plataforma também gerencia **Oportunidades** (editais) com seus processos de inscrição e **Avaliação**. Usuários interagem com a plataforma através de **Componentes Vue** modernos, que se comunicam com o servidor usando uma **Classe API** centralizada. Funcionalidades importantes incluem uma **Busca** avançada com filtros, um **Painel de Controle** pessoal para gerenciar conteúdos e tarefas, e um sistema de **Autenticação** flexível.
+# Mapas Culturais - Documentação para Desenvolvedores
+
+O **Mapas Culturais** é uma plataforma colaborativa de código aberto projetada para *mapear e conectar* agentes, espaços, eventos, projetos e oportunidades culturais. A plataforma permite que usuários cadastrem suas **Entidades** culturais, formando um mapa interativo e uma base de dados cultural robusta.
 
 **Código-fonte:** [Redemapas/mapas](https://github.com/redemapas/mapas)
+
+## Visão Geral da Arquitetura
+
+A plataforma é construída com uma arquitetura moderna e modular que separa claramente as responsabilidades entre frontend e backend:
 
 <Mermaid
   chart='
 flowchart TD
-    A0["Entidades Entities"]
-    A1["Componentes Vue Vue Components"]
-    A2["Classe API"]
-    A3["Plugin de Autenticação Múltipla Local MultipleLocalAuth"]
-    A4["Oportunidades e Inscrições Opportunities & Registrations"]
-    A5["Métodos de Avaliação Evaluation Methods"]
-    A6["Painel de Controle Panel"]
-    A7["Busca Search"]
+    A0["🏛️ Entidades<br/>Entities"]
+    A1["⚡ Componentes Vue<br/>Vue Components"]
+    A2["🔌 Classe API"]
+    A3["🔐 Autenticação<br/>MultipleLocalAuth"]
+    A4["📋 Oportunidades<br/>Opportunities & Registrations"]
+    A5["📊 Métodos de Avaliação<br/>Evaluation Methods"]
+    A6["🎛️ Painel de Controle<br/>Panel"]
+    A7["🔍 Busca<br/>Search"]
+    
     A1 -- "Exibe e manipula" --> A0
-    A1 -- "Usa para comunicação backend" --> A2
+    A1 -- "Comunica via" --> A2
     A2 -- "Busca e persiste" --> A0
-    A3 -- "Fornece componentes de UI" --> A1
-    A3 -- "Usa para chamadas de autent..." --> A2
+    A3 -- "Fornece UI para" --> A1
+    A3 -- "Autentica via" --> A2
     A4 -- "São tipos de" --> A0
-    A4 -- "Usa componentes de UI" --> A1
-    A4 -- "Define métodos para" --> A5
-    A5 -- "Usa componentes de formulário" --> A1
-    A5 -- "Avalia inscrições de" --> A4
-    A6 -- "Gerencia - do usuário" --> A0
-    A6 -- "É construído com" --> A1
-    A6 -- "Usa para buscar dados do us..." --> A2
-    A6 -- "Exibe Inscrições/Avaliações" --> A4
+    A4 -- "Usa componentes" --> A1
+    A4 -- "Define métodos" --> A5
+    A5 -- "Usa formulários" --> A1
+    A5 -- "Avalia inscrições" --> A4
+    A6 -- "Gerencia" --> A0
+    A6 -- "Construído com" --> A1
+    A6 -- "Busca dados via" --> A2
+    A6 -- "Exibe" --> A4
     A7 -- "Encontra e filtra" --> A0
-    A7 -- "É implementada com" --> A1
-    A7 -- "Usa para obter resultados" --> A2
+    A7 -- "Implementada com" --> A1
+    A7 -- "Obtém resultados via" --> A2
 ' />
-## Capítulos
 
-1. [Entidades (Entities)
-](devs/01_entidades__entities__)
-2. [Componentes Vue (Vue Components)
-](devs/02_componentes_vue__vue_components__)
-3. [Classe API
-](devs/03_classe_api_)
-4. [Busca (Search)
-](devs/04_busca__search__)
-5. [Painel de Controle (Panel)
-](devs/05_painel_de_controle__panel__)
-6. [Oportunidades e Inscrições (Opportunities & Registrations)
-](devs/06_oportunidades_e_inscricoes__opportunities___registrations__)
-7. [Métodos de Avaliação (Evaluation Methods)
-](devs/07_metodos_de_avaliacao__evaluation_methods__)
-8. [Plugin de Autenticação Múltipla Local (MultipleLocalAuth)
-](devs/08_plugin_de_autenticacao_multipla_local__multiplelocalauth__)
+## Estrutura da Documentação
+
+Esta documentação está organizada em seções que cobrem desde conceitos fundamentais até implementações avançadas:
+
+### 📖 Fundamentos
+
+- **[Visão Geral da Plataforma](devs/00_visao_geral_plataforma/)** - Arquitetura, tecnologias e conceitos fundamentais
+- **[Entidades (Entities)](devs/01_entidades__entities__)** - Modelos de dados centrais da plataforma
+
+### 🛠️ Desenvolvimento Frontend
+
+- **[Componentes Vue (Vue Components)](devs/02_componentes_vue__vue_components__)** - Interface de usuário e componentes reutilizáveis
+- **[Classe API](devs/03_classe_api_)** - Comunicação entre frontend e backend
+- **[Busca (Search)](devs/04_busca__search__)** - Sistema de busca e filtros
+
+### 🎛️ Funcionalidades Principais
+
+- **[Painel de Controle (Panel)](devs/05_painel_de_controle__panel__)** - Interface administrativa e de usuário
+- **[Oportunidades e Inscrições](devs/06_oportunidades_e_inscricoes__opportunities___registrations__)** - Gestão de editais e processos seletivos
+- **[Métodos de Avaliação](devs/07_metodos_de_avaliacao__evaluation_methods__)** - Sistemas de avaliação e seleção
+
+### 🔐 Segurança e Autenticação
+
+- **[Plugin de Autenticação Múltipla Local](devs/08_plugin_de_autenticacao_multipla_local__multiplelocalauth__)** - Sistema de autenticação flexível
+
+## Tecnologias Principais
+
+### Backend
+- **PHP** com framework **Slim**
+- **Doctrine ORM** para persistência de dados
+- **JWT** para autenticação segura
+- **Symfony Mailer** para comunicações
+
+### Frontend
+- **Vue.js** para componentes interativos
+- **Webpack** e **Laravel Mix** para build
+- **Sass/SCSS** para estilização
+- **JavaScript ES6+** moderno
+
+### Infraestrutura
+- **PostgreSQL** como banco de dados principal
+- **Redis** para cache e sessões
+- **Docker** para containerização
+
+## Começando
+
+Para começar a desenvolver na plataforma Mapas Culturais:
+
+1. **Leia a [Visão Geral da Plataforma](devs/00_visao_geral_plataforma/)** para entender a arquitetura
+2. **Configure o ambiente** seguindo o README do repositório
+3. **Explore as [Entidades](devs/01_entidades__entities__)** para entender os modelos de dados
+4. **Estude os [Componentes Vue](devs/02_componentes_vue__vue_components__)** para desenvolvimento frontend
+
+## Contribuindo
+
+O Mapas Culturais é um projeto de código aberto mantido pela comunidade. Contribuições são bem-vindas através de:
+
+- **Issues** para reportar bugs ou sugerir melhorias
+- **Pull Requests** com correções ou novas funcionalidades
+- **Documentação** para melhorar este guia
+- **Testes** para garantir qualidade do código
 
 ---
 
-Generated by [AI Codebase Knowledge Builder](https://github.com/The-Pocket/Tutorial-Codebase-Knowledge)
-Welcome to the docs! You can start writing documents in `/content/docs`.
+*Esta documentação é mantida pela comunidade de desenvolvedores do Mapas Culturais. Para dúvidas ou sugestões, abra uma issue no repositório oficial.*

@@ -1,0 +1,138 @@
+---
+title: Funções Essenciais e Tecnologias Chave
+description: Detalhamento das tecnologias e dependências principais da plataforma
+---
+
+# Funções Essenciais e Tecnologias Chave
+
+Esta seção detalha as tecnologias fundamentais que compõem a plataforma Mapas Culturais, suas funções específicas e como elas se integram para formar um sistema robusto e escalável.
+
+## Stack Tecnológico
+
+### Backend (PHP)
+
+O backend é construído em **PHP** utilizando um conjunto de bibliotecas modernas e bem estabelecidas:
+
+#### Framework e API
+- **`slim/slim`** - Micro-framework PHP para construção de APIs RESTful
+- **`doctrine/orm`** - ORM (Object-Relational Mapper) para abstração de banco de dados
+- **`respect/validation`** - Motor de validação para garantir integridade dos dados
+
+#### Autenticação e Segurança
+- **`firebase/php-jwt`** - Implementação JWT para autenticação segura
+- **`opauth/openid`** - Suporte para autenticação OpenID
+- **`opauth/logincidadao`** - Integração com Login Cidadão (gov.br)
+- **`opauth/authentik`** - Suporte para Authentik SSO
+
+#### Comunicação e Processamento
+- **`symfony/mailer`** - Sistema de envio de e-mails para notificações
+- **`phpoffice/phpspreadsheet`** - Processamento de planilhas (import/export)
+- **`monolog/monolog`** - Sistema de logging robusto
+- **`michelf/php-markdown`** - Parser Markdown para conteúdo dinâmico
+
+#### Templating
+- **`mustache/mustache`** - Sistema de templates sem lógica para renderização
+
+### Frontend (JavaScript)
+
+O frontend utiliza tecnologias modernas para uma experiência de usuário rica:
+
+#### Build e Empacotamento
+- **`laravel-mix`** - API fluente para configuração do Webpack
+- **`webpack`** - Empacotador de módulos JavaScript
+- **`fast-glob`** - Biblioteca de globbing para correspondência de arquivos
+
+#### Estilização
+- **`sass`** / **`sass-loader`** - Pré-processador CSS
+- **`postcss`** - Pós-processamento CSS com plugins
+- **`resolve-url-loader`** - Resolução de URLs em arquivos CSS/Sass
+
+## Funções Essenciais da Plataforma
+
+### 1. Gestão de Usuários e Autenticação
+- **Registro e login** de usuários
+- **Múltiplos provedores** de autenticação (OpenID, Login Cidadão, Authentik)
+- **Autorização baseada em papéis** e permissões
+- **Gestão de sessões** segura com JWT
+
+### 2. Gestão de Conteúdo Cultural
+- **CRUD completo** para entidades culturais (agentes, espaços, eventos, projetos)
+- **Upload e processamento** de arquivos e imagens
+- **Validação robusta** de dados de entrada
+- **Versionamento** de informações
+
+### 3. Sistema de Busca e Descoberta
+- **Busca textual** com indexação eficiente
+- **Filtros geográficos** baseados em localização
+- **Busca facetada** por categorias e tags
+- **API de busca** para integrações externas
+
+### 4. Gestão de Oportunidades
+- **Criação e gestão** de editais e chamadas públicas
+- **Processo de inscrição** online com formulários dinâmicos
+- **Sistema de avaliação** configurável
+- **Acompanhamento** de projetos aprovados
+
+### 5. Comunicação e Notificações
+- **Sistema de e-mail** para notificações automáticas
+- **Alertas** personalizados por usuário
+- **Comunicação** entre agentes culturais
+- **Relatórios** e estatísticas
+
+### 6. Importação e Exportação de Dados
+- **Import/export** via planilhas Excel/CSV
+- **APIs** para integração com sistemas externos
+- **Backup** e migração de dados
+- **Sincronização** entre instâncias
+
+## Inovações e Diferenciais
+
+### Arquitetura Modular
+- **Plugins** para extensão de funcionalidades
+- **Módulos** independentes e reutilizáveis
+- **Temas** personalizáveis por instituição
+- **APIs** padronizadas para integrações
+
+### Foco no Setor Cultural
+- **Modelos de dados** específicos para cultura
+- **Fluxos de trabalho** adaptados ao setor
+- **Terminologia** e conceitos culturais
+- **Integração** com políticas públicas
+
+### Código Aberto e Colaborativo
+- **Transparência** total do código
+- **Comunidade ativa** de desenvolvedores
+- **Contribuições** da comunidade
+- **Documentação** aberta e colaborativa
+
+### Suporte a Múltiplas Instâncias
+- **Personalização** por instituição
+- **Configuração** flexível
+- **Branding** customizável
+- **Integração** com sistemas locais
+
+## Requisitos de Sistema
+
+### Servidor
+- **PHP 8.0+** com extensões necessárias
+- **PostgreSQL 12+** com extensões geoespaciais
+- **Redis** para cache e sessões
+- **Nginx/Apache** como servidor web
+
+### Desenvolvimento
+- **Node.js 16+** para build do frontend
+- **Composer** para dependências PHP
+- **Git** para controle de versão
+- **Docker** (opcional) para containerização
+
+## Próximos Passos
+
+Para entender como essas tecnologias se integram na arquitetura geral:
+
+1. **[Arquitetura do Sistema](02_arquitetura_sistema)** - Diagramas e fluxos de dados
+2. **[Entidades](../01_entidades__entities__)** - Modelos de dados implementados
+3. **[Componentes Vue](../02_componentes_vue__vue_components__)** - Interface de usuário
+
+---
+
+*Esta seção fornece a base técnica para entender as escolhas arquiteturais da plataforma.*

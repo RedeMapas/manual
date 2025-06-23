@@ -1,0 +1,8 @@
+{
+  "title": "Visão Geral da Plataforma",
+  "description": "Arquitetura, tecnologias e conceitos fundamentais",
+  "pages": [
+    "01_funcoes_tecnologias",
+    "02_arquitetura_sistema"
+  ]
+}
