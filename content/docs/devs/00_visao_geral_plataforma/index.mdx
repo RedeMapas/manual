@@ -1,0 +1,122 @@
+---
+title: Visão Geral da Plataforma
+description: Arquitetura, tecnologias e conceitos fundamentais do Mapas Culturais
+---
+
+# Visão Geral da Plataforma Mapas Culturais
+
+O **Mapas Culturais** é uma plataforma colaborativa de código aberto projetada para coletar, organizar e disponibilizar informações sobre agentes culturais, espaços, eventos e projetos. Seu objetivo principal é fornecer às autoridades públicas uma visão abrangente da cultura local e aos cidadãos um mapa interativo dos espaços e eventos culturais.
+
+## Objetivos da Plataforma
+
+### Para Gestores Públicos
+- **Visão estratégica** da cultura local através de dados estruturados
+- **Formulação de políticas** baseada em evidências
+- **Gestão de recursos** e programas culturais
+- **Transparência** nos processos de fomento cultural
+
+### Para Cidadãos e Agentes Culturais
+- **Descoberta** de eventos e espaços culturais
+- **Cadastro e gestão** de informações culturais
+- **Participação** em oportunidades e editais
+- **Conexão** com outros agentes do setor
+
+## Arquitetura do Sistema
+
+A plataforma utiliza uma arquitetura moderna e escalável baseada em:
+
+### Backend (PHP)
+- **Framework**: Slim Framework para APIs RESTful
+- **ORM**: Doctrine para mapeamento objeto-relacional
+- **Autenticação**: JWT e múltiplos provedores (OpenID, Login Cidadão)
+- **Comunicação**: Symfony Mailer para notificações
+- **Processamento**: PHPSpreadsheet para importação/exportação
+
+### Frontend (JavaScript)
+- **Framework**: Vue.js para componentes interativos
+- **Build**: Webpack com Laravel Mix
+- **Estilização**: Sass/SCSS com PostCSS
+- **Templating**: Mustache para renderização dinâmica
+
+### Banco de Dados
+- **Principal**: PostgreSQL com extensões geoespaciais
+- **Cache**: Redis para sessões e cache de dados
+- **ORM**: Doctrine para abstração de dados
+
+## Conceitos Fundamentais
+
+### Entidades Principais
+
+1. **Agentes** - Pessoas físicas ou jurídicas do setor cultural
+2. **Espaços** - Locais onde acontecem atividades culturais
+3. **Eventos** - Atividades culturais com data e local específicos
+4. **Projetos** - Iniciativas culturais de médio/longo prazo
+5. **Oportunidades** - Editais, chamadas e processos seletivos
+
+### Relacionamentos
+- Agentes podem ser **responsáveis** por espaços, eventos e projetos
+- Eventos acontecem em **espaços** específicos
+- Projetos podem gerar **eventos** e utilizar **espaços**
+- Oportunidades podem financiar **projetos** e **eventos**
+
+## Módulos e Funcionalidades
+
+### Gestão de Conteúdo
+- **Cadastro** e edição de entidades
+- **Upload** e processamento de arquivos
+- **Validação** de dados e integridade
+- **Versionamento** de informações
+
+### Sistema de Busca
+- **Busca textual** com indexação
+- **Filtros geográficos** e por categorias
+- **Busca avançada** com múltiplos critérios
+- **API de busca** para integrações
+
+### Gestão de Oportunidades
+- **Criação** de editais e chamadas
+- **Processo de inscrição** online
+- **Métodos de avaliação** configuráveis
+- **Acompanhamento** de projetos aprovados
+
+### Painel de Controle
+- **Dashboard** personalizado por usuário
+- **Gestão** de entidades próprias
+- **Notificações** e alertas
+- **Relatórios** e estatísticas
+
+## Diferenciais Técnicos
+
+### Modularidade
+- **Arquitetura modular** permite extensões
+- **Plugins** para funcionalidades específicas
+- **Temas** personalizáveis por instituição
+- **APIs** para integrações externas
+
+### Escalabilidade
+- **Separação** clara entre frontend e backend
+- **Cache** inteligente para performance
+- **Otimização** de consultas geoespaciais
+- **Containerização** com Docker
+
+### Segurança
+- **Autenticação** multi-fator
+- **Autorização** baseada em papéis
+- **Conformidade** com LGPD
+- **Auditoria** de ações dos usuários
+
+## Próximos Passos
+
+Para aprofundar seu conhecimento sobre a plataforma:
+
+1. **[Funções e Tecnologias](01_funcoes_tecnologias)** - Detalhes técnicos das dependências
+2. **[Arquitetura do Sistema](02_arquitetura_sistema)** - Diagramas e fluxos de dados
+3. **[Casos de Uso e Implementações](03_casos_uso_implementacoes)** - Exemplos reais de uso
+4. **[Módulos e Funcionalidades](04_modulos_funcionalidades)** - Detalhamento dos módulos
+5. **[Personalização e Configuração](05_personalizacao_configuracao)** - Opções de customização
+6. **[Entidades](../01_entidades__entities__)** - Modelos de dados principais
+7. **[Componentes Vue](../02_componentes_vue__vue_components__)** - Interface de usuário
+
+---
+
+*Esta seção fornece uma base sólida para entender a plataforma. Continue explorando as seções específicas para detalhes de implementação.*
