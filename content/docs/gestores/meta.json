@@ -1,0 +1,19 @@
+{
+    "title": "Gestores",
+    "description": "Manual para gestores culturais da Rede das Artes",
+    "root": true,
+    "pages": [
+        "intro", 
+        "painel-controle", 
+        "gerenciar-agentes", 
+        "gerenciar-oportunidades", 
+        "gerenciar-projetos", 
+        "gerenciar-espacos", 
+        "gerenciar-eventos", 
+        "relatorios-metricas", 
+        "configuracoes-plataforma", 
+        "---.---", 
+        "duvidas-frequentes", 
+        "referencias"
+    ]
+}
