@@ -23,7 +23,7 @@ const roles = [
     alt: 'Pintora criando em tela com pincéis',
     description:
       'Coordenação do processo de editais e iniciativas, publicação dos resultados e monitoramento da execução de editais.',
-    link: '#',
+    link: '/docs/gestores/intro',
     linkText: 'Saiba mais',
     bgColor: 'bg-blue-900',
     textColor: 'text-white',
@@ -64,11 +64,9 @@ export default function Example() {
                   <p className="my-5 max-w-lg text-sm leading-6 mx-auto">{role.description}</p>
                   <a
                     href={role.link}
-                    className={`inline-block rounded-md m-1 px-3.5 py-2.5 text-sm font-semibold shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 ${
-                      role.disabled
-                        ? 'bg-gray-300 text-gray-900 cursor-not-allowed'
-                        : `${role.bgColor} ${role.textColor} hover:opacity-90 focus-visible:outline-${role.bgColor}`
-                    }`}
+                    className={`inline-block rounded-md m-1 px-3.5 py-2.5 text-sm font-semibold shadow-xs 
+                                focus-visible:outline-2 focus-visible:outline-offset-2 
+                                ${role.bgColor} ${role.textColor} hover:opacity-90`}
                   >
                     {role.linkText}
                   </a>
