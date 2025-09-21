@@ -24,10 +24,10 @@ const roles = [
     description:
       'Coordenação do processo de editais e iniciativas, publicação dos resultados e monitoramento da execução de editais.',
     link: '#',
-    linkText: 'Em Breve',
-    bgColor: 'bg-gray-300',
-    textColor: 'text-gray-900',
-    disabled: true,
+    linkText: 'Saiba mais',
+    bgColor: 'bg-blue-900',
+    textColor: 'text-white',
+    roundedClass: 'lg:rounded-l-[2rem]',
   },
   {
     title: 'Desenvolvedores',
