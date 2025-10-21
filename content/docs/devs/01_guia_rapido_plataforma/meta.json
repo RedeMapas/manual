@@ -1,0 +1,10 @@
+{
+  "title": "Guia Rápido",
+  "description": "Arquitetura, tecnologias e conceitos fundamentais",
+  "pages": [
+    "01_introducao_praticas_cultura_colaborativa_software_livre",
+    "02_customizacao",
+    "03_suporte_tecnico_resolucao_problemas",
+    "04_gestao_dados"
+  ]
+}

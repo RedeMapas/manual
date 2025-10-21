@@ -1,0 +1,18 @@
+{
+  "title": "Guia Avançado",
+  "description": "Documentação técnica completa da plataforma Mapas Culturais",
+  "root": true,
+  "pages": [
+    "00_visao_geral_plataforma",
+    "01_entidades__entities__",
+    "02_componentes_vue__vue_components__",
+    "03_classe_api_",
+    "04_busca__search__",
+    "05_painel_de_controle__panel__",
+    "06_oportunidades_e_inscricoes__opportunities___registrations__",
+    "07_metodos_de_avaliacao__evaluation_methods__",
+    "08_plugin_de_autenticacao_multipla_local__multiplelocalauth__",
+    "09_plugins_index",
+    "10_themes_index"
+  ]
+}
