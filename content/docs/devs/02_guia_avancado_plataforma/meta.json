@@ -1,7 +1,6 @@
 {
   "title": "Guia Avançado",
   "description": "Documentação técnica completa da plataforma Mapas Culturais",
-  "root": true,
   "pages": [
     "00_visao_geral_plataforma",
     "01_entidades__entities__",
