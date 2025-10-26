@@ -1,6 +1,6 @@
 {
-    "title": "Usuários",
-    "description": "",
-    "root": true,
-    "pages": ["intro", "home", "agents", "opportunities", "projects", "spaces", "events", "---.---", "duvidas-frequentes", "referencias" ]
-  }
+  "title": "Usuários",
+  "description": "Guia completo para navegação e uso da plataforma Rede das Artes",
+  "root": true,
+  "pages": ["intro", "home", "agents", "opportunities", "projects", "spaces", "events", "---.---", "duvidas-frequentes", "referencias" ]
+}
