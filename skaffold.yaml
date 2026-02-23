@@ -1,0 +1,45 @@
+apiVersion: skaffold/v4beta13
+kind: Config
+metadata:
+  name: manual
+
+build:
+  artifacts:
+    - image: ghcr.io/redemapas/manual
+      docker:
+        dockerfile: Dockerfile
+  local:
+    useBuildkit: true
+
+deploy:
+  helm:
+    releases:
+      - name: manual
+        chartPath: helm/manual
+        namespace: default
+        valuesFiles:
+          - helm/manual/values.yaml
+        setValueTemplates:
+          image.repository: "{{.IMAGE_REPO_ghcr_io_redemapas_manual}}"
+          image.tag: "{{.IMAGE_TAG_ghcr_io_redemapas_manual}}"
+
+profiles:
+  - name: dev
+    build:
+      artifacts:
+        - image: ghcr.io/redemapas/manual
+          docker:
+            dockerfile: Dockerfile
+    deploy:
+      helm:
+        releases:
+          - name: manual-dev
+            chartPath: helm/manual
+            namespace: manual-dev
+            createNamespace: true
+            valuesFiles:
+              - helm/manual/values.yaml
+            setValueTemplates:
+              image.repository: "{{.IMAGE_REPO_ghcr_io_redemapas_manual}}"
+              image.tag: "{{.IMAGE_TAG_ghcr_io_redemapas_manual}}"
+              ingress.namespacePrefix: true
