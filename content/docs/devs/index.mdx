@@ -5,112 +5,693 @@ description: Guia completo para desenvolvimento na plataforma Mapas Culturais
 
 # Mapas Culturais - Documentação para Desenvolvedores
 
-O **Mapas Culturais** é uma plataforma colaborativa de código aberto projetada para *mapear e conectar* agentes, espaços, eventos, projetos e oportunidades culturais. A plataforma permite que usuários cadastrem suas **Entidades** culturais, formando um mapa interativo e uma base de dados cultural robusta.
-
-**Código-fonte:** [Redemapas/mapas](https://github.com/redemapas/mapas)
-
-## Visão Geral da Arquitetura
-
-A plataforma é construída com uma arquitetura moderna e modular que separa claramente as responsabilidades entre frontend e backend:
-
-<Mermaid
-  chart='
-flowchart TD
-    A0["🏛️ Entidades<br/>Entities"]
-    A1["⚡ Componentes Vue<br/>Vue Components"]
-    A2["🔌 Classe API"]
-    A3["🔐 Autenticação<br/>MultipleLocalAuth"]
-    A4["📋 Oportunidades<br/>Opportunities & Registrations"]
-    A5["📊 Métodos de Avaliação<br/>Evaluation Methods"]
-    A6["🎛️ Painel de Controle<br/>Panel"]
-    A7["🔍 Busca<br/>Search"]
-    
-    A1 -- "Exibe e manipula" --> A0
-    A1 -- "Comunica via" --> A2
-    A2 -- "Busca e persiste" --> A0
-    A3 -- "Fornece UI para" --> A1
-    A3 -- "Autentica via" --> A2
-    A4 -- "São tipos de" --> A0
-    A4 -- "Usa componentes" --> A1
-    A4 -- "Define métodos" --> A5
-    A5 -- "Usa formulários" --> A1
-    A5 -- "Avalia inscrições" --> A4
-    A6 -- "Gerencia" --> A0
-    A6 -- "Construído com" --> A1
-    A6 -- "Busca dados via" --> A2
-    A6 -- "Exibe" --> A4
-    A7 -- "Encontra e filtra" --> A0
-    A7 -- "Implementada com" --> A1
-    A7 -- "Obtém resultados via" --> A2
-' />
-
-## Estrutura da Documentação
-
-Esta documentação está organizada em seções que cobrem desde conceitos fundamentais até implementações avançadas:
-
-### 📖 Fundamentos
-
-- **[Visão Geral da Plataforma](devs/00_visao_geral_plataforma/)** - Arquitetura, tecnologias e conceitos fundamentais
-- **[Entidades (Entities)](devs/01_entidades__entities__)** - Modelos de dados centrais da plataforma
-
-### 🛠️ Desenvolvimento Frontend
-
-- **[Componentes Vue (Vue Components)](devs/02_componentes_vue__vue_components__)** - Interface de usuário e componentes reutilizáveis
-- **[Classe API](devs/03_classe_api_)** - Comunicação entre frontend e backend
-- **[Busca (Search)](devs/04_busca__search__)** - Sistema de busca e filtros
-
-### 🎛️ Funcionalidades Principais
-
-- **[Painel de Controle (Panel)](devs/05_painel_de_controle__panel__)** - Interface administrativa e de usuário
-- **[Oportunidades e Inscrições](devs/06_oportunidades_e_inscricoes__opportunities___registrations__)** - Gestão de editais e processos seletivos
-- **[Métodos de Avaliação](devs/07_metodos_de_avaliacao__evaluation_methods__)** - Sistemas de avaliação e seleção
-
-### 🔐 Segurança e Autenticação
-
-- **[Plugin de Autenticação Múltipla Local](devs/08_plugin_de_autenticacao_multipla_local__multiplelocalauth__)** - Sistema de autenticação flexível
-
-### 🎨 Personalização e Extensões
-
-- **[Índice de Plugins](devs/09_plugins_index)** - Catálogo completo de plugins disponíveis
-- **[Índice de Temas](devs/10_themes_index)** - Catálogo completo de temas e customizações visuais
-
-## Tecnologias Principais
-
-### Backend
-- **PHP** com framework **Slim**
-- **Doctrine ORM** para persistência de dados
-- **JWT** para autenticação segura
-- **Symfony Mailer** para comunicações
-
-### Frontend
-- **Vue.js** para componentes interativos
-- **Webpack** e **Laravel Mix** para build
-- **Sass/SCSS** para estilização
-- **JavaScript ES6+** moderno
-
-### Infraestrutura
-- **PostgreSQL** como banco de dados principal
-- **Redis** para cache e sessões
-- **Docker** para containerização
-
-## Começando
-
-Para começar a desenvolver na plataforma Mapas Culturais:
-
-1. **Leia a [Visão Geral da Plataforma](devs/00_visao_geral_plataforma/)** para entender a arquitetura
-2. **Configure o ambiente** seguindo o README do repositório
-3. **Explore as [Entidades](devs/01_entidades__entities__)** para entender os modelos de dados
-4. **Estude os [Componentes Vue](devs/02_componentes_vue__vue_components__)** para desenvolvimento frontend
-
-## Contribuindo
-
-O Mapas Culturais é um projeto de código aberto mantido pela comunidade. Contribuições são bem-vindas através de:
-
-- **Issues** para reportar bugs ou sugerir melhorias
-- **Pull Requests** com correções ou novas funcionalidades
-- **Documentação** para melhorar este guia
-- **Testes** para garantir qualidade do código
+> Plataforma de mapeamento cultural (agentes, espaços, eventos, projetos).
+> Instalação RedeMapas do framework open-source **Mapas Culturais** (PHP 8.3 + Slim 4 + Doctrine ORM + PostgreSQL/PostGIS).
 
 ---
 
-*Esta documentação é mantida pela comunidade de desenvolvedores do Mapas Culturais. Para dúvidas ou sugestões, abra uma issue no repositório oficial.*
+## Setup local (< 10 min)
+
+### Pré-requisitos
+
+| Ferramenta | Versão mínima |
+|---|---|
+| Docker + Compose | 24+ |
+| Node.js + pnpm | 20+ / 8+ |
+| PHP + Composer | 8.3+ (só para IDE autocomplete) |
+
+### Passos
+
+```bash
+# 1. Clone com submodules
+git clone --recurse-submodules <repo-url>
+cd mapas
+
+# 2. Variáveis de ambiente (copie e edite)
+cp .env.example .env          # se existir, senão crie baseado no compose.yaml
+
+# 3. Suba o stack
+docker compose up -d
+
+# app em  http://localhost:8080
+# HTTPS   https://mapas.localhost:8443  (requer confiar no CA do Caddy — veja abaixo)
+# Mailpit http://localhost:8025
+
+# 4. Dependências JS (dentro do container)
+docker compose exec mapas bash -c "cd src && pnpm install && pnpm run build"
+```
+
+### HTTPS local (necessário para PWA/ServiceWorker)
+
+```bash
+# Instalar o CA do Caddy no sistema (CachyOS/Arch)
+docker compose exec caddy cat /data/caddy/pki/authorities/local/root.crt > /tmp/caddy-root.crt
+sudo trust anchor --store /tmp/caddy-root.crt && sudo update-ca-trust
+
+# Instalar no Chrome/Chromium
+mkdir -p $HOME/.pki/nssdb
+certutil -d sql:$HOME/.pki/nssdb -N --empty-password 2>/dev/null || true
+certutil -d sql:$HOME/.pki/nssdb -A -t "CT,," -n "Caddy Local CA" -i /tmp/caddy-root.crt
+# Reinicie o Chrome
+```
+
+### Verificação
+
+- [ ] `http://localhost:8080` carrega a home
+- [ ] `docker compose exec mapas ./vendor/bin/phpunit tests/` passa (verde)
+
+---
+
+## Estrutura do projeto
+
+```
+mapas/
+├── config/             # Config PHP por feature (db, mailer, maps, etc.)
+├── dev/                # Scripts de desenvolvimento (bash.sh, shell.sh, psql.sh)
+├── scripts/            # Scripts utilitários (execute-job, db-update, run-tests)
+├── src/
+│   ├── core/           # Framework base (App, Entity, Controller, Hooks, Theme…)
+│   ├── modules/        # Features modulares (Opportunities, Home, GeoDivisions…)
+│   ├── plugins/        # Plugins opcionais (SpamDetector, Metabase, MapasBlame…)
+│   ├── themes/
+│   │   ├── BaseV1/     # Tema legado
+│   │   ├── BaseV2/     # Tema moderno (base)
+│   │   └── RedeMapas/  # ← tema ativo (submodule git separado)
+│   └── db-updates.php  # Migrações (auto-aplicadas no start do container)
+├── tests/              # PHPUnit (necessita DB — roda dentro do container)
+├── compose.yaml        # Stack principal
+└── compose.override.yml# Caddy HTTPS local
+```
+
+### Tema ativo: RedeMapas
+
+`src/themes/RedeMapas/` é um **submodule git** separado. Commits nele precisam de dois passos:
+
+```bash
+cd src/themes/RedeMapas
+git add <arquivo> && git commit -m "fix: ..."
+
+# Depois, no repo pai:
+cd ../../..
+git add src/themes/RedeMapas && git commit -m "chore: bump RedeMapas submodule"
+```
+
+Estrutura do tema:
+
+```
+RedeMapas/
+├── Theme.php           # _init(): hooks, controllers, assets, metadata
+├── assets-src/
+│   ├── js/             # Fontes JS (esbuild)
+│   └── sass/           # Fontes CSS (dart-sass)
+├── assets/             # Build output (.gitignored no submodule)
+├── layouts/            # Templates PHP de layout
+├── views/              # Templates PHP de views
+├── Controllers/        # Controllers HTTP do tema (ex: Push)
+├── Jobs/               # JobTypes assíncronos (ex: SendWebPushNotification)
+├── Push/               # Infraestrutura Web Push (SubscriptionStore, PushConfigBuilder)
+└── Pwa/                # PWA (WebmanifestBuilder, HeadTagsBuilder)
+```
+
+---
+
+## Conceitos core
+
+### App singleton
+
+```php
+$app = \MapasCulturais\App::i();
+$app->em;          // Doctrine EntityManager
+$app->user;        // usuário logado (GuestUser se anônimo)
+$app->config[...]; // configurações
+$app->log;         // Monolog logger
+```
+
+### Entidades
+
+Doctrine PHP 8 attributes. Todas estendem `src/core/Entity.php`.
+Status constants: `STATUS_ENABLED=1`, `STATUS_DRAFT=0`, `STATUS_DISABLED=-9`, `STATUS_TRASH=-10`, `STATUS_ARCHIVED=-2`.
+
+Entidades principais: `Agent`, `Space`, `Event`, `Project`, `Opportunity`, `Registration`, `User`, `Notification`.
+
+### Hooks
+
+```php
+$app->hook('entity(Agent).save:before', function() {
+    // $this = instância da entidade
+});
+
+$app->hook('view.render(site/index):before', function() {
+    // roda antes de renderizar a view site/index
+});
+
+$app->hook('mapas.printJsObject:before', function() {
+    $this->jsObject['minhaConfig'] = [...]; // injeta no objeto JS global `Mapas`
+});
+```
+
+### Controllers
+
+```php
+// Registrar
+$app->registerController('meu', MeuController::class);
+
+// Métodos = verbos HTTP + ação
+// GET  /meu/listar/    → GET_listar()
+// POST /meu/salvar/    → POST_salvar()
+class MeuController extends Controller {
+    public function GET_listar(): void {
+        $this->json(['items' => [...]]);
+    }
+}
+```
+
+### Jobs assíncronos
+
+```bash
+# Processar jobs pendentes
+docker compose exec mapas ./scripts/execute-job.sh
+```
+
+Jobs são enfileirados via hooks (ex: `entity(Notification).insert:after`) e precisam ser processados manualmente em dev ou via cron em produção.
+
+### Metadata de entidades
+
+Metadata precisa ser registrado antes de usar:
+
+```php
+$app->registerMetadata(
+    new \MapasCulturais\Definitions\Metadata('minhaChave', ['label' => 'Minha chave', 'private' => true]),
+    \MapasCulturais\Entities\User::class
+);
+
+// Leitura/escrita
+$user->getMetadata('minhaChave');
+$user->setMetadata('minhaChave', json_encode($valor)); // arrays: sempre json_encode
+$user->save(true);
+```
+
+---
+
+## Tarefas comuns
+
+### Build de assets (frontend)
+
+```bash
+# Dentro do container
+docker compose exec mapas bash
+cd src
+pnpm run build    # produção
+pnpm run dev      # dev com source maps
+pnpm run watch    # watch mode
+```
+
+Assets do tema RedeMapas ficam em `src/themes/RedeMapas/assets-src/` (fontes) e `src/themes/RedeMapas/assets/` (output — não comitar no repo pai).
+
+### Rodar testes
+
+```bash
+# Todos os testes
+docker compose exec mapas ./vendor/bin/phpunit tests/
+
+# Arquivo específico
+docker compose exec mapas ./vendor/bin/phpunit tests/src/EntitiesTest.php
+
+# Método específico
+docker compose exec mapas ./vendor/bin/phpunit tests/src/EntitiesTest.php --filter testAgentCreation
+```
+
+Cada teste usa transação com rollback automático em `tearDown()`. Base: `tests/src/Abstract/TestCase.php`.
+
+### Shell interativo PHP (PsySH)
+
+```bash
+docker compose exec mapas ./scripts/shell.sh
+# ou
+docker compose exec mapas ./dev/shell.sh
+```
+
+Útil para testar código, inspecionar entidades, disparar jobs manualmente:
+
+```php
+// No prompt PsySH:
+$app->disableAccessControl();
+$user = $app->repo('User')->find(1);
+// ... manipular entidades
+$app->enableAccessControl();
+```
+
+### Migrações de banco
+
+```bash
+# Aplicar migrações pendentes
+docker compose exec mapas ./scripts/db-update.sh
+
+# Conectar ao PostgreSQL
+docker compose exec mapas ./dev/psql.sh
+# ou direto
+docker compose exec postgres psql -U mapas -d mapas
+```
+
+Migrações ficam em `src/db-updates.php` e são aplicadas automaticamente no start do container.
+
+### Adicionar uma nova rota / controller
+
+1. Criar `src/themes/RedeMapas/Controllers/MeuController.php` estendendo `Controller`
+2. Registrar em `Theme.php` → método `_init()`:
+
+   ```php
+   $app->registerController('meu', MeuController::class);
+   ```
+
+3. Acessar em `https://mapas.localhost:8443/meu/acao/`
+
+### Injetar variáveis no JS global (`Mapas.*`)
+
+```php
+// Em Theme.php, hook mapas.printJsObject:before:
+$app->hook('mapas.printJsObject:before', function() {
+    $this->jsObject['minhaConfig'] = ['key' => 'value'];
+});
+
+// No JS:
+var config = window.Mapas?.minhaConfig;
+```
+
+**Atenção:** o layout da home (`layouts/home.php`) precisa chamar `<?php $this->printJsObject(); ?>` para que o objeto `Mapas` exista.
+
+---
+
+## Debugging
+
+### Logs de erros
+
+```bash
+# PHP errors
+docker compose exec mapas tail -f var/logs/error.log
+
+# Logs do container
+docker compose logs mapas --tail=50 -f
+
+# Habilitar debug verbose
+# Em dev/config.d/0.main.php:
+'app.mode' => 'development',
+# E definir APP_DEBUG=true no .env
+```
+
+### Erros comuns
+
+**`The 'Entity::chave' metadata is not registered`**
+→ Falta `$app->registerMetadata(...)` em `Theme.php` ou no Module antes de chamar `setMetadata`.
+
+**`PermissionDenied: O usuário 0 não tem permissão`**
+→ No shell: use `$app->disableAccessControl()` antes e `$app->enableAccessControl()` depois.
+
+**`Call to undefined method App::authenticateWithUserEntity()`**
+→ Não existe esse método. Use `$app->disableAccessControl()` para operações CLI.
+
+**Service Worker preso em "trying to install"**
+→ SSL do Caddy não está confiado. Siga os passos de HTTPS local acima.
+
+**`500` em endpoint do tema**
+→ Cheque `var/logs/error.log`. Se vazio, ative `display_errors` via env ou inspecione via PsySH.
+
+### Queries SQL úteis
+
+```bash
+# Conectar
+docker compose exec mapas ./dev/psql.sh
+
+# Ver metadata de um usuário
+SELECT * FROM user_metadata WHERE object_id = 1;
+
+# Jobs pendentes
+SELECT * FROM job WHERE status = 0 ORDER BY create_timestamp DESC LIMIT 10;
+
+# Notificações de um usuário
+SELECT * FROM notification WHERE user_id = 1 ORDER BY create_timestamp DESC LIMIT 10;
+```
+
+---
+
+## Frontend — arquitetura do core
+
+### Visão geral
+
+O frontend é dividido em duas camadas que coexistem:
+
+| Camada | Tecnologia | Onde vive |
+|---|---|---|
+| Componentes reativos | Vue 3 + Pinia | `src/modules/Components/` |
+| CSS global / design system | SCSS (ITCSS) | `src/themes/BaseV2/assets-src/sass/` |
+| Build tooling | esbuild + dart-sass | `src/node_scripts/` |
+| Páginas simples / PWA | Vanilla JS | `src/themes/RedeMapas/assets-src/js/` |
+
+Não há Alpine.js, Next.js ou SSR de JavaScript. O PHP renderiza o HTML, e o Vue 3 monta em `#main-app` para partes interativas.
+
+---
+
+### Objeto global `Mapas`
+
+`window.Mapas` é o contrato entre PHP e JS. É populado pelo hook `mapas.printJsObject:before` e serializado como `<script>var Mapas = {...};</script>` no rodapé de cada página (via `printJsObject()`).
+
+Estrutura relevante:
+
+```js
+Mapas = {
+  baseURL: 'https://mapas.localhost:8443/',
+  assetURL: '...',
+  userId: 42,               // null se não logado
+  user: { id, name, ... },
+  config: {
+    locale: 'pt-BR',
+    timezone: 'America/Sao_Paulo',
+    currency: 'BRL',
+    iconset: { 'chevron-right': 'ph:chevron-right', ... },
+  },
+  request: { controller, action, urlData, id },
+  routes: { ... },          // mapa de rotas registradas
+  EntitiesDescription: { agent, space, event, project, ... },
+  Taxonomies: { ... },
+  // injetado pelo RedeMapas:
+  redemapasPush: { enabled, publicKey, subscribeUrl, serviceWorkerUrl, strings },
+}
+```
+
+**Como injetar dados do PHP:**
+
+```php
+// Em Theme.php ou Module.php — hook mapas.printJsObject:before
+$app->hook('mapas.printJsObject:before', function() {
+    $this->jsObject['minhaConfig'] = ['key' => 'value'];
+});
+```
+
+```js
+// No JS:
+const config = window.Mapas?.minhaConfig;
+```
+
+> **Atenção:** o layout home (`layouts/home.php`) não chama `printJsObject()` automaticamente. Sempre garantir que o layout do template chame `<?php $this->printJsObject(); ?>` antes dos scripts.
+
+---
+
+### Sistema de componentes Vue 3
+
+**Onde vivem:** `src/modules/Components/components/<nome-do-componente>/`
+
+Cada componente tem até 4 arquivos:
+
+| Arquivo | Papel |
+|---|---|
+| `template.php` | Markup PHP — renderizado para string e enviado ao browser como JSON |
+| `script.js` | Definição do componente Vue 3 (Options API ou Composition API) |
+| `init.php` | Inicialização PHP opcional (roda antes do `printJsObject`) |
+| `texts.php` | Strings i18n do componente |
+
+**Fluxo de registro:**
+
+```
+PHP importa componente → template renderizado → serializado em $TEMPLATES (JSON)
+↓
+Browser recebe window.$TEMPLATES = { 'mc-icon': '<svg>...</svg>', ... }
+↓
+vue-init.js registra globalmente: app.component('mc-icon', { template: $TEMPLATES['mc-icon'], ...script.js })
+↓
+Vue monta em #main-app
+```
+
+**Importar um componente em uma view PHP:**
+
+```php
+<?php $this->import('mc-icon'); ?>
+<mc-icon name="ph:star" />
+
+<?php $this->import('entity-card'); ?>
+<entity-card :entity="<?= json_encode($entity->simplify('id,name,type')) ?>"></entity-card>
+```
+
+**Componentes disponíveis (50+):** `mc-icon`, `mc-modal`, `mc-tabs`, `mc-loading`, `mc-datepicker`, `mc-map`, `entity-card`, `space-card`, `agent-card`, `mc-multiselect`, `mc-draggable`, entre outros.
+
+---
+
+### vue-init.js — bootstrap do Vue
+
+Localização compilada: `src/modules/Components/assets/js/vue-init.js`
+
+O que ele faz:
+
+```js
+// Cria a app Vue 3
+const app = createApp({ ... })
+
+// Plugins registrados:
+app.use(pinia)           // Pinia — gerenciamento de estado global
+app.use(iconify)         // Iconify — ícones (via Mapas.config.iconset)
+app.use(mediaQuery)      // $media() — breakpoints reativos
+
+// Stores Pinia globalmente:
+useEntitiesCache()       // cache de entidades buscadas via API
+useEntitiesLists()       // listas paginadas
+useGlobalState()         // estado geral ($MAPAS, $global)
+
+// Propriedades globais:
+app.config.globalProperties.$MAPAS = Mapas
+app.config.globalProperties.$DESCRIPTIONS = Mapas.EntitiesDescription
+app.config.globalProperties.$TAXONOMIES = Mapas.Taxonomies
+
+// Monta em:
+app.mount('#main-app')
+```
+
+**Acessar o estado Pinia fora do Vue:**
+
+```js
+import { useEntitiesCache } from './components-base/global-state.js'
+const cache = useEntitiesCache()
+cache.fetchEntity('agent', 42)
+```
+
+---
+
+### API JS de entidades
+
+`src/modules/Components/assets/js/components-base/API.js` encapsula as chamadas à API REST:
+
+```js
+// Buscar entidade
+const agent = await API.getEntity('agent', 42)
+
+// Buscar lista com filtros
+const agents = await API.find('agent', {
+  'name': 'LIKE%fulano%',
+  '@select': 'id,name,type',
+  '@limit': 10,
+})
+
+// Buscar contagem
+const total = await API.find('agent', { '@count': 1 })
+
+// Salvar / atualizar
+await API.save('agent', { id: 42, name: 'Novo nome' })
+```
+
+A API usa o endpoint `/api/{entidade}/find` do Mapas Culturais. Respostas são cacheadas no Pinia por padrão.
+
+**Parâmetros especiais de query:**
+
+| Parâmetro | Efeito |
+|---|---|
+| `@select` | Campos a retornar (`id,name,type`) |
+| `@limit` | Limite de resultados |
+| `@offset` | Paginação |
+| `@count=1` | Retorna inteiro com total |
+| `@order` | Ordenação (`name ASC`) |
+| `status=1` | Filtro por status |
+
+---
+
+### SCSS — design system (ITCSS)
+
+O CSS segue a metodologia **ITCSS** (Inverted Triangle CSS):
+
+```
+src/themes/BaseV2/assets-src/sass/
+├── 0.settings/
+│   ├── _variables.scss    ← design tokens: cores, fontes, espaçamentos
+│   ├── _mixins.scss       ← @mixin desktop/mobile, size(), sr-only
+│   ├── _typography.scss   ← @font-face Open Sans
+│   └── _global.scss       ← reset global, h1-h6, a, p
+├── 1.objects/             ← padrões reutilizáveis sem estilo visual
+├── 2.components/          ← 180+ componentes UI
+├── layouts/               ← header, footer, entity layout, tabs
+└── pages/                 ← estilos específicos por página/entidade
+```
+
+**Design tokens principais (`_variables.scss`):**
+
+```scss
+// Cores de entidades
+$color-agents:       #EF7B45;
+$color-events:       #9C4EC7;
+$color-spaces:       #5EA73A;
+$color-projects:     #00ADEB;
+$color-opportunities:#003F7E;
+
+// RedeMapas sobrescreve em theme-BaseV2.scss:
+$color-primary:      #c46e14;  // dourado
+$color-secondary:    #cc9933;  // laranja
+
+// Responsividade
+$desktop-breakpoint: 50rem;  // 800px
+@mixin desktop { @media (min-width: $desktop-breakpoint) { @content; } }
+@mixin mobile  { @media (max-width: $desktop-breakpoint) { @content; } }
+```
+
+**Criar um novo componente CSS:**
+
+1. Criar `src/themes/BaseV2/assets-src/sass/2.components/_meu-componente.scss`
+2. Importar em `theme-BaseV2.scss`
+3. Para override no RedeMapas: criar em `src/themes/RedeMapas/assets-src/sass/` e importar lá
+
+---
+
+### Workspace pnpm — como o build funciona
+
+```
+src/
+├── package.json              # root — scripts: dev/build/watch --parallel --recursive
+├── node_scripts/             # @mapas/scripts — esbuild-build.mjs, sass-compile-options.mjs
+├── modules/Components/       # workspace package — compila os componentes Vue
+├── themes/BaseV2/            # workspace package — compila o CSS base
+└── themes/RedeMapas/         # workspace package (submodule) — home.js, sw.js, home.scss
+```
+
+Cada pacote tem seu próprio `package.json` com scripts `build`/`dev`/`watch`.
+O root orquestra com `pnpm run --parallel --recursive build`.
+
+**Build do RedeMapas (manual, dentro do submodule):**
+
+```bash
+cd src/themes/RedeMapas
+npm run build    # ou: pnpm run build (se não for submodule isolado)
+```
+
+Fontes em `assets-src/` → output em `assets/` (ignorado pelo git do submodule, mas versionado no repo pai via `.gitignore` customizado).
+
+---
+
+### Grupos de scripts / estilos
+
+Assets são enfileirados por **grupo** e impressos com `printScripts('grupo')` / `printStyles('grupo')`:
+
+| Grupo | Conteúdo | Impresso por |
+|---|---|---|
+| `vendor-v2` | Libs de terceiros | Layout BaseV2 |
+| `app-v2` | Vue init, componentes, tema | Layout BaseV2 |
+| `components` | Templates Vue compilados | `mapas.printJsObject:after` |
+| `redemapas-home` | home.js, push-notifications.js, home.css | `layouts/home.php` |
+
+Para enfileirar no tema:
+
+```php
+// Em Theme.php — _init()
+$this->enqueueScript('app-v2', 'meu-script', 'js/meu-script.js');
+$this->enqueueStyle('app-v2', 'meu-style', 'css/meu-style.css');
+
+// Com dependência
+$this->enqueueScript('app-v2', 'meu-script', 'js/meu-script.js', ['outro-script']);
+```
+
+---
+
+### Hooks de template
+
+```php
+// Injeta no <head>
+$app->hook('template(<<*>>.head):end', function() { echo '<meta ...>'; });
+
+// Injeta no início do <body>
+$app->hook('template(<<*>>.body):begin', function() { echo '<div ...>'; });
+
+// Injeta no final do <body> (antes de </body>)
+$app->hook('template(<<*>>.body):end', function() { echo '<script>...</script>'; });
+
+// Somente na home
+$app->hook('template(site/index.body):end', function() { /* ... */ });
+```
+
+---
+
+## Stack de tecnologias
+
+| Camada | Tecnologia |
+|---|---|
+| Linguagem | PHP 8.3 |
+| Framework HTTP | Slim 4 |
+| ORM | Doctrine ORM + DBAL |
+| Banco | PostgreSQL 14 + PostGIS |
+| Cache | Redis |
+| Build JS/CSS | esbuild + dart-sass (pnpm workspaces) |
+| Container | Docker Compose |
+| Reverse proxy local | Caddy 2 (TLS interno) |
+| Email (dev) | Mailpit |
+| Auth | Opauth (LoginCidadao, Authentik, OpenID) |
+| Jobs | JobType próprio do framework |
+| Testes | PHPUnit |
+
+---
+
+## Variáveis de ambiente relevantes
+
+| Variável | Descrição |
+|---|---|
+| `DB_HOST/NAME/USER/PASS` | Conexão PostgreSQL |
+| `REDIS_CACHE` | URL Redis |
+| `BASE_URL` | URL base da aplicação |
+| `APP_DEBUG` | Liga debug verboso |
+| `DISABLE_SUBSITES` | Desabilita subsites (true em dev) |
+| `REDEMAPAS_PUSH_ENABLED` | Liga Web Push |
+| `REDEMAPAS_VAPID_PUBLIC_KEY` | Chave pública VAPID |
+| `REDEMAPAS_VAPID_PRIVATE_KEY` | Chave privada VAPID |
+| `REDEMAPAS_VAPID_SUBJECT` | E-mail/URL VAPID subject |
+
+Gerar chaves VAPID:
+
+```bash
+docker compose exec mapas php -r "
+\$keys = \Minishlink\WebPush\VAPID::createVapidKeys();
+echo 'Public:  ' . \$keys['publicKey'] . PHP_EOL;
+echo 'Private: ' . \$keys['privateKey'] . PHP_EOL;
+"
+```
+
+---
+
+## Contribuição
+
+### Branches
+
+```
+develop        → base para PRs
+  └── feat/descricao-curta
+  └── fix/descricao-curta
+```
+
+### Commits
+
+```
+feat(scope): descrição    # nova funcionalidade
+fix(scope): descrição     # correção de bug
+chore: descrição          # manutenção
+```
+
+### Submodule RedeMapas
+
+Sempre commit em dois passos: primeiro dentro de `src/themes/RedeMapas/`, depois o ponteiro no repo pai.
+
+### Antes de abrir PR
+
+- [ ] Testes passando: `docker compose exec mapas ./vendor/bin/phpunit tests/`
+- [ ] Build de assets sem erros: `cd src && pnpm run build`
+- [ ] Sem erros no `var/logs/error.log` após smoke test manualmente
