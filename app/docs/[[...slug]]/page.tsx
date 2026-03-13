@@ -29,7 +29,7 @@ export default async function Page(props: {
       repo: 'manual',
       sha: 'main',
       // file path, make sure it's valid
-      path: `content/docs/${page.file.path}`,
+      path: `content/docs/${page.path}`,
     }}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
