@@ -1,0 +1,14 @@
+{
+    "title": "Gestor do Ente Federativo",
+    "description": "Guia para gestores de entes federativos no Cult Editais",
+    "root": true,
+    "pages": [
+        "intro",
+        "conta",
+        "criar-oportunidade",
+        "gerenciar-oportunidades",
+        "configuracao-fases",
+        "inscricoes-resultados",
+        "relatorios"
+    ]
+}

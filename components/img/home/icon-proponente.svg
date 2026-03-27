@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#e6f4f5"/>
+
+  <!-- Body -->
+  <ellipse cx="64" cy="96" rx="26" ry="18" fill="#28878d"/>
+
+  <!-- Head -->
+  <circle cx="64" cy="52" r="20" fill="#f9d8ad"/>
+
+  <!-- Hair -->
+  <path d="M44 52 Q44 30 64 30 Q84 30 84 52 Q80 40 64 40 Q48 40 44 52Z" fill="#231f20"/>
+  <path d="M44 52 L44 62 Q41 57 41 52Z" fill="#231f20"/>
+  <path d="M84 52 L84 61 Q87 57 87 52Z" fill="#231f20"/>
+
+  <!-- Left arm up (celebrating) -->
+  <path d="M38 80 Q28 68 30 52 L38 56 Q36 66 44 76Z" fill="#f9d8ad"/>
+  <!-- Right arm up (celebrating) -->
+  <path d="M90 80 Q100 68 98 52 L90 56 Q92 66 84 76Z" fill="#f9d8ad"/>
+
+  <!-- Shirt collar suggestion -->
+  <path d="M50 78 Q64 86 78 78 L78 82 Q64 90 50 82Z" fill="#4c9ca3"/>
+
+  <!-- Star (above head, floating) -->
+  <path d="M64 10 L67 20 L78 20 L69 26 L72 36 L64 30 L56 36 L59 26 L50 20 L61 20Z" fill="#fcbd4b"/>
+
+  <!-- Sparkles -->
+  <circle cx="30" cy="36" r="3" fill="#f73c4f"/>
+  <circle cx="98" cy="30" r="2.5" fill="#f05e2b"/>
+  <circle cx="108" cy="54" r="2" fill="#fcbd4b"/>
+
+  <!-- Eyes -->
+  <ellipse cx="57" cy="52" rx="2.5" ry="2.8" fill="#231f20"/>
+  <ellipse cx="71" cy="52" rx="2.5" ry="2.8" fill="#231f20"/>
+  <circle cx="58" cy="51" r="1" fill="white"/>
+  <circle cx="72" cy="51" r="1" fill="white"/>
+
+  <!-- Smile -->
+  <path d="M56 60 Q64 67 72 60" stroke="#f05e2b" stroke-width="2" stroke-linecap="round" fill="none"/>
+</svg>

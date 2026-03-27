@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <!-- Background circle -->
+  <circle cx="64" cy="64" r="60" fill="#eef0fa"/>
+
+  <!-- Body / jacket (formal) -->
+  <ellipse cx="64" cy="96" rx="26" ry="18" fill="#1e3a5f"/>
+  <!-- Shirt/tie hint -->
+  <path d="M60 82 L64 72 L68 82 L66 96 L62 96Z" fill="#ffffff" opacity="0.9"/>
+  <path d="M62 80 L64 86 L66 80 L64 76Z" fill="#f73c4f"/>
+
+  <!-- Head -->
+  <circle cx="64" cy="50" r="20" fill="#f2c9a7"/>
+
+  <!-- Hair (short, professional) -->
+  <path d="M44 50 Q44 30 64 30 Q84 30 84 50 Q82 38 64 38 Q46 38 44 50Z" fill="#231f20"/>
+  <path d="M44 50 L44 56 Q41 53 41 50Z" fill="#231f20"/>
+
+  <!-- Glasses -->
+  <rect x="50" y="47" width="11" height="8" rx="3" stroke="#28878d" stroke-width="2" fill="none"/>
+  <rect x="67" y="47" width="11" height="8" rx="3" stroke="#28878d" stroke-width="2" fill="none"/>
+  <line x1="61" y1="51" x2="67" y2="51" stroke="#28878d" stroke-width="1.5"/>
+  <line x1="44" y1="51" x2="50" y2="51" stroke="#28878d" stroke-width="1.5"/>
+  <line x1="78" y1="51" x2="84" y2="51" stroke="#28878d" stroke-width="1.5"/>
+
+  <!-- Left arm (down, natural) -->
+  <path d="M38 80 Q30 82 28 94 L36 96 Q36 86 44 82Z" fill="#f2c9a7"/>
+  <!-- Right arm holding clipboard -->
+  <path d="M90 80 Q96 82 98 94 L90 96 Q90 88 84 82Z" fill="#f2c9a7"/>
+
+  <!-- Clipboard -->
+  <rect x="88" y="72" width="24" height="32" rx="3" fill="#ffffff" stroke="#28878d" stroke-width="1.5"/>
+  <rect x="95" y="68" width="10" height="6" rx="2" fill="#28878d"/>
+  <!-- Lines on clipboard -->
+  <line x1="92" y1="82" x2="108" y2="82" stroke="#e0e0e0" stroke-width="1.5"/>
+  <line x1="92" y1="88" x2="108" y2="88" stroke="#e0e0e0" stroke-width="1.5"/>
+  <line x1="92" y1="94" x2="102" y2="94" stroke="#e0e0e0" stroke-width="1.5"/>
+  <!-- Checkmark on clipboard -->
+  <path d="M93 79 L96 83 L103 75" stroke="#28878d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+  <!-- Eyes -->
+  <ellipse cx="56" cy="50" rx="2.5" ry="2.8" fill="#231f20"/>
+  <ellipse cx="72" cy="50" rx="2.5" ry="2.8" fill="#231f20"/>
+  <circle cx="57" cy="49" r="1" fill="white"/>
+  <circle cx="73" cy="49" r="1" fill="white"/>
+
+  <!-- Smile (subtle) -->
+  <path d="M57 59 Q64 65 71 59" stroke="#e0a575" stroke-width="2" stroke-linecap="round" fill="none"/>
+
+  <!-- Badge / government seal (top left of body) -->
+  <circle cx="50" cy="86" r="5.5" fill="#fcbd4b" stroke="#edaa15" stroke-width="1"/>
+  <path d="M50 82 L51 85 L54 85 L52 87 L53 90 L50 88 L47 90 L48 87 L46 85 L49 85Z" fill="#1e3a5f"/>
+
+  <!-- Small dots decoration -->
+  <circle cx="20" cy="40" r="3" fill="#f73c4f"/>
+  <circle cx="18" cy="90" r="2" fill="#fcbd4b"/>
+  <circle cx="26" cy="66" r="2" fill="#28878d"/>
+</svg>

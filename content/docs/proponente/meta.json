@@ -1,0 +1,11 @@
+{
+  "title": "Proponente",
+  "description": "Guia para proponentes do Cult Editais",
+  "root": true,
+  "pages": [
+    "intro",
+    "conta",
+    "agentes",
+    "oportunidades"
+  ]
+}

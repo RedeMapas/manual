@@ -9,26 +9,17 @@ import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
  */
 import Image from 'next/image';
 
-import LogoRedeMapas from '../public/svg/dark-logo-rede-das-artes.svg';
-import LogoRedeMapasDark from '../public/svg/light-logo-rede-das-artes.svg';
+import LogoCultBR from '../public/img/cultbr-fundo-claro.png';
+import LogoCultBRDark from '../public/img/cultbr-fundo-escuro.png';
 
 export const baseOptions: BaseLayoutProps = {
-  githubUrl: 'https://github.com/redemapas/manual',
   nav: {
     title: (
       <>
-        {/* <svg
-          width="24"
-          height="24"
-          xmlns="http://www.w3.org/2000/svg"
-          aria-label="Logo"
-        >
-          <circle cx={12} cy={12} r={12} fill="currentColor" />
-        </svg> */}
-        <Image alt="M" src={LogoRedeMapas} className="w-25 object-contain mx-auto block dark:hidden" />
-        <Image alt="M" src={LogoRedeMapasDark} className="w-25 object-contain mx-auto hidden dark:block" />
+        <Image alt="Cult Editais" src={LogoCultBR} className="h-8 w-auto object-contain block dark:hidden" />
+        <Image alt="Cult Editais" src={LogoCultBRDark} className="h-8 w-auto object-contain hidden dark:block" />
         
-        <h1>Manual Rede das Artes</h1>
+        <h1>Manual Cult Editais</h1>
       </>
     ),
   },

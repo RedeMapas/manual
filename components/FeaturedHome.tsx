@@ -1,41 +1,28 @@
 import Image from 'next/image';
 
-import imgAgents from './img/home/agents.svg';
-import imgManagers from './img/home/managers.svg';
-import imgDevelopers from './img/home/developers.svg';
+import iconProponente from './img/home/icon-proponente.svg';
+import iconGestor from './img/home/icon-gestor.svg';
 
 const roles = [
   {
-    title: 'Agentes Artísticos',
-    image: imgAgents,
-    alt: 'Pessoa dançando com o sol ao fundo',
+    title: 'Proponentes',
+    image: iconProponente,
+    alt: 'Ícone de agente cultural proponente',
     description:
-      'Pessoas que desejam divulgar a agenda de seus circuitos artísticos, eventos e outras oportunidades.',
-    link: '/docs/usuarios/intro',
+      'Agentes culturais, artistas e produtores que desejam se inscrever em editais da Política Nacional Aldir Blanc e gerenciar suas propostas.',
+    link: '/docs/proponente/intro',
     linkText: 'Saiba mais',
     bgColor: 'bg-blue-900',
     textColor: 'text-white',
     roundedClass: 'lg:rounded-l-[2rem]',
   },
   {
-    title: 'Gestores',
-    image: imgManagers,
-    alt: 'Pintora criando em tela com pincéis',
+    title: 'Gestores do Ente Federativo',
+    image: iconGestor,
+    alt: 'Ícone de gestor do ente federativo',
     description:
-      'Coordenação do processo de editais e iniciativas, publicação dos resultados e monitoramento da execução de editais.',
-    link: '/docs/gestores/intro',
-    linkText: 'Saiba mais',
-    bgColor: 'bg-blue-900',
-    textColor: 'text-white',
-    roundedClass: 'lg:rounded-l-[2rem]',
-  },
-  {
-    title: 'Desenvolvedores',
-    image: imgDevelopers,
-    alt: 'Equipe trabalhando com tecnologia e engrenagens',
-    description:
-      'Pessoa responsável por manter a infraestrutura e dar manutenção nas tecnologias digitais utilizadas pela Rede das Artes.',
-    link: '/docs/devs',
+      'Servidores de secretarias de cultura estaduais e municipais que publicam editais, avaliam inscrições e acompanham a execução dos projetos selecionados.',
+    link: '/docs/gestor/intro',
     linkText: 'Saiba mais',
     bgColor: 'bg-blue-900',
     textColor: 'text-white',

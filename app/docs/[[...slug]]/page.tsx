@@ -24,13 +24,7 @@ export default async function Page(props: {
   };
 
   return (
-    <DocsPage toc={page.data.toc} full={page.data.full} footer={optionsFooter} editOnGithub={{
-      owner: 'redemapas',
-      repo: 'manual',
-      sha: 'main',
-      // file path, make sure it's valid
-      path: `content/docs/${page.path}`,
-    }}>
+    <DocsPage toc={page.data.toc} full={page.data.full} footer={optionsFooter}>
       <DocsTitle>{page.data.title}</DocsTitle>
       <DocsDescription>{page.data.description}</DocsDescription>
       <DocsBody>
