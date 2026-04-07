@@ -1,0 +1,274 @@
+---
+title: Architecture
+---
+> Technical overview of Mapas Culturais: stack, directory structure, core abstractions, and key design patterns.
+
+Mapas Culturais is a PHP 8.3 web application for cultural mapping. It is built on [Slim 4](https://www.slimframework.com/) as the HTTP microframework, [Doctrine ORM 2](https://www.doctrine-project.org/) for database access, and [PostgreSQL](https://www.postgresql.org/) with the [PostGIS](https://postgis.net/) extension for geospatial data. Frontend assets are managed with [pnpm workspaces](https://pnpm.io/workspaces).
+
+## Stack
+
+| Layer          | Technology                          |
+| -------------- | ----------------------------------- |
+| Language       | PHP 8.3 (`declare(strict_types=1)`) |
+| HTTP framework | Slim 4                              |
+| ORM            | Doctrine ORM 2.16                   |
+| Database       | PostgreSQL + PostGIS                |
+| Cache          | Redis (configurable)                |
+| Frontend build | pnpm workspaces                     |
+| Email          | Symfony Mailer                      |
+| Logging        | Monolog                             |
+| Validation     | Respect Validation                  |
+
+## Directory structure
+
+```
+src/
+  core/        → MapasCulturais\      (framework base classes)
+  modules/     → MapasCulturais\Modules\ (modular features)
+  themes/      → MapasCulturais\Themes\  (installation themes)
+  conf/        → configuration loader
+  tools/       → CLI tools (apply-updates.php, psysh.php)
+config/        → base configuration (PHP arrays)
+dev/config.d/  → local development overrides
+public/        → web root
+tests/         → PHPUnit test suite
+helm/          → Helm chart for Kubernetes
+docker/        → Docker configuration and entrypoint
+```
+
+## PSR-4 namespaces
+
+| Namespace                 | Directory      |
+| ------------------------- | -------------- |
+| `MapasCulturais\`         | `src/core/`    |
+| `MapasCulturais\Modules\` | `src/modules/` |
+| `MapasCulturais\Themes\`  | `src/themes/`  |
+| `Tests\`                  | `tests/`       |
+
+## Core abstractions
+
+### App singleton
+
+The application is accessed as a singleton via `App::i()`. It holds every top-level service:
+
+```php  theme={null}
+$app = MapasCulturais\App::i();
+
+$app->em;           // Doctrine EntityManager
+$app->hooks;        // Hook/event system
+$app->view;         // Active theme instance
+$app->auth;         // Authentication provider
+$app->cache;        // Persistent cache (Redis)
+$app->log;          // Monolog logger
+```
+
+The singleton pattern means you can retrieve the same application instance from anywhere in the codebase without passing dependencies manually.
+
+### Entity
+
+`MapasCulturais\Entity` is the abstract base class for all Doctrine-managed objects. Entities use PHP 8 attributes for ORM mapping:
+
+```php  theme={null}
+use Doctrine\ORM\Mapping as ORM;
+
+#[ORM\Entity]
+#[ORM\Table(name: 'agent')]
+class Agent extends MapasCulturais\Entity
+{
+    // ...
+}
+```
+
+All entities share a common set of status constants:
+
+| Constant                  | Value | Meaning                 |
+| ------------------------- | ----- | ----------------------- |
+| `Entity::STATUS_ENABLED`  | `1`   | Published and visible   |
+| `Entity::STATUS_DRAFT`    | `0`   | Saved but not published |
+| `Entity::STATUS_ARCHIVED` | `-2`  | Archived                |
+| `Entity::STATUS_DISABLED` | `-9`  | Disabled by an admin    |
+| `Entity::STATUS_TRASH`    | `-10` | Soft-deleted (trash)    |
+
+Entity instances expose permission checking through `canUser()` and `checkPermission()`:
+
+```php  theme={null}
+// Returns true/false
+$agent->canUser('modify');
+
+// Throws PermissionDenied if user cannot perform the action
+$agent->checkPermission('remove');
+```
+
+### Controller
+
+`MapasCulturais\Controller` is the abstract base for all route handlers. Action methods are named after the HTTP method they handle:
+
+```php  theme={null}
+class MyController extends MapasCulturais\Controller
+{
+    // Responds to GET /my-controller/index
+    public function GET_index(): void
+    {
+        $this->render('my-controller/index', ['data' => []]);
+    }
+
+    // Responds to any HTTP method
+    public function ALL_create(): void
+    {
+        $this->requireAuthentication();
+        $this->json(['status' => 'ok']);
+    }
+}
+```
+
+Register a controller in the application:
+
+```php  theme={null}
+$app->registerController('my-controller', MyController::class);
+```
+
+Inside action methods, request data is available through:
+
+* `$this->data` — merged URL params + `$_REQUEST`
+* `$this->getData`, `$this->postData`, `$this->putData`
+
+### Hooks
+
+Hooks are the primary extension mechanism. They let modules and themes react to named events throughout the request lifecycle:
+
+```php  theme={null}
+$app->hook('entity(Agent).save:before', function() {
+    // $this is the Agent entity being saved
+});
+```
+
+See the [hooks reference](/docs/devs/development/hooks) for the full naming syntax and available events.
+
+## Database migrations
+
+Migrations live in `src/db-updates.php` and are applied automatically on container startup via `docker/entrypoint.sh`. You can also apply them manually:
+
+```bash  theme={null}
+./scripts/db-update.sh
+```
+
+There is no migration versioning tool — each entry in `db-updates.php` is tracked by a hash and only applied once.
+
+## Common request flows
+
+The legacy developer guide spent more time on how requests move across the stack. The three flows below are the ones worth keeping in your mental model when debugging.
+
+### Authentication flow
+
+1. The browser hits a controller action that requires authentication.
+2. The controller calls `requireAuthentication()` or checks the active auth provider.
+3. The configured provider (`$app->auth`) redirects to or validates against the external identity service.
+4. On success, the user is resolved or provisioned locally and the request resumes.
+
+This is why auth bugs often span configuration, provider code, theme-level logout UI, and controller behavior at the same time.
+
+### Entity creation flow
+
+1. A controller receives validated request data.
+2. The entity is instantiated and populated.
+3. Permission checks and hooks run before persistence.
+4. Doctrine persists the entity and related metadata.
+5. Post-save hooks may enqueue jobs, notifications, or search updates.
+
+If an entity "saves but behaves strangely", inspect hooks and async jobs in addition to the controller itself.
+
+### Search flow
+
+1. Request parameters are normalized by controller or API layer.
+2. Query expressions are translated to Doctrine / SQL constraints.
+3. Geospatial filters use PostgreSQL + PostGIS.
+4. Results are serialized and shaped by `@select`, pagination, and relation loading.
+
+Search bugs frequently come from filter syntax, metadata visibility, or geospatial assumptions rather than from a broken endpoint.
+
+## Configuration
+
+Configuration is merged from multiple sources at runtime:
+
+<Steps>
+  <Step title="Base config">
+    `config/` — PHP array files with defaults for all settings.
+  </Step>
+
+  <Step title="Theme config">
+    Each theme can contribute its own configuration values through `conf-base.php` inside the theme directory.
+  </Step>
+
+  <Step title="Environment overrides">
+    `dev/config.d/` — local override files loaded in alphabetical order. The active theme, debug flags, and local credentials go here.
+  </Step>
+
+  <Step title="Environment variables">
+    Key variables: `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASS`, `REDIS_CACHE`, `APP_DEBUG`, `BASE_URL`.
+  </Step>
+</Steps>
+
+## Authentication
+
+Authentication providers are pluggable. The active provider is set in configuration and is accessed at runtime through `$app->auth`. Providers implement the `MapasCulturais\AuthProvider` interface.
+
+## Data layer notes
+
+The data layer is more than "Doctrine over PostgreSQL":
+
+* PostgreSQL stores the canonical application state
+* PostGIS supports map-aware queries such as proximity filters
+* metadata tables extend base entities without schema changes for every new field
+* Redis can back cache and session storage when enabled
+
+That combination explains a common maintenance pattern: schema issues, metadata issues, and geospatial issues may surface in the same user-facing feature.
+
+## Error handling
+
+Use typed exceptions from `MapasCulturais\Exceptions\`:
+
+| Exception          | When to use                            |
+| ------------------ | -------------------------------------- |
+| `PermissionDenied` | User lacks the required permission     |
+| `NotFound`         | Entity or resource does not exist      |
+| `WorkflowRequest`  | Invalid state transition in a workflow |
+
+## Key design patterns
+
+<CardGroup cols={3}>
+  <Card title="Singleton" icon="circle-dot">
+    `App` is a singleton accessed via `App::i()`. Ensures a single shared instance of all services.
+  </Card>
+
+  <Card title="Repository (Doctrine)" icon="database">
+    Entities are queried through Doctrine repositories: `$app->repo('Agent')->find($id)`.
+  </Card>
+
+  <Card title="Hook / Event system" icon="webhook">
+    Modules and themes extend behavior by registering callbacks on named hooks rather than modifying core files.
+  </Card>
+</CardGroup>
+
+## Frontend build
+
+Frontend assets are organized as pnpm workspaces under `src/`:
+
+```bash  theme={null}
+# Install all workspace dependencies
+dev/pnpm.sh -C src install
+
+# Production build
+dev/pnpm.sh -C src run build
+
+# Development build with source maps
+dev/pnpm.sh -C src run dev
+
+# Watch mode
+dev/pnpm.sh -C src run watch
+```
+
+Workspace packages: `src/modules/*`, `src/plugins/*`, `src/themes/*`, `src/node_scripts`.
+
+<Note>
+  Frontend builds must run inside the Docker container or via the `dev/pnpm.sh` wrapper, which proxies commands into the container where Node.js and pnpm are available.
+</Note>

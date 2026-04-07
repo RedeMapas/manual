@@ -1,0 +1,196 @@
+---
+title: Registrations
+---
+> Registrations are applications submitted by cultural agents to opportunities, tracking the full lifecycle from draft to final decision.
+
+A **Registration** (inscrição) is an application submitted by a cultural agent to an opportunity. It captures the applicant's responses to the opportunity's configured fields, attached files, and agent relations at the time of submission. Registrations move through a defined status lifecycle from creation to final decision.
+
+## Registration status lifecycle
+
+<Tabs>
+  <Tab title="Status codes">
+    | Code | Name                | Description                                          |
+    | ---- | ------------------- | ---------------------------------------------------- |
+    | `0`  | Draft               | Being filled in by the applicant. Not yet submitted. |
+    | `1`  | Sent (Pending)      | Submitted and awaiting evaluation.                   |
+    | `2`  | Invalid             | Declared invalid by an evaluator or administrator.   |
+    | `3`  | Not approved        | Evaluated and not selected.                          |
+    | `8`  | Waitlist            | On the waiting list (suplente).                      |
+    | `10` | Approved / Selected | Selected by the opportunity.                         |
+  </Tab>
+
+  <Tab title="PHP constants">
+    ```php  theme={null}
+    Registration::STATUS_DRAFT       = 0;  // Entity::STATUS_DRAFT
+    Registration::STATUS_SENT        = 1;  // Entity::STATUS_ENABLED
+    Registration::STATUS_INVALID     = 2;
+    Registration::STATUS_NOTAPPROVED = 3;
+    Registration::STATUS_WAITLIST    = 8;
+    Registration::STATUS_APPROVED    = 10;
+    ```
+  </Tab>
+</Tabs>
+
+```text  theme={null}
+Draft (0) ──send()──→ Sent / Pending (1)
+                              ↓
+               ┌──────────────┼──────────────┐
+           Invalid (2)  Not approved (3)  Waitlist (8)
+                                               ↓
+                                         Approved (10)
+```
+
+<Note>
+  The `STATUS_SENT` constant equals `1`, which is the same value as `Entity::STATUS_ENABLED`. The registration's `status` field uses `0` (draft) as its default on creation.
+</Note>
+
+## Key fields
+
+| Field                | Description                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| `number`             | Human-readable registration number with a configurable prefix. Generated automatically on creation. |
+| `category`           | Selected category, chosen from the opportunity's `registrationCategories` list.                     |
+| `proponentType`      | Proponent type chosen by the applicant from `registrationProponentTypes`.                           |
+| `range`              | Funding range or tier chosen from `registrationRanges`.                                             |
+| `owner`              | The agent submitting the registration. Required.                                                    |
+| `opportunity`        | The opportunity this registration belongs to. Required. Immutable after creation.                   |
+| `status`             | Current status code (see table above).                                                              |
+| `sentTimestamp`      | When the registration was submitted. Set automatically on `send()`.                                 |
+| `agentsData`         | JSON snapshot of agent data captured at submission time.                                            |
+| `score`              | Numeric score computed from technical evaluations.                                                  |
+| `eligible`           | Whether the registration passed eligibility checks.                                                 |
+| `consolidatedResult` | Final result string produced by the evaluation method.                                              |
+| `editableUntil`      | Deadline for applicant to edit specific fields after submission.                                    |
+| `editableFields`     | List of fields the applicant is allowed to edit post-submission.                                    |
+
+## Registration fields
+
+Opportunities configure what information applicants must provide through:
+
+* **`RegistrationFieldConfiguration`** — form fields (text, select, checkbox, date, number, etc.)
+* **`RegistrationFileConfiguration`** — file upload requirements
+* **`RegistrationStep`** — named groups of fields for multi-step forms
+
+Field responses are stored as entity metadata with keys prefixed by `field_`. The field visibility system supports:
+
+* **Category-based visibility** — fields shown only to applicants of a specific category.
+* **Proponent-type-based visibility** — fields shown only to applicants of a specific proponent type.
+* **Range-based visibility** — fields shown only to applicants in a specific funding range.
+* **Conditional fields** — fields shown only when another field has a specific value.
+
+```php  theme={null}
+// Check if a field should be displayed for the current registration
+if ($registration->isFieldVisisble($fieldConfig)) {
+    // render the field
+}
+```
+
+## Submitting a registration
+
+When the applicant calls `send()`, the platform:
+
+1. Validates all required fields, file attachments, and agent relations.
+2. Captures a JSON snapshot of the owner agent's data and any related agents into `agentsData`.
+3. Captures a snapshot of the linked space (if any) into `_spaceData`.
+4. Sets `status` to `STATUS_SENT` and records `sentTimestamp`.
+5. Triggers permission cache recreation.
+
+```php  theme={null}
+$registration->send();
+```
+
+<Warning>
+  Once submitted, the opportunity and agent owner of a registration cannot be changed. Attempting to modify `opportunity` after creation is silently ignored.
+</Warning>
+
+## Agent relations in registrations
+
+Registrations can have multiple related agents beyond the primary owner. These are configured through `RegistrationAgentRelation` and are defined by the opportunity's `RegistrationAgentRelation` definitions. Common groups include:
+
+* `owner` — the primary applicant agent (always required)
+* `coletivo` — an associated collective agent
+* `instituicao` — an associated institutional agent
+
+Each related agent must confirm participation (relation status ≥ 0) before the registration can be submitted.
+
+## Space relation
+
+If the opportunity requires a space, the applicant links one through `RegistrationSpaceRelation`. The space owner must authorize the link. The platform validates:
+
+* Whether a space is required (`useSpaceRelationIntituicao = 'required'`).
+* Whether a linked space has been authorized (status ≥ 0).
+
+## Evaluation flow
+
+<Steps>
+  <Step title="Submission">
+    The applicant submits the registration (status → Sent).
+  </Step>
+
+  <Step title="Committee assignment">
+    Evaluators are assigned to registrations either automatically or manually. Each evaluator is a member of the opportunity's `EvaluationMethodConfiguration` committee.
+  </Step>
+
+  <Step title="Individual evaluation">
+    Each committee member creates or updates a `RegistrationEvaluation` record with their assessment. Evaluations move through their own status lifecycle: Draft → Evaluated (`STATUS_EVALUATED = 1`) → Sent (`STATUS_SENT = 2`).
+  </Step>
+
+  <Step title="Result consolidation">
+    After each evaluation is saved or updated, the platform recomputes the consolidated result using the opportunity's evaluation method and stores it in `consolidatedResult`.
+  </Step>
+
+  <Step title="Final status">
+    An administrator sets the final status (approved, waitlist, not approved, invalid) based on consolidated results.
+  </Step>
+</Steps>
+
+## RegistrationEvaluation
+
+A `RegistrationEvaluation` records a single evaluator's assessment of one registration.
+
+| Field            | Description                                                                       |
+| ---------------- | --------------------------------------------------------------------------------- |
+| `registration`   | The registration being evaluated.                                                 |
+| `user`           | The evaluator's user account.                                                     |
+| `evaluationData` | JSON object with the evaluator's responses, structured per the evaluation method. |
+| `result`         | The computed result string for this individual evaluation.                        |
+| `status`         | `0` = draft, `1` = evaluated (completed), `2` = sent (submitted to committee).    |
+| `isTiebreaker`   | Whether this evaluation was submitted to break a tie.                             |
+| `committee`      | The name of the committee group this evaluator belongs to.                        |
+| `sentTimestamp`  | When the evaluation was submitted.                                                |
+
+```php  theme={null}
+// Submit all evaluations for the current user
+$opportunity->sendUserEvaluations($user);
+```
+
+## Evaluator distribution
+
+The platform supports per-registration evaluator exceptions:
+
+* **`valuersIncludeList`** — user IDs that must evaluate this registration regardless of the default distribution.
+* **`valuersExcludeList`** — user IDs that must not evaluate this registration.
+* **`valuers`** — the final computed list of assigned evaluators.
+
+## Post-submission editing
+
+Opportunity managers can allow applicants to edit specific fields after submission by setting `editableUntil` and `editableFields`. The applicant submits their edits via `sendEditableFields()`.
+
+```php  theme={null}
+// Grant post-submission editing rights
+$registration->editableUntil = new DateTime('2024-06-30 23:59:59');
+$registration->editableFields = ['field_123', 'field_456'];
+$registration->save();
+```
+
+## Seals on approval
+
+When an opportunity publishes its results, approved registrations trigger automatic seal assignments on the relevant agents (owner, collective, institution) based on the opportunity's `registrationSeals` metadata configuration.
+
+## Export
+
+The Spreadsheets module provides export of registrations and evaluation data. Exports can be generated per opportunity phase and filtered by status.
+
+## Accountability
+
+The OpportunityAccountability module extends the registration workflow to track the delivery of accountability reports and financial documents from approved applicants after the grant period.

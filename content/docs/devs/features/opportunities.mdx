@@ -1,0 +1,199 @@
+---
+title: Opportunities
+---
+> Opportunities are public calls, grants, residencies, and prizes that cultural agents can apply to.
+
+An **Opportunity** (edital) is a public call for applications. It defines the terms, timeline, and evaluation criteria for cultural agents seeking funding, recognition, or participation in a program. Opportunities are owned by agents and can be linked to other entities such as projects, events, or spaces.
+
+<CardGroup cols={3}>
+  <Card title="Grants & funding" icon="hand-coins">
+    Public funding calls (editais de fomento) from government or private funders.
+  </Card>
+
+  <Card title="Residencies & prizes" icon="award">
+    Artistic residencies, awards, and recognition programs.
+  </Card>
+
+  <Card title="Calls for participation" icon="megaphone">
+    Open calls for artists, groups, or organizations to participate in events or programs.
+  </Card>
+</CardGroup>
+
+## Key fields
+
+| Field                        | Description                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------------ |
+| `name`                       | Opportunity name. Required.                                                                      |
+| `shortDescription`           | Brief introduction. Required in some installation themes.                                        |
+| `longDescription`            | Full description of the opportunity.                                                             |
+| `type`                       | Numeric type identifier. Required. Configured per installation.                                  |
+| `registrationFrom`           | Start of the registration period.                                                                |
+| `registrationTo`             | End of the registration period. Must be ≥ `registrationFrom`.                                    |
+| `publishedRegistrations`     | Whether the results are publicly visible. Defaults to `false`.                                   |
+| `registrationCategories`     | List of categories applicants can choose from.                                                   |
+| `registrationProponentTypes` | List of accepted proponent types (e.g., individual, collective).                                 |
+| `registrationRanges`         | List of funding ranges or tiers applicants can apply for.                                        |
+| `autoPublish`                | Whether results are published automatically on a schedule.                                       |
+| `publishTimestamp`           | Scheduled date for automatic result publication.                                                 |
+| `publicityOnly`              | If `true`, the opportunity is for announcement only — registrations happen outside the platform. |
+| `status`                     | `1` = published, `0` = draft, `-2` = archived, `-1` = evaluation phase, `-20` = appeal phase.    |
+
+## Opportunity owner entity
+
+An opportunity is always associated with an owner entity — an agent, space, event, or project. This association determines which entity's managers have control over the opportunity. The entity type is captured via the Doctrine inheritance discriminator:
+
+| Discriminator                     | Owner entity type  |
+| --------------------------------- | ------------------ |
+| `MapasCulturais\Entities\Agent`   | AgentOpportunity   |
+| `MapasCulturais\Entities\Space`   | SpaceOpportunity   |
+| `MapasCulturais\Entities\Event`   | EventOpportunity   |
+| `MapasCulturais\Entities\Project` | ProjectOpportunity |
+
+## Registration period
+
+The registration window is defined by `registrationFrom` and `registrationTo`. The method `isRegistrationOpen()` checks whether registrations are currently being accepted.
+
+```php  theme={null}
+if ($opportunity->isRegistrationOpen()) {
+    // show the apply button
+}
+```
+
+### Continuous flow
+
+Opportunities can operate in **continuous flow** mode, where registrations are accepted indefinitely (or until a defined end date). The `CONTINUOUS_FLOW_DATE` constant (`"2111-01-01 00:00"`) is used as a sentinel value for the `registrationTo` field when no actual end date applies.
+
+## Evaluation methods
+
+Each opportunity can be configured with one evaluation method. The method determines how submitted registrations are scored and ranked.
+
+<AccordionGroup>
+  <Accordion title="Simple (Avaliação Simplificada)">
+    Evaluators select a status for each registration from a dropdown (approved, waitlist, rejected, invalid). Suitable for straightforward selection processes.
+  </Accordion>
+
+  <Accordion title="Continuous (Avaliação Contínua)">
+    Designed for continuous-flow opportunities. Registrations are evaluated as they arrive, without waiting for a closed submission period.
+  </Accordion>
+
+  <Accordion title="Documentary (Avaliação Documental)">
+    Evaluators check whether required documents have been submitted correctly. Used in eligibility screening phases.
+  </Accordion>
+
+  <Accordion title="Qualification (Avaliação de Habilitação)">
+    Evaluators assess whether applicants meet the qualification criteria defined in the opportunity.
+  </Accordion>
+
+  <Accordion title="Technical (Avaliação Técnica)">
+    Numeric scoring with configurable criteria and weights. Produces a consolidated score per registration.
+  </Accordion>
+</AccordionGroup>
+
+## Evaluation committee
+
+An opportunity can have an **evaluation committee** composed of multiple evaluators. Evaluators are added through `EvaluationMethodConfigurationAgentRelation`. The committee is responsible for submitting `RegistrationEvaluation` records for each registration.
+
+```php  theme={null}
+// Get the evaluation committee for an opportunity
+$committee = $opportunity->getEvaluationCommittee();
+```
+
+Each evaluator submits their own evaluation. The platform consolidates evaluations into a final result using the configured evaluation method.
+
+## Opportunity phases
+
+The Opportunities module supports **multi-phase** calls. Phases are child opportunities linked to a parent via the nested entity system (`parent` / `_children`). Each phase can have its own:
+
+* Registration fields and file requirements
+* Evaluation method and committee
+* Registration period
+
+Registrations are carried forward between phases using `nextPhaseRegistrationId` and `previousPhaseRegistrationId` metadata pointers.
+
+<Note>
+  Only registrations that pass each phase move to the next. The `fixNextPhaseRegistrationIds()` method repairs broken phase links if data integrity issues arise.
+</Note>
+
+## Registration fields and file requirements
+
+Administrators configure the fields and file uploads required for each registration through:
+
+* **`RegistrationFieldConfiguration`** — text, select, checkbox, date, and other input types.
+* **`RegistrationFileConfiguration`** — file upload slots with optional templates.
+* **`RegistrationStep`** — groups fields into named steps for multi-page forms.
+
+Fields can be conditional (visible only when another field has a specific value) and scoped to specific categories, proponent types, or ranges.
+
+## Additional modules
+
+<CardGroup cols={2}>
+  <Card title="Appeal phase" icon="scale">
+    The OpportunityAppealPhase module adds a formal appeal window after results are published, allowing applicants to contest decisions.
+  </Card>
+
+  <Card title="Workplan" icon="list-checks">
+    The OpportunityWorkplan module lets opportunity managers define deliverables and milestones that approved applicants must fulfill.
+  </Card>
+
+  <Card title="Accountability" icon="file-check">
+    The OpportunityAccountability module tracks the delivery of project reports and financial statements from approved applicants.
+  </Card>
+
+  <Card title="Data export" icon="download">
+    The OpportunityExporter module provides structured export of registrations and evaluation data to spreadsheet formats.
+  </Card>
+</CardGroup>
+
+## Publishing results
+
+When the evaluation is complete, administrators publish results by calling `publishRegistrations()`. This action:
+
+1. Sets `publishedRegistrations = true` on the opportunity.
+2. Applies configured seals to the owner agents of approved registrations.
+3. Fires hooks that modules can use for additional post-publication processing.
+
+```php  theme={null}
+$opportunity->publishRegistrations();
+```
+
+Results can be unpublished via `unPublishRegistrations()`, which reverses seal assignments.
+
+## Status lifecycle
+
+```text  theme={null}
+Draft (0) → Published (1)
+                ↓
+         Evaluation phase (-1)
+                ↓
+         Appeal phase (-20)
+                ↓
+         Archived (-2)
+```
+
+## Creating an opportunity
+
+<Steps>
+  <Step title="Navigate to opportunities">
+    From your dashboard, select **My Opportunities**.
+  </Step>
+
+  <Step title="Create a new opportunity">
+    Click **New Opportunity**, choose the type, and fill in the required fields: name, type, and owner entity.
+  </Step>
+
+  <Step title="Set registration dates">
+    Define the `registrationFrom` and `registrationTo` dates, or enable continuous flow mode.
+  </Step>
+
+  <Step title="Configure registration fields">
+    Add the fields and file upload requirements that applicants must complete. Group them into steps if the form is long.
+  </Step>
+
+  <Step title="Configure the evaluation method">
+    Select an evaluation method and add committee members who will evaluate the submissions.
+  </Step>
+
+  <Step title="Publish">
+    Change the status from **Draft** to **Published** to open the opportunity to applicants.
+  </Step>
+</Steps>

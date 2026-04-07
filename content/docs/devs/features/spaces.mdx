@@ -1,0 +1,135 @@
+---
+title: Spaces
+---
+> Spaces represent physical and virtual cultural venues — theaters, museums, cultural centers, and alternative spaces.
+
+A **Space** is a venue where cultural activities take place. Spaces can be physical locations with a geographic address or virtual environments. They are owned by agents and can host events or be linked to opportunities.
+
+<CardGroup cols={2}>
+  <Card title="Physical spaces" icon="building-2">
+    Theaters, cinemas, museums, galleries, cultural centers, libraries, community spaces, and any other fixed venue.
+  </Card>
+
+  <Card title="Virtual spaces" icon="monitor">
+    Online platforms, streaming channels, and digital environments where cultural activities are held.
+  </Card>
+</CardGroup>
+
+## Key fields
+
+| Field              | Description                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `name`             | Space name. Required.                                                                    |
+| `shortDescription` | Brief summary, up to 400 characters. Required.                                           |
+| `longDescription`  | Full description with rich text support.                                                 |
+| `type`             | Numeric type identifier. Required. Configured per installation.                          |
+| `public`           | Whether the space is open to the general public (`true`) or access-restricted (`false`). |
+| `location`         | PostGIS geographic point (`latitude, longitude`).                                        |
+| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash.           |
+| `createTimestamp`  | When the space was created. Read-only.                                                   |
+| `updateTimestamp`  | When the space was last modified. Read-only.                                             |
+
+Additional fields such as street address, capacity, area in square meters, phone number, and website are stored as **metadata** and may vary by installation configuration.
+
+## Geolocation
+
+Spaces have first-class geospatial support via PostGIS. The location is stored in two columns:
+
+* `location` — a `point` column used internally.
+* `_geo_location` — a `geography` column that supports radius-based spatial queries (e.g., "find all spaces within 5 km of this coordinate").
+
+The platform exposes a map interface that renders space locations as pins. Users can search for spaces by geographic area directly from the map.
+
+```sql  theme={null}
+-- Example: find spaces within 10 km of a coordinate (handled by PostGIS)
+SELECT * FROM space
+WHERE ST_DWithin(
+    _geo_location,
+    ST_GeographyFromText('POINT(-46.6333 -23.5505)'),
+    10000
+);
+```
+
+## Space types
+
+Space types are configured per installation and categorized using the entity-type system. Common examples include:
+
+* Theater
+* Museum / Gallery
+* Cultural center
+* Library
+* Community space
+* Outdoor / public space
+* Virtual / online space
+
+Each space must have a type assigned; the available types and their IDs depend on the installation's configuration.
+
+## Hierarchical spaces
+
+Spaces support a parent–child hierarchy via the `parent` / `_children` relationship. This allows modeling large venues that contain smaller sub-spaces — for example, a cultural center (parent) with multiple rooms (children).
+
+When a child space is updated, the parent's revision history is also updated.
+
+## Relations to other entities
+
+<CardGroup cols={2}>
+  <Card title="Owner agent" icon="user">
+    Every space is owned by exactly one agent. The owner is set via `agent_id` and can be changed subject to permission checks.
+  </Card>
+
+  <Card title="Events" icon="calendar">
+    Events are scheduled at spaces through `EventOccurrence` records. A space exposes its occurrences via the `eventOccurrences` collection.
+  </Card>
+
+  <Card title="Opportunities" icon="megaphone">
+    Spaces can be linked to opportunities through `SpaceOpportunity` relations.
+  </Card>
+
+  <Card title="Agent relations" icon="users">
+    Additional agents (collaborators, managers) can be related to a space through `SpaceAgentRelation`.
+  </Card>
+</CardGroup>
+
+## Seals and verification
+
+Like agents, spaces can receive **seals** that certify or verify them. Seal relations are stored in `SpaceSealRelation`. Verified seals may lock specific fields to prevent unauthorized modifications after certification.
+
+## Tags and taxonomies
+
+Spaces support term relations (`SpaceTermRelation`) for tags, area classification, and other taxonomical vocabularies configured per installation.
+
+## Status lifecycle
+
+```text  theme={null}
+Draft (0) → Published (1) → Archived (-2)
+                           → Disabled (-9)
+                           → Trash (-10)
+```
+
+<Tip>
+  Set a space to **Draft** while you fill in its details. Only publish it when the information is complete and accurate, so it appears correctly on the public map.
+</Tip>
+
+## Creating a space
+
+<Steps>
+  <Step title="Navigate to spaces">
+    From your dashboard, select **My Spaces**.
+  </Step>
+
+  <Step title="Create a new space">
+    Click **New Space**, choose the space type, and fill in the required fields: name and short description.
+  </Step>
+
+  <Step title="Add location">
+    Enter the address or pin the location directly on the map. Accurate geolocation is important for users searching by proximity.
+  </Step>
+
+  <Step title="Complete the profile">
+    Add capacity, accessibility information, contact details, photos, and tags to help users find the space.
+  </Step>
+
+  <Step title="Publish">
+    Change the status from **Draft** to **Published** to make the space visible on the public map.
+  </Step>
+</Steps>

@@ -1,0 +1,380 @@
+---
+title: Registrations API
+---
+> API endpoints for managing registrations (applications) to opportunities in Mapas Culturais.
+
+A **registration** is an application submitted by an agent to an opportunity. Registrations move through a lifecycle from draft to sent, and may be evaluated and assigned a status (approved, waitlisted, not approved, etc.). Registration data is private — only the applicant and opportunity managers can view it.
+
+Base path: `/api/registration/`
+
+<Warning>
+  Registration data is private. All endpoints require authentication. Unauthenticated requests will not return registration records. Use a valid JWT token in the `Authorization` header and set `MapasSDK-REQUEST: true`.
+</Warning>
+
+## Endpoints
+
+| Method   | Path                        | Description                     |
+| -------- | --------------------------- | ------------------------------- |
+| `GET`    | `/api/registration/find`    | List or search registrations    |
+| `GET`    | `/api/registration/findOne` | Find a single registration      |
+| `POST`   | `/registration/index`       | Create a new registration       |
+| `PATCH`  | `/registration/single/{id}` | Update an existing registration |
+| `DELETE` | `/registration/single/{id}` | Delete a registration           |
+
+***
+
+## GET /api/registration/find
+
+Returns a paginated list of registrations. Only returns registrations the authenticated user has permission to view.
+
+### Query parameters
+
+**Control parameters** (prefixed with `@`)
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to include in the response.
+
+  Example: `@select=id,number,status,opportunity,owner`
+</ParamField>
+
+<ParamField query="@page" type="integer" default="1">
+  Page number for paginated results. Starts at `1`.
+</ParamField>
+
+<ParamField query="@limit" type="integer" default="10">
+  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+</ParamField>
+
+<ParamField query="@order" type="string">
+  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+
+  Example: `@order=sentTimestamp DESC`
+</ParamField>
+
+<ParamField query="@or" type="integer">
+  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+</ParamField>
+
+**Filter parameters**
+
+<ParamField query="id" type="string">
+  Filter by registration ID. Supports operators: `EQ(n)`, `IN(a,b,c)`.
+
+  Example: `id=EQ(123456)`
+</ParamField>
+
+<ParamField query="number" type="string">
+  Filter by registration number (the human-readable reference code, e.g., `ABC123456`).
+
+  Example: `number=EQ(ABC123456)`
+</ParamField>
+
+<ParamField query="status" type="integer">
+  Filter by registration status. See status values below.
+
+  Example: `status=EQ(1)` for sent/pending registrations.
+</ParamField>
+
+<ParamField query="opportunity" type="string">
+  Filter by opportunity using entity reference syntax.
+
+  Example: `opportunity=EQ(@Opportunity:15)` returns all registrations for opportunity ID 15.
+</ParamField>
+
+<ParamField query="owner" type="string">
+  Filter by the applicant agent using entity reference syntax.
+
+  Example: `owner=EQ(@Agent:42)` returns registrations belonging to agent ID 42.
+</ParamField>
+
+<ParamField query="category" type="string">
+  Filter by registration category (if the opportunity uses categories).
+
+  Example: `category=EQ(Pintura)`
+</ParamField>
+
+<ParamField query="proponentType" type="string">
+  Filter by proponent type.
+
+  Example: `proponentType=EQ(individual)`
+</ParamField>
+
+### Response
+
+Returns a JSON array of registration objects.
+
+<ResponseField name="id" type="integer" required>
+  Unique registration identifier (randomly generated integer).
+</ResponseField>
+
+<ResponseField name="number" type="string" required>
+  Human-readable registration reference number (e.g., `ABC123456`). Includes a configurable prefix.
+</ResponseField>
+
+<ResponseField name="status" type="integer" required>
+  Registration status code. See status values below.
+</ResponseField>
+
+<ResponseField name="category" type="string">
+  The category chosen by the applicant (if the opportunity uses categories).
+</ResponseField>
+
+<ResponseField name="proponentType" type="string">
+  The proponent type chosen by the applicant.
+</ResponseField>
+
+<ResponseField name="range" type="string">
+  The range/tier chosen by the applicant (if the opportunity uses ranges).
+</ResponseField>
+
+<ResponseField name="opportunity" type="object">
+  The opportunity this registration belongs to.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Opportunity ID.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Opportunity name.
+    </ResponseField>
+
+    <ResponseField name="singleUrl" type="string">
+      URL to the opportunity's detail page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The agent that submitted this registration.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Agent ID.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Agent name.
+    </ResponseField>
+
+    <ResponseField name="singleUrl" type="string">
+      URL to the agent's profile page.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="agentRelations" type="array">
+  List of related agents (co-authors, institutions, etc.) and their relation status.
+</ResponseField>
+
+<ResponseField name="spaceRelation" type="object">
+  The space linked to this registration (if the opportunity requires a space).
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Space relation ID.
+    </ResponseField>
+
+    <ResponseField name="status" type="integer">
+      Relation status. Negative values indicate pending authorization.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="files" type="object">
+  Attached files keyed by file group name. Only visible to the applicant and opportunity managers.
+</ResponseField>
+
+<ResponseField name="createTimestamp" type="string">
+  ISO 8601 datetime when the registration was created.
+</ResponseField>
+
+<ResponseField name="sentTimestamp" type="string">
+  ISO 8601 datetime when the registration was submitted. Null while still in draft.
+</ResponseField>
+
+<ResponseField name="updateTimestamp" type="string">
+  ISO 8601 datetime of the last update.
+</ResponseField>
+
+<ResponseField name="evaluationResultValue" type="mixed">
+  The consolidated evaluation result value. Only visible to users with the appropriate permission.
+</ResponseField>
+
+<ResponseField name="evaluationResultString" type="string">
+  Human-readable string representation of the evaluation result.
+</ResponseField>
+
+<ResponseField name="singleUrl" type="string">
+  URL to the registration detail/view page.
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+  ```bash List all registrations for an opportunity (requires opportunity manager role) theme={null}
+  curl "https://instance.example.com/api/registration/find?@select=id,number,status,owner&opportunity=EQ(@Opportunity:15)" \
+    -H "authorization: <jwt-token>" \
+    -H "MapasSDK-REQUEST: true"
+  ```
+
+  ```bash Get sent registrations for an opportunity theme={null}
+  curl "https://instance.example.com/api/registration/find?@select=id,number,status,category&opportunity=EQ(@Opportunity:15)&status=EQ(1)" \
+    -H "authorization: <jwt-token>" \
+    -H "MapasSDK-REQUEST: true"
+  ```
+
+  ```bash Get approved registrations theme={null}
+  curl "https://instance.example.com/api/registration/find?@select=id,number,status,owner&opportunity=EQ(@Opportunity:15)&status=EQ(10)" \
+    -H "authorization: <jwt-token>" \
+    -H "MapasSDK-REQUEST: true"
+  ```
+
+  ```bash Get own registrations as an applicant theme={null}
+  curl "https://instance.example.com/api/registration/find?@select=id,number,status,opportunity&owner=EQ(@Agent:42)" \
+    -H "authorization: <jwt-token>" \
+    -H "MapasSDK-REQUEST: true"
+  ```
+
+  ```bash Find a registration by number theme={null}
+  curl "https://instance.example.com/api/registration/findOne?@select=id,number,status,category&number=EQ(ABC123456)" \
+    -H "authorization: <jwt-token>" \
+    -H "MapasSDK-REQUEST: true"
+  ```
+</CodeGroup>
+
+<ResponseExample>
+  ```json 200 theme={null}
+  [
+    {
+      "id": 987654,
+      "number": "ABC987654",
+      "status": 10,
+      "category": "Pintura",
+      "proponentType": "individual",
+      "range": null,
+      "opportunity": {
+        "id": 15,
+        "name": "Edital de Apoio a Projetos Culturais",
+        "singleUrl": "https://instance.example.com/opportunity/15"
+      },
+      "owner": {
+        "id": 42,
+        "name": "Maria da Silva",
+        "singleUrl": "https://instance.example.com/agent/42"
+      },
+      "agentRelations": [],
+      "spaceRelation": null,
+      "files": {},
+      "createTimestamp": { "date": "2024-06-10 14:32:00", "timezone": "UTC" },
+      "sentTimestamp": { "date": "2024-07-15 09:00:00", "timezone": "UTC" },
+      "updateTimestamp": { "date": "2024-09-01 11:00:00", "timezone": "UTC" },
+      "singleUrl": "https://instance.example.com/registration/987654",
+      "status": 10
+    }
+  ]
+  ```
+</ResponseExample>
+
+***
+
+## GET /api/registration/findOne
+
+Returns a single registration. Accepts the same filter parameters as `find`. Returns the first matching result.
+
+```bash  theme={null}
+curl "https://instance.example.com/api/registration/findOne?@select=id,number,status,opportunity,owner&id=EQ(987654)" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true"
+```
+
+***
+
+## POST /registration/index
+
+Creates a new registration (draft). Requires authentication. The authenticated user's agent becomes the registration owner.
+
+### Request body
+
+| Field           | Type    | Required | Description                                           |
+| --------------- | ------- | -------- | ----------------------------------------------------- |
+| `opportunityId` | integer | Yes      | The ID of the opportunity to apply to                 |
+| `category`      | string  | No       | Category selection (if the opportunity requires it)   |
+| `proponentType` | string  | No       | Proponent type (if the opportunity requires it)       |
+| `range`         | string  | No       | Range/tier selection (if the opportunity requires it) |
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/registration/index" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "opportunityId": 15,
+    "category": "Pintura"
+  }'
+```
+
+<Note>
+  A newly created registration has status `0` (draft). To submit it, use the `send` action or update the status to `1` via `save`.
+</Note>
+
+***
+
+## POST /registration/single/\{id\}
+
+Updates an existing registration. Requires authentication and ownership.
+
+<Note>
+  Once a registration is sent (status `1`), most fields become locked. Contact the opportunity manager to enable editable fields after submission.
+</Note>
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/registration/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 987654,
+    "category": "Escultura"
+  }'
+```
+
+***
+
+## DELETE /registration/single/\{id\}
+
+Deletes a registration. Only draft registrations can be deleted by the applicant. Requires authentication and ownership.
+
+```bash  theme={null}
+curl -X DELETE "https://instance.example.com/registration/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -d 'id=987654'
+```
+
+***
+
+## Status values
+
+Registrations use a distinct set of status codes from other entities:
+
+| Value | Constant             | Meaning                                          |
+| ----- | -------------------- | ------------------------------------------------ |
+| `0`   | `STATUS_DRAFT`       | Draft — not yet submitted, editable by applicant |
+| `1`   | `STATUS_SENT`        | Submitted / Pending evaluation                   |
+| `2`   | `STATUS_INVALID`     | Invalid — rejected for procedural reasons        |
+| `3`   | `STATUS_NOTAPPROVED` | Not selected                                     |
+| `8`   | `STATUS_WAITLIST`    | Waitlisted                                       |
+| `10`  | `STATUS_APPROVED`    | Selected / Approved                              |
+
+<Note>
+  Registration statuses differ from entity statuses used by agents, spaces, events, projects, and opportunities. Do not mix them.
+</Note>
+
+## Tips
+
+* Only the applicant and opportunity managers can view registration data. Unauthenticated requests return empty results.
+* Filter all registrations for an opportunity with `opportunity=EQ(@Opportunity:id)`. This requires opportunity manager permissions.
+* Applicants can find their own registrations with `owner=EQ(@Agent:id)`.
+* Field data from custom registration form fields (type `field_*`) is included in the response when the user has view access.
+* When `publishedRegistrations` is `true` on the parent opportunity, approved and waitlisted registrations become publicly visible.

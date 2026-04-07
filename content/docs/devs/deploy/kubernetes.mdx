@@ -1,0 +1,180 @@
+---
+title: Kubernetes com Helm
+---
+> Deploy Mapas Culturais em produção usando o Helm chart oficial em um cluster Kubernetes.
+
+The Mapas Culturais Helm chart deploys the full platform — application, PostgreSQL/PostGIS, and Redis — to any Kubernetes cluster. The container image is published at `ghcr.io/redemapas/mapas`.
+
+## Prerequisites
+
+* `kubectl` configured against your target cluster
+* Helm 3.x installed
+* Cluster with at least 512Mi memory available per pod
+
+## Quick Install
+
+```bash  theme={null}
+helm install mapas ./helm/mapas \
+  --set postgresql.settings.superuserPassword=$(openssl rand -base64 32)
+```
+
+This installs Mapas Culturais with:
+
+* Internal PostgreSQL/PostGIS subchart
+* Two internal Redis instances (cache + sessions)
+* PersistentVolumeClaims for assets, files, and private files
+
+## Redis Configuration Modes
+
+The chart supports three Redis modes:
+
+| Mode                              | Command                                                              |
+| --------------------------------- | -------------------------------------------------------------------- |
+| Internal Redis (default)          | `helm install mapas ./helm/mapas`                                    |
+| External Redis with password      | `helm install mapas ./helm/mapas -f helm/mapas/values-dev.yaml`      |
+| No Redis (filesystem/APCu)        | `--set redis-cache.enabled=false --set redis-sessions.enabled=false` |
+| Single Redis for cache + sessions | `--set mapas.useSameRedisForCacheAndSessions=true`                   |
+
+### External Redis example
+
+```yaml  theme={null}
+mapas:
+  redisCache:
+    host: "my-redis.default.svc.cluster.local"
+    port: 6379
+    existingSecret: "redis-secret"
+    existingSecretKey: "password"
+
+  redisSessions:
+    host: "my-redis.default.svc.cluster.local"
+    port: 6379
+    existingSecret: "redis-secret"
+    existingSecretKey: "password"
+
+redis-cache:
+  enabled: false
+
+redis-sessions:
+  enabled: false
+```
+
+## Key Values Reference
+
+### Application
+
+| Value                | Default      | Description                        |
+| -------------------- | ------------ | ---------------------------------- |
+| `mapas.appEnv`       | `production` | Runtime environment                |
+| `mapas.appDebug`     | `false`      | Enable debug mode                  |
+| `mapas.numProcesses` | `2`          | PHP worker processes               |
+| `mapas.jobsInterval` | `60`         | Background jobs interval (seconds) |
+| `mapas.buildAssets`  | `0`          | Build frontend assets on startup   |
+
+### Database
+
+| Value                           | Description                                         |
+| ------------------------------- | --------------------------------------------------- |
+| `mapas.database.host`           | External DB host (when `postgresql.enabled: false`) |
+| `mapas.database.port`           | DB port (default: 5432)                             |
+| `mapas.database.name`           | Database name                                       |
+| `mapas.database.user`           | Database user                                       |
+| `mapas.database.existingSecret` | K8s secret with DB password                         |
+
+### Redis Cache
+
+| Value                                | Description                                       |
+| ------------------------------------ | ------------------------------------------------- |
+| `mapas.redisCache.host`              | Redis host (empty = use APCu/filesystem fallback) |
+| `mapas.redisCache.port`              | Redis port (default: 6379)                        |
+| `mapas.redisCache.password`          | Inline password                                   |
+| `mapas.redisCache.existingSecret`    | K8s secret name                                   |
+| `mapas.redisCache.existingSecretKey` | Key in secret (default: `password`)               |
+
+### Redis Sessions
+
+Same structure as `redisCache`. Set `mapas.useSameRedisForCacheAndSessions: true` to share one Redis instance.
+
+### Mailer
+
+| Value                    | Default               | Description        |
+| ------------------------ | --------------------- | ------------------ |
+| `mapas.mailer.transport` | `smtp://localhost:25` | Symfony Mailer DSN |
+| `mapas.mailer.from`      | `noreply@mapas.local` | Sender address     |
+
+Supported transports: `smtp://`, `ses://`, `mailgun://`, `sendgrid://`, `mailchimp://`.
+
+### Web Push (RedeMapas)
+
+| Value                          | Description                       |
+| ------------------------------ | --------------------------------- |
+| `mapas.webPush.enabled`        | Enable WebPush notifications      |
+| `mapas.webPush.vapidSubject`   | VAPID subject (mailto: or URL)    |
+| `mapas.webPush.vapidPublicKey` | VAPID public key                  |
+| `mapas.webPush.existingSecret` | K8s secret with VAPID private key |
+
+### Persistence
+
+Four PVCs are created by default:
+
+| Volume                     | Default Size | Description                |
+| -------------------------- | ------------ | -------------------------- |
+| `persistence.assets`       | 10Gi         | Public asset files         |
+| `persistence.publicFiles`  | 50Gi         | User-uploaded public files |
+| `persistence.privateFiles` | 10Gi         | Private registration files |
+| `persistence.varFiles`     | 5Gi          | Runtime var directory      |
+
+### Ingress
+
+```yaml  theme={null}
+ingress:
+  enabled: true
+  className: "nginx"
+  hosts:
+    - host: mapas.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: mapas-tls
+      hosts:
+        - mapas.example.com
+```
+
+## Skaffold (Cluster Development)
+
+For iterative development against a local cluster (kind, minikube):
+
+```bash  theme={null}
+# Hot-reload dev mode
+skaffold dev
+
+# Build and deploy to production profile
+skaffold run -p prod
+```
+
+## Upgrading
+
+```bash  theme={null}
+helm upgrade mapas ./helm/mapas --reuse-values \
+  --set image.tag=<new-version>
+```
+
+<Note>
+  Database migrations in `db-updates.php` run automatically on container startup via `entrypoint.sh`. No manual migration step is needed on upgrade.
+</Note>
+
+## Scaling
+
+```yaml  theme={null}
+replicaCount: 3
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+```
+
+<Warning>
+  If you scale beyond one replica, ensure your PVCs use `ReadWriteMany` access mode or use an external shared storage (S3, NFS) for the assets and files volumes.
+</Warning>

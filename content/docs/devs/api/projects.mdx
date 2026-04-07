@@ -1,0 +1,324 @@
+---
+title: Projects API
+---
+> API endpoints for managing cultural projects in Mapas Culturais.
+
+A **project** is a cultural initiative that groups related events together. Projects are owned by agents and can have a defined registration period. Events can be linked to projects, and projects can have child sub-projects.
+
+Base path: `/api/project/`
+
+<Info>
+  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+</Info>
+
+## Endpoints
+
+| Method   | Path                   | Description                |
+| -------- | ---------------------- | -------------------------- |
+| `GET`    | `/api/project/find`    | List or search projects    |
+| `GET`    | `/api/project/findOne` | Find a single project      |
+| `POST`   | `/project/index`       | Create a new project       |
+| `PATCH`  | `/project/single/{id}` | Update an existing project |
+| `DELETE` | `/project/single/{id}` | Delete a project           |
+
+***
+
+## GET /api/project/find
+
+Returns a paginated list of projects. Supports filtering, sorting, field selection, and full-text search.
+
+### Query parameters
+
+**Control parameters** (prefixed with `@`)
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to include in the response. Supports dot notation for related objects (e.g., `owner.name`).
+
+  Example: `@select=id,name,shortDescription,registrationFrom,registrationTo`
+</ParamField>
+
+<ParamField query="@page" type="integer" default="1">
+  Page number for paginated results. Starts at `1`.
+</ParamField>
+
+<ParamField query="@limit" type="integer" default="10">
+  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+</ParamField>
+
+<ParamField query="@order" type="string">
+  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+
+  Example: `@order=name ASC`
+</ParamField>
+
+<ParamField query="@keyword" type="string">
+  Full-text search keyword. Searches across name and description fields.
+</ParamField>
+
+<ParamField query="@or" type="integer">
+  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+</ParamField>
+
+**Filter parameters**
+
+<ParamField query="id" type="string">
+  Filter by project ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+
+  Example: `id=EQ(4)` or `id=IN(1,2,3)`
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filter by project name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+
+  Example: `name=ILIKE(programa*)`
+</ParamField>
+
+<ParamField query="status" type="integer">
+  Filter by publication status.
+
+  | Value | Meaning   |
+  | ----- | --------- |
+  | `1`   | Published |
+  | `0`   | Draft     |
+  | `-2`  | Archived  |
+  | `-9`  | Disabled  |
+  | `-10` | Trash     |
+
+  Example: `status=EQ(1)`
+</ParamField>
+
+<ParamField query="type" type="integer">
+  Filter by project type. Type IDs depend on instance configuration.
+
+  Example: `type=EQ(1)`
+</ParamField>
+
+<ParamField query="owner" type="string">
+  Filter by owner agent using entity reference syntax.
+
+  Example: `owner=EQ(@Agent:42)` returns projects owned by agent ID 42.
+</ParamField>
+
+<ParamField query="startsOn" type="string">
+  Filter by project start date. Supports date comparison operators.
+
+  Example: `startsOn=GTE(2024-01-01)`
+</ParamField>
+
+<ParamField query="endsOn" type="string">
+  Filter by project end date.
+
+  Example: `endsOn=LTE(2024-12-31)`
+</ParamField>
+
+### Response
+
+Returns a JSON array of project objects. The fields returned depend on `@select`.
+
+<ResponseField name="id" type="integer" required>
+  Unique project identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Project display name.
+</ResponseField>
+
+<ResponseField name="type" type="integer">
+  Project type identifier. Defined by instance configuration.
+</ResponseField>
+
+<ResponseField name="shortDescription" type="string">
+  Short description (up to 400 characters).
+</ResponseField>
+
+<ResponseField name="longDescription" type="string">
+  Full long-form description.
+</ResponseField>
+
+<ResponseField name="startsOn" type="string">
+  Project start date (ISO 8601 datetime). When set, `endsOn` is also required.
+</ResponseField>
+
+<ResponseField name="endsOn" type="string">
+  Project end date (ISO 8601 datetime). Must be greater than or equal to `startsOn`.
+</ResponseField>
+
+<ResponseField name="registrationFrom" type="string">
+  Alias for `startsOn` in the context of event registration periods.
+</ResponseField>
+
+<ResponseField name="registrationTo" type="string">
+  Alias for `endsOn` in the context of event registration periods.
+</ResponseField>
+
+<ResponseField name="status" type="integer">
+  Publication status. See status values below.
+</ResponseField>
+
+<ResponseField name="createTimestamp" type="string">
+  ISO 8601 datetime when the project was created.
+</ResponseField>
+
+<ResponseField name="updateTimestamp" type="string">
+  ISO 8601 datetime of the last update.
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The agent that owns this project.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Owner agent ID.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Owner agent name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+  ```bash List published projects theme={null}
+  curl "https://instance.example.com/api/project/find?@select=id,name,shortDescription&status=EQ(1)&@limit=20"
+  ```
+
+  ```bash Search projects by keyword theme={null}
+  curl "https://instance.example.com/api/project/find?@select=id,name,registrationFrom,registrationTo&@keyword=cultura"
+  ```
+
+  ```bash Filter projects by owner agent theme={null}
+  curl "https://instance.example.com/api/project/find?@select=id,name,owner.name&owner=EQ(@Agent:42)"
+  ```
+
+  ```bash Get projects ordered by creation date theme={null}
+  curl "https://instance.example.com/api/project/find?@select=id,name,createTimestamp&@order=createTimestamp%20DESC&@limit=10"
+  ```
+
+  ```bash Get projects with type filter theme={null}
+  curl "https://instance.example.com/api/project/find?@select=id,name,type&type=EQ(1)&status=EQ(1)"
+  ```
+</CodeGroup>
+
+<ResponseExample>
+  ```json 200 theme={null}
+  [
+    {
+      "id": 4,
+      "name": "Programa Cultural Verão",
+      "type": 1,
+      "shortDescription": "Programação cultural para o período de verão.",
+      "longDescription": "Um conjunto de eventos e atividades culturais...",
+      "startsOn": { "date": "2024-12-01 00:00:00", "timezone": "UTC" },
+      "endsOn": { "date": "2025-03-31 00:00:00", "timezone": "UTC" },
+      "status": 1,
+      "createTimestamp": { "date": "2024-10-01 10:00:00", "timezone": "UTC" },
+      "updateTimestamp": { "date": "2024-11-15 09:00:00", "timezone": "UTC" },
+      "owner": {
+        "id": 7,
+        "name": "Secretaria de Cultura"
+      }
+    }
+  ]
+  ```
+</ResponseExample>
+
+***
+
+## GET /api/project/findOne
+
+Returns a single project. Accepts the same filter parameters as `find`. Returns the first matching result.
+
+```bash  theme={null}
+curl "https://instance.example.com/api/project/findOne?@select=id,name,shortDescription,owner&id=EQ(4)"
+```
+
+***
+
+## POST /project/index
+
+Creates a new project. Requires authentication.
+
+<Warning>
+  Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
+</Warning>
+
+### Request body
+
+| Field              | Type    | Required | Description                                                           |
+| ------------------ | ------- | -------- | --------------------------------------------------------------------- |
+| `name`             | string  | Yes      | Project name                                                          |
+| `type`             | integer | Yes      | Project type ID                                                       |
+| `shortDescription` | string  | Yes      | Short description (max 400 characters)                                |
+| `longDescription`  | string  | No       | Full description                                                      |
+| `startsOn`         | string  | No       | Start date in `YYYY-MM-DD` format. If set, `endsOn` is also required. |
+| `endsOn`           | string  | No       | End date in `YYYY-MM-DD` format. Must be >= `startsOn`.               |
+| `terms`            | object  | No       | Taxonomy terms, e.g. `{"area": ["Theater"]}`                          |
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/project/index" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Programa Cultural Verão",
+    "type": 1,
+    "shortDescription": "Programação cultural para o período de verão.",
+    "startsOn": "2024-12-01",
+    "endsOn": "2025-03-31"
+  }'
+```
+
+***
+
+## POST /project/single/\{id\}
+
+Updates an existing project. Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/project/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 4,
+    "shortDescription": "Updated description."
+  }'
+```
+
+***
+
+## DELETE /project/single/\{id\}
+
+Soft-deletes a project. Requires authentication and ownership (or admin role).
+
+<Note>
+  Deleting a project unlinks (but does not delete) events associated with that project.
+</Note>
+
+```bash  theme={null}
+curl -X DELETE "https://instance.example.com/project/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -d 'id=4'
+```
+
+***
+
+## Status values
+
+| Value | Constant          | Meaning                         |
+| ----- | ----------------- | ------------------------------- |
+| `1`   | `STATUS_ENABLED`  | Published and publicly visible  |
+| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner    |
+| `-2`  | `STATUS_ARCHIVED` | Archived                        |
+| `-9`  | `STATUS_DISABLED` | Disabled by admin               |
+| `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash) |
+
+## Tips
+
+* When `startsOn` is set, `endsOn` is mandatory and must be on or after `startsOn`.
+* Projects can have child sub-projects. Filter with `parent=EQ(@Project:id)` to list sub-projects.
+* Users with control over a project can create events within it. Other users can submit a workflow request to link their events.
+* Use `@select` to limit response fields for better performance.

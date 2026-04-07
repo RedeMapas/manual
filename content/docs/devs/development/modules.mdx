@@ -1,0 +1,270 @@
+---
+title: Modules
+---
+> Extend Mapas Culturais with modules: structure, registration, configuration, lifecycle, and the full list of bundled modules.
+
+A module is a self-contained feature package that plugs into the Mapas Culturais core. Each module is a PHP class extending `MapasCulturais\Module`. Modules register their behavior — hooks, controllers, entities, job types — inside the `_init()` method, which the framework calls automatically during application boot.
+
+## Module structure
+
+```
+src/modules/MyModule/
+  Module.php       → Main module class (must extend MapasCulturais\Module)
+  Entities/        → Doctrine entities added by this module (optional)
+  Controllers/     → Controllers added by this module (optional)
+  Jobs/            → Background job types (optional)
+  views/           → View overrides or additions (optional)
+```
+
+## Writing a module
+
+```php  theme={null}
+<?php
+namespace MapasCulturais\Modules\MyModule;
+
+use MapasCulturais\App;
+
+class Module extends \MapasCulturais\Module
+{
+    function _init(): void
+    {
+        $app = App::i();
+
+        // Access module configuration
+        $setting = $this->_config['my_setting'] ?? 'default';
+
+        // Register a hook
+        $app->hook('entity(Agent).save:after', function() use ($app, $setting) {
+            // $this is the Agent entity that was just saved
+            $app->log->info("Agent saved: {$this->name}");
+        });
+
+        // Register a controller
+        $app->registerController('my-module', Controllers\MyController::class);
+
+        // Register a background job type
+        $app->registerJobType(new Jobs\MyJob(Jobs\MyJob::SLUG));
+    }
+
+    function register(): void
+    {
+        // Called before _init(). Use to register definitions,
+        // evaluation methods, or other early-boot items.
+    }
+}
+```
+
+<Note>
+  Module entities placed in `Entities/` are automatically discovered by Doctrine. No additional ORM configuration is needed.
+</Note>
+
+## Registering a module
+
+Add the module to the `plugins` key in your configuration file:
+
+```php  theme={null}
+// config/config.php or dev/config.d/0.main.php
+return [
+    'plugins' => [
+        'MyModule' => [
+            'namespace' => 'MapasCulturais\Modules\MyModule',
+            'my_setting' => 'custom_value',
+        ],
+    ],
+];
+```
+
+The key (`'MyModule'`) is an arbitrary identifier. The `namespace` value must match the module's PHP namespace. Any additional keys in the array are passed as the `$config` array available inside the module as `$this->_config`.
+
+## Module lifecycle
+
+<Steps>
+  <Step title="Constructor">
+    `Module::__construct()` runs when the module is instantiated. It fires `module({ClassName}).init:before`, calls `_init()`, then fires `module({ClassName}).init:after`.
+  </Step>
+
+  <Step title="_init()">
+    The module registers all its hooks, controllers, and services. This is where all module logic is wired in.
+  </Step>
+
+  <Step title="register()">
+    Called earlier in the boot sequence for items that must be registered before `_init()` runs across all modules.
+  </Step>
+
+  <Step title="mapasculturais.init hook">
+    Once all modules have initialized, the application fires `mapasculturais.init`. Use this hook for code that depends on all modules being ready.
+  </Step>
+</Steps>
+
+## Accessing module configuration
+
+Inside the module, configuration values are available through `$this->_config`:
+
+```php  theme={null}
+function _init(): void
+{
+    $maxItems = $this->_config['max_items'] ?? 100;
+    $apiKey   = $this->_config['api_key']   ?? null;
+}
+```
+
+## Bundled modules
+
+<AccordionGroup>
+  <Accordion title="Opportunities">
+    **`Opportunities`** — editais and funding calls. Manages the full opportunity lifecycle: open calls, registrations, evaluation phases, results, and accountability. This is the most feature-rich module in the platform.
+
+    Related modules: `OpportunityPhases`, `OpportunityAppealPhase`, `OpportunityAccountability`, `OpportunityExporter`, `OpportunityWorkplan`.
+  </Accordion>
+
+  <Accordion title="Evaluation methods">
+    Five pluggable evaluation strategies for opportunities:
+
+    | Module                          | Method                                   |
+    | ------------------------------- | ---------------------------------------- |
+    | `EvaluationMethodSimple`        | Simple approve/reject evaluation         |
+    | `EvaluationMethodContinuous`    | Continuous scoring                       |
+    | `EvaluationMethodDocumentary`   | Document-based checklist                 |
+    | `EvaluationMethodTechnical`     | Technical scoring with weighted criteria |
+    | `EvaluationMethodQualification` | Qualification-based evaluation           |
+
+    Each evaluation method module implements a specific scoring interface and registers itself with the Opportunities module.
+  </Accordion>
+
+  <Accordion title="OpportunityPhases">
+    **`OpportunityPhases`** — multi-phase evaluations. Allows opportunities to define sequential phases, each with its own evaluation method, dates, and committee.
+  </Accordion>
+
+  <Accordion title="OpportunityAppealPhase">
+    **`OpportunityAppealPhase`** — appeal phases. Adds an appeal window after evaluation results are published, during which applicants can contest decisions.
+  </Accordion>
+
+  <Accordion title="OpportunityAccountability">
+    **`OpportunityAccountability`** — accountability reporting. Manages post-selection reporting workflows where grant recipients submit evidence of completed activities.
+  </Accordion>
+
+  <Accordion title="Notifications">
+    **`Notifications`** — in-app notification system. Delivers messages to users inside the platform interface when relevant events occur (new evaluation, registration status change, etc.).
+  </Accordion>
+
+  <Accordion title="MailNotification">
+    **`MailNotification`** — email notifications. Sends transactional emails using Symfony Mailer. Email templates are stored in the module's views directory and can be overridden by themes.
+  </Accordion>
+
+  <Accordion title="Search">
+    **`Search`** — full-text and faceted search across all entity types. Integrates with the API query layer to provide keyword-based discovery of agents, spaces, events, and opportunities.
+  </Accordion>
+
+  <Accordion title="Seals">
+    **`Seals`** — verification seals. Allows administrators to certify entities as official or verified. Seals appear as badges on entity cards and profile pages.
+  </Accordion>
+
+  <Accordion title="LGPD">
+    **`LGPD`** — data privacy compliance. Implements features required by Brazil's Lei Geral de Proteção de Dados, including consent management and data deletion workflows.
+  </Accordion>
+
+  <Accordion title="Reports">
+    **`Reports`** — reporting tools. Generates aggregate reports on registrations, evaluations, and platform usage for administrators and opportunity managers.
+  </Accordion>
+
+  <Accordion title="Spreadsheets">
+    **`Spreadsheets`** — Excel/CSV export. Adds export actions to entity lists and registration tables, generating downloadable spreadsheet files.
+  </Accordion>
+
+  <Accordion title="GeoDivisions">
+    **`GeoDivisions`** — geographic divisions. Imports and manages shapefile-based territorial divisions (states, municipalities, neighborhoods) used for map filtering and agent location data.
+  </Accordion>
+
+  <Accordion title="Panel">
+    **`Panel`** — user dashboard. Provides the authenticated user's management interface for their entities, registrations, and opportunities.
+  </Accordion>
+
+  <Accordion title="UserManagement">
+    **`UserManagement`** — user administration. Adds admin-facing interfaces for managing users, roles, and access control.
+  </Accordion>
+
+  <Accordion title="Charts">
+    **`Charts`** — data visualization. Renders summary charts and statistics for opportunities, registrations, and evaluations.
+  </Accordion>
+
+  <Accordion title="FAQ">
+    **`FAQ`** — FAQ management. Allows administrators to create and organize frequently asked questions displayed to end users.
+  </Accordion>
+
+  <Accordion title="ThemeCustomizer">
+    **`ThemeCustomizer`** — UI customization. Provides an admin interface for adjusting colors, logos, and other visual settings without editing theme files directly.
+  </Accordion>
+
+  <Accordion title="Other modules">
+    | Module                   | Description                               |
+    | ------------------------ | ----------------------------------------- |
+    | `ApiKeywords`            | Keyword-based API filtering               |
+    | `Apps`                   | OAuth application management              |
+    | `BaseV1EmbedTools`       | Embeddable widgets for BaseV1             |
+    | `CEPAberto`              | Brazilian postal code lookup              |
+    | `CompliantSuggestion`    | Content moderation suggestions            |
+    | `Components`             | Shared UI components                      |
+    | `CountryLocalizations`   | Country and locale data                   |
+    | `DeleteAccount`          | Self-service account deletion             |
+    | `Entities`               | Core entity extensions                    |
+    | `EventImporter`          | Bulk event import tools                   |
+    | `FakeAuthentication`     | Development-only auth bypass              |
+    | `Home`                   | Home page layout and content              |
+    | `ImageTransformations`   | Image resizing and cropping               |
+    | `OpportunityExporter`    | Registration data export                  |
+    | `OpportunityWorkplan`    | Work plan management                      |
+    | `ProfileCompletion`      | Profile completeness nudges               |
+    | `ProjectMonitoring`      | Project progress tracking                 |
+    | `RegistrationFieldTypes` | Custom field types for registration forms |
+    | `Support`                | In-app support request forms              |
+  </Accordion>
+</AccordionGroup>
+
+## Ecosystem plugins
+
+Beyond the bundled modules, older installations often referenced external plugins maintained per project, edital, or deployment. They are not part of the core distribution, but these names still help when reading old configs and forks:
+
+| Category | Historical examples |
+| -------- | ------------------- |
+| Opportunity workflows | `plugin-RegistrationPayments`, `plugin-AldirBlanc`, `plugin-AldirBlancDataprev`, `plugin-AldirBlancValidador`, `plugin-AldirBlancValidadorFinanceiro`, `plugin-AldirBlancValidadorRecurso`, `plugin-AppealValidator`, `plugin-GenericValidator`, `Plugin-FinancialValidador`, `plugin-GenericPaymentExport`, `plugin-ClaimForm` |
+| Integrations and support | `plugin-Metabase`, `plugin-Analytics`, `plugin-Zammad`, `plugin-Integrator`, `plugin-MailImage` |
+| Data and admin tooling | `plugin-DataAnonymization`, `plugin-MapasBlame`, `plugin-AccountConsolidator`, `plugin-DisableModules`, `plugin-UndeletableEntities`, `plugin-MetadataKeyword` |
+| UX and installation behavior | `plugin-Accessibility`, `plugin-SpamDetector`, `plugin-MapasOportunidade`, `plugin-MapasOportunidadeFrontend`, `plugin-EmbedTools`, `plugin-HomeContent`, `plugin-SubsiteFilter`, `plugin-SubsiteImport` |
+| Geography and localization | `plugin-LocationPatch`, `plugin-GeodivisionsBR`, `plugin-CreateGeoDivisions` |
+
+Use this list only as an orientation aid for technical archaeology. For current behavior, verify whether the capability is implemented as a bundled module, project-specific plugin, or theme customization in the repository you are maintaining.
+
+## Real-world example: Opportunities module
+
+The following excerpt from `src/modules/Opportunities/Module.php` shows the `_init()` pattern in practice — registering job types, hooks that run after entity operations, and hooks that intercept API parameters:
+
+```php  theme={null}
+function _init(): void
+{
+    $app = App::i();
+
+    // Register background job types
+    $app->registerJobType(new Jobs\StartEvaluationPhase(Jobs\StartEvaluationPhase::SLUG));
+    $app->registerJobType(new Jobs\PublishResult(Jobs\PublishResult::SLUG));
+
+    // Create a default registration step when a new opportunity is inserted
+    $app->hook('entity(Opportunity).insert:after', function() {
+        if ($this->registrationSteps && count($this->registrationSteps) > 0) {
+            return;
+        }
+        $step = new RegistrationStep();
+        $step->opportunity = $this;
+        $step->save(true);
+    });
+
+    // Propagate owner changes to all subsequent phases
+    $app->hook('entity(Opportunity).saveOwnerAgent', function() {
+        if (!$this->isNew()) {
+            foreach ($this->allPhases as $phase) {
+                $phase->owner = $this->owner;
+                $phase->save(true);
+            }
+        }
+    });
+}
+```

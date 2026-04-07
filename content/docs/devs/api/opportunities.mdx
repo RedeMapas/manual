@@ -1,0 +1,351 @@
+---
+title: Opportunities API
+---
+> API endpoints for managing opportunities (calls, grants, and open calls) in Mapas Culturais.
+
+An **opportunity** is an open call, grant, award, or any selection process that accepts registrations. Opportunities are associated with an owner entity (agent, space, event, or project) and have a defined registration period. They support multi-phase evaluation workflows.
+
+Base path: `/api/opportunity/`
+
+<Info>
+  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+</Info>
+
+## Endpoints
+
+| Method   | Path                       | Description                    |
+| -------- | -------------------------- | ------------------------------ |
+| `GET`    | `/api/opportunity/find`    | List or search opportunities   |
+| `GET`    | `/api/opportunity/findOne` | Find a single opportunity      |
+| `POST`   | `/opportunity/index`       | Create a new opportunity       |
+| `PATCH`  | `/opportunity/single/{id}` | Update an existing opportunity |
+| `DELETE` | `/opportunity/single/{id}` | Delete an opportunity          |
+
+***
+
+## GET /api/opportunity/find
+
+Returns a paginated list of opportunities. Supports filtering, sorting, field selection, and full-text search.
+
+### Query parameters
+
+**Control parameters** (prefixed with `@`)
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to include in the response. Supports dot notation for related objects (e.g., `owner.name`).
+
+  Example: `@select=id,name,registrationFrom,registrationTo,publishedRegistrations`
+</ParamField>
+
+<ParamField query="@page" type="integer" default="1">
+  Page number for paginated results. Starts at `1`.
+</ParamField>
+
+<ParamField query="@limit" type="integer" default="10">
+  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+</ParamField>
+
+<ParamField query="@order" type="string">
+  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+
+  Example: `@order=registrationFrom DESC`
+</ParamField>
+
+<ParamField query="@keyword" type="string">
+  Full-text search keyword. Searches across name and description fields.
+</ParamField>
+
+<ParamField query="@or" type="integer">
+  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+</ParamField>
+
+**Filter parameters**
+
+<ParamField query="id" type="string">
+  Filter by opportunity ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+
+  Example: `id=EQ(15)`
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filter by opportunity name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+
+  Example: `name=ILIKE(edital*)`
+</ParamField>
+
+<ParamField query="status" type="integer">
+  Filter by publication status.
+
+  | Value | Meaning   |
+  | ----- | --------- |
+  | `1`   | Published |
+  | `0`   | Draft     |
+  | `-2`  | Archived  |
+  | `-9`  | Disabled  |
+  | `-10` | Trash     |
+
+  Example: `status=EQ(1)`
+</ParamField>
+
+<ParamField query="type" type="integer">
+  Filter by opportunity type. Type IDs depend on instance configuration.
+
+  Example: `type=EQ(1)`
+</ParamField>
+
+<ParamField query="owner" type="string">
+  Filter by owner agent using entity reference syntax.
+
+  Example: `owner=EQ(@Agent:7)`
+</ParamField>
+
+<ParamField query="registrationFrom" type="string">
+  Filter by registration open date. Supports date comparison operators.
+
+  Example: `registrationFrom=GTE(2024-01-01)`
+</ParamField>
+
+<ParamField query="registrationTo" type="string">
+  Filter by registration close date.
+
+  Example: `registrationTo=LTE(2024-12-31)`
+</ParamField>
+
+<ParamField query="publishedRegistrations" type="boolean">
+  Filter by whether results have been published.
+
+  Example: `publishedRegistrations=EQ(true)`
+</ParamField>
+
+### Response
+
+Returns a JSON array of opportunity objects. The fields returned depend on `@select`.
+
+<ResponseField name="id" type="integer" required>
+  Unique opportunity identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Opportunity display name.
+</ResponseField>
+
+<ResponseField name="type" type="integer">
+  Opportunity type identifier. Defined by instance configuration.
+</ResponseField>
+
+<ResponseField name="shortDescription" type="string">
+  Short description / introduction text.
+</ResponseField>
+
+<ResponseField name="longDescription" type="string">
+  Full long-form description.
+</ResponseField>
+
+<ResponseField name="registrationFrom" type="string">
+  ISO 8601 datetime when the registration period opens.
+</ResponseField>
+
+<ResponseField name="registrationTo" type="string">
+  ISO 8601 datetime when the registration period closes. Must be greater than or equal to `registrationFrom`.
+</ResponseField>
+
+<ResponseField name="publishedRegistrations" type="boolean">
+  Whether the selection results have been published publicly.
+</ResponseField>
+
+<ResponseField name="registrationCategories" type="array">
+  List of registration category options available to applicants.
+</ResponseField>
+
+<ResponseField name="registrationProponentTypes" type="array">
+  List of valid proponent types (e.g., individual, collective, institution).
+</ResponseField>
+
+<ResponseField name="autoPublish" type="boolean">
+  Whether results are published automatically at the configured timestamp.
+</ResponseField>
+
+<ResponseField name="publishTimestamp" type="string">
+  Scheduled auto-publish datetime (ISO 8601).
+</ResponseField>
+
+<ResponseField name="status" type="integer">
+  Publication status. See status values below.
+</ResponseField>
+
+<ResponseField name="createTimestamp" type="string">
+  ISO 8601 datetime when the opportunity was created.
+</ResponseField>
+
+<ResponseField name="updateTimestamp" type="string">
+  ISO 8601 datetime of the last update.
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The agent that owns this opportunity.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Owner agent ID.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Owner agent name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+  ```bash List published opportunities theme={null}
+  curl "https://instance.example.com/api/opportunity/find?@select=id,name,registrationFrom,registrationTo&status=EQ(1)&@limit=20"
+  ```
+
+  ```bash Search opportunities by keyword theme={null}
+  curl "https://instance.example.com/api/opportunity/find?@select=id,name,shortDescription&@keyword=edital%20cultura"
+  ```
+
+  ```bash Filter open opportunities (registration still active) theme={null}
+  curl "https://instance.example.com/api/opportunity/find?@select=id,name,registrationTo&status=EQ(1)&registrationTo=GTE(2024-08-01)"
+  ```
+
+  ```bash Get opportunities with published results theme={null}
+  curl "https://instance.example.com/api/opportunity/find?@select=id,name,publishedRegistrations&publishedRegistrations=EQ(true)"
+  ```
+
+  ```bash Filter by owner agent ordered by registration close date theme={null}
+  curl "https://instance.example.com/api/opportunity/find?@select=id,name,registrationTo&owner=EQ(@Agent:7)&@order=registrationTo%20DESC"
+  ```
+</CodeGroup>
+
+<ResponseExample>
+  ```json 200 theme={null}
+  [
+    {
+      "id": 15,
+      "name": "Edital de Apoio a Projetos Culturais",
+      "type": 1,
+      "shortDescription": "Chamada pública para projetos de artes visuais.",
+      "registrationFrom": { "date": "2024-06-01 00:00:00", "timezone": "UTC" },
+      "registrationTo": { "date": "2024-08-31 23:59:59", "timezone": "UTC" },
+      "publishedRegistrations": false,
+      "registrationCategories": ["Pintura", "Escultura", "Fotografia"],
+      "registrationProponentTypes": ["individual", "coletivo"],
+      "status": 1,
+      "createTimestamp": { "date": "2024-05-01 10:00:00", "timezone": "UTC" },
+      "updateTimestamp": { "date": "2024-05-15 14:30:00", "timezone": "UTC" },
+      "owner": {
+        "id": 7,
+        "name": "Secretaria de Cultura"
+      }
+    }
+  ]
+  ```
+</ResponseExample>
+
+***
+
+## GET /api/opportunity/findOne
+
+Returns a single opportunity. Accepts the same filter parameters as `find`. Returns the first matching result.
+
+```bash  theme={null}
+curl "https://instance.example.com/api/opportunity/findOne?@select=id,name,shortDescription,registrationFrom,registrationTo&id=EQ(15)"
+```
+
+***
+
+## POST /opportunity/index
+
+Creates a new opportunity. Requires authentication.
+
+<Warning>
+  Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
+</Warning>
+
+### Request body
+
+| Field                        | Type    | Required | Description                                                                    |
+| ---------------------------- | ------- | -------- | ------------------------------------------------------------------------------ |
+| `name`                       | string  | Yes      | Opportunity name                                                               |
+| `type`                       | integer | Yes      | Opportunity type ID                                                            |
+| `shortDescription`           | string  | Yes      | Short description                                                              |
+| `longDescription`            | string  | No       | Full description                                                               |
+| `registrationFrom`           | string  | No       | Registration open date (`YYYY-MM-DD HH:MM`)                                    |
+| `registrationTo`             | string  | No       | Registration close date (`YYYY-MM-DD HH:MM`). Must be >= `registrationFrom`.   |
+| `ownerEntity`                | integer | Yes      | ID of the entity this opportunity belongs to (agent, space, event, or project) |
+| `registrationCategories`     | array   | No       | List of category options                                                       |
+| `registrationProponentTypes` | array   | No       | List of valid proponent types                                                  |
+| `terms`                      | object  | No       | Taxonomy terms                                                                 |
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/opportunity/index" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Edital de Apoio a Projetos Culturais",
+    "type": 1,
+    "shortDescription": "Chamada pública para projetos de artes visuais.",
+    "registrationFrom": "2024-06-01 00:00",
+    "registrationTo": "2024-08-31 23:59",
+    "ownerEntity": 7
+  }'
+```
+
+***
+
+## POST /opportunity/single/\{id\}
+
+Updates an existing opportunity. Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/opportunity/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 15,
+    "shortDescription": "Updated description."
+  }'
+```
+
+***
+
+## DELETE /opportunity/single/\{id\}
+
+Soft-deletes an opportunity. Requires authentication and ownership (or admin role).
+
+<Note>
+  Deleting an opportunity will also remove associated registrations and evaluation data.
+</Note>
+
+```bash  theme={null}
+curl -X DELETE "https://instance.example.com/opportunity/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -d 'id=15'
+```
+
+***
+
+## Status values
+
+| Value | Constant              | Meaning                                                  |
+| ----- | --------------------- | -------------------------------------------------------- |
+| `1`   | `STATUS_ENABLED`      | Published and accepting registrations (if within period) |
+| `0`   | `STATUS_DRAFT`        | Draft, visible only to owner                             |
+| `-1`  | `STATUS_PHASE`        | Phase opportunity (sub-phase of a multi-phase process)   |
+| `-2`  | `STATUS_ARCHIVED`     | Archived                                                 |
+| `-9`  | `STATUS_DISABLED`     | Disabled by admin                                        |
+| `-10` | `STATUS_TRASH`        | Deleted (soft delete, in trash)                          |
+| `-20` | `STATUS_APPEAL_PHASE` | Appeal phase in evaluation workflow                      |
+
+## Tips
+
+* An opportunity is considered **open** when the current date is between `registrationFrom` and `registrationTo` and its status is `1`.
+* Use `publishedRegistrations=EQ(true)` to find opportunities where results are public.
+* Multi-phase opportunities have a parent opportunity. Filter by `parent=EQ(@Opportunity:id)` to list phases.
+* The `registrationCategories` and `registrationProponentTypes` arrays define what options applicants see on the registration form.
+* Continuous-flow opportunities use a special date far in the future (`2111-01-01`) as `registrationTo`.

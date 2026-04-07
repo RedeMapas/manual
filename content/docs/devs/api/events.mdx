@@ -1,0 +1,366 @@
+---
+title: Events API
+---
+> API endpoints for managing cultural events in Mapas Culturais.
+
+An **event** represents a cultural activity with one or more scheduled occurrences at spaces. Events belong to an agent (owner) and can optionally be linked to a project. Occurrences define when and where the event takes place.
+
+Base path: `/api/event/`
+
+<Info>
+  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+</Info>
+
+## Endpoints
+
+| Method   | Path                 | Description              |
+| -------- | -------------------- | ------------------------ |
+| `GET`    | `/api/event/find`    | List or search events    |
+| `GET`    | `/api/event/findOne` | Find a single event      |
+| `POST`   | `/event/index`       | Create a new event       |
+| `PATCH`  | `/event/single/{id}` | Update an existing event |
+| `DELETE` | `/event/single/{id}` | Delete an event          |
+
+***
+
+## GET /api/event/find
+
+Returns a paginated list of events. Supports filtering, sorting, field selection, and full-text search.
+
+### Query parameters
+
+**Control parameters** (prefixed with `@`)
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to include in the response. Supports dot notation for nested objects and nested field selection for occurrences.
+
+  Example: `@select=id,name,occurrences.{id,space.{name},rule}`
+</ParamField>
+
+<ParamField query="@page" type="integer" default="1">
+  Page number for paginated results. Starts at `1`.
+</ParamField>
+
+<ParamField query="@limit" type="integer" default="10">
+  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+</ParamField>
+
+<ParamField query="@order" type="string">
+  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+
+  Example: `@order=name ASC`
+</ParamField>
+
+<ParamField query="@keyword" type="string">
+  Full-text search keyword. Searches across name and description fields.
+</ParamField>
+
+<ParamField query="@or" type="integer">
+  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+</ParamField>
+
+**Filter parameters**
+
+<ParamField query="id" type="string">
+  Filter by event ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+
+  Example: `id=BET(100,200)`
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filter by event name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+
+  Example: `name=ILIKE(festival*)`
+</ParamField>
+
+<ParamField query="status" type="integer">
+  Filter by publication status.
+
+  | Value | Meaning   |
+  | ----- | --------- |
+  | `1`   | Published |
+  | `0`   | Draft     |
+  | `-2`  | Archived  |
+  | `-9`  | Disabled  |
+  | `-10` | Trash     |
+
+  Example: `status=EQ(1)`
+</ParamField>
+
+<ParamField query="type" type="integer">
+  Filter by event type. Type IDs depend on instance configuration.
+
+  Example: `type=EQ(1)`
+</ParamField>
+
+<ParamField query="project" type="string">
+  Filter by associated project using entity reference syntax.
+
+  Example: `project=EQ(@Project:4)` returns events linked to project ID 4.
+</ParamField>
+
+<ParamField query="owner" type="string">
+  Filter by owner agent using entity reference syntax.
+
+  Example: `owner=EQ(@Agent:42)`
+</ParamField>
+
+### Response
+
+Returns a JSON array of event objects. The fields returned depend on `@select`.
+
+<ResponseField name="id" type="integer" required>
+  Unique event identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Event display name.
+</ResponseField>
+
+<ResponseField name="type" type="integer">
+  Event type identifier.
+</ResponseField>
+
+<ResponseField name="shortDescription" type="string">
+  Short description (up to 400 characters).
+</ResponseField>
+
+<ResponseField name="longDescription" type="string">
+  Full long-form description.
+</ResponseField>
+
+<ResponseField name="occurrences" type="array">
+  List of scheduled occurrences for this event.
+
+  <Expandable title="occurrence properties">
+    <ResponseField name="id" type="integer">
+      Occurrence identifier.
+    </ResponseField>
+
+    <ResponseField name="startsOn" type="string">
+      Start date of the occurrence (ISO 8601).
+    </ResponseField>
+
+    <ResponseField name="endsOn" type="string">
+      End date of the occurrence (ISO 8601).
+    </ResponseField>
+
+    <ResponseField name="startsAt" type="string">
+      Start time of the occurrence.
+    </ResponseField>
+
+    <ResponseField name="endsAt" type="string">
+      End time of the occurrence.
+    </ResponseField>
+
+    <ResponseField name="frequency" type="string">
+      Recurrence rule (e.g., `once`, `weekly`, `monthly`).
+    </ResponseField>
+
+    <ResponseField name="rule" type="object">
+      Full recurrence rule object. Contains a `description` field with a human-readable summary.
+    </ResponseField>
+
+    <ResponseField name="space" type="object">
+      The space where the occurrence takes place.
+
+      <Expandable title="properties">
+        <ResponseField name="id" type="integer">Space ID.</ResponseField>
+        <ResponseField name="name" type="string">Space name.</ResponseField>
+        <ResponseField name="location" type="object">Space coordinates (latitude, longitude).</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="project" type="object">
+  The project this event is linked to (if any).
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">Project ID.</ResponseField>
+    <ResponseField name="name" type="string">Project name.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="status" type="integer">
+  Publication status. See status values below.
+</ResponseField>
+
+<ResponseField name="createTimestamp" type="string">
+  ISO 8601 datetime when the event was created.
+</ResponseField>
+
+<ResponseField name="updateTimestamp" type="string">
+  ISO 8601 datetime of the last update.
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The agent that owns this event.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">Owner agent ID.</ResponseField>
+    <ResponseField name="name" type="string">Owner agent name.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+  ```bash List published events theme={null}
+  curl "https://instance.example.com/api/event/find?@select=id,name,shortDescription&status=EQ(1)&@limit=20"
+  ```
+
+  ```bash Search events by keyword theme={null}
+  curl "https://instance.example.com/api/event/find?@select=id,name,shortDescription&@keyword=festival"
+  ```
+
+  ```bash Get events with occurrences including space and recurrence rule theme={null}
+  curl "https://instance.example.com/api/event/find?@select=id,name,occurrences.{id,space.{name},rule}&id=BET(100,200)"
+  ```
+
+  ```bash Get events with taxonomy terms filtered by language theme={null}
+  curl "https://instance.example.com/api/event/find?@select=id,name,terms&term:linguagem=LIKE(Cinema)&id=BET(100,200)"
+  ```
+
+  ```bash Get all events belonging to a project theme={null}
+  curl "https://instance.example.com/api/event/find?@select=id,name,location&project=EQ(@Project:4)"
+  ```
+
+  ```bash Get events with file URLs theme={null}
+  curl "https://instance.example.com/api/event/find?@files=header.header,avatar.avatarBig&@select=id,name,shortDescription&id=BET(100,200)"
+  ```
+</CodeGroup>
+
+<ResponseExample>
+  ```json 200 theme={null}
+  [
+    {
+      "id": 101,
+      "name": "Festival de Jazz",
+      "type": 1,
+      "shortDescription": "Festival anual de jazz ao ar livre.",
+      "occurrences": [
+        {
+          "id": 2001,
+          "rule": {
+            "description": "Sábado, 10 de agosto de 2024, das 18h às 23h"
+          },
+          "space": {
+            "id": 10,
+            "name": "Teatro Municipal",
+            "location": { "latitude": -23.5498, "longitude": -46.6338 }
+          }
+        }
+      ],
+      "project": {
+        "id": 4,
+        "name": "Programa Cultural Verão"
+      },
+      "status": 1,
+      "createTimestamp": { "date": "2024-01-10 11:00:00", "timezone": "UTC" },
+      "updateTimestamp": { "date": "2024-07-01 09:00:00", "timezone": "UTC" },
+      "owner": {
+        "id": 7,
+        "name": "Secretaria de Cultura"
+      }
+    }
+  ]
+  ```
+</ResponseExample>
+
+***
+
+## GET /api/event/findOne
+
+Returns a single event. Accepts the same filter parameters as `find`. Returns the first matching result.
+
+```bash  theme={null}
+curl "https://instance.example.com/api/event/findOne?@select=id,name,occurrences&id=EQ(101)"
+```
+
+***
+
+## POST /event/index
+
+Creates a new event. Requires authentication.
+
+<Warning>
+  Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
+</Warning>
+
+### Request body
+
+| Field              | Type    | Required | Description                                     |
+| ------------------ | ------- | -------- | ----------------------------------------------- |
+| `name`             | string  | Yes      | Event name                                      |
+| `type`             | integer | No       | Event type ID (defaults to `1`)                 |
+| `shortDescription` | string  | Yes      | Short description (max 400 characters)          |
+| `longDescription`  | string  | No       | Full description                                |
+| `projectId`        | integer | No       | ID of the project to associate the event with   |
+| `terms`            | object  | No       | Taxonomy terms, e.g. `{"linguagem": ["Music"]}` |
+
+<Note>
+  To link an event to a project, the authenticated user must have control over that project. If not, a workflow request is created for the project owner to approve.
+</Note>
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/event/index" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Festival de Jazz",
+    "type": 1,
+    "shortDescription": "Festival anual de jazz ao ar livre.",
+    "projectId": 4
+  }'
+```
+
+***
+
+## POST /event/single/\{id\}
+
+Updates an existing event. Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/event/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 101,
+    "shortDescription": "Updated description."
+  }'
+```
+
+***
+
+## DELETE /event/single/\{id\}
+
+Soft-deletes an event. Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X DELETE "https://instance.example.com/event/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -d 'id=101'
+```
+
+***
+
+## Status values
+
+| Value | Constant          | Meaning                                           |
+| ----- | ----------------- | ------------------------------------------------- |
+| `1`   | `STATUS_ENABLED`  | Published and publicly visible                    |
+| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner and project managers |
+| `-2`  | `STATUS_ARCHIVED` | Archived                                          |
+| `-9`  | `STATUS_DISABLED` | Disabled by admin                                 |
+| `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash)                   |
+
+## Tips
+
+* Use `@select=id,name,occurrences.{id,space.{name},rule}` to retrieve structured occurrence data with space and recurrence info in a single request.
+* The `rule.description` field inside each occurrence contains a human-readable date/time summary.
+* Filter by taxonomy with `term:linguagem=LIKE(Cinema)` syntax where `linguagem` is the taxonomy slug.
+* Project managers can also publish events within their project.

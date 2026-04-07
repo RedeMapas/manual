@@ -1,0 +1,252 @@
+---
+title: Testing
+---
+> Write and run PHPUnit tests for Mapas Culturais: test structure, base class, builders, directors, and practical examples.
+
+Mapas Culturais uses [PHPUnit 10](https://phpunit.de/) for its test suite. Tests require a live database connection, so they must run inside the Docker container (or an equivalent environment with PostgreSQL and PostGIS available).
+
+## Running tests
+
+```bash  theme={null}
+# Run the full test suite
+docker compose exec mapas vendor/bin/phpunit tests/
+
+# Run a single test file
+docker compose exec mapas vendor/bin/phpunit tests/src/EntitiesTest.php
+
+# Run a single test method
+docker compose exec mapas vendor/bin/phpunit tests/src/EntitiesTest.php --filter testAgentCreation
+
+# Via the convenience script
+./scripts/run-tests-docker.sh
+```
+
+<Warning>
+  Tests must run inside the container. Running `vendor/bin/phpunit` directly on the host will fail because the host has no access to the PostgreSQL and Redis instances that the test suite depends on.
+</Warning>
+
+PHPUnit is configured via `phpunit.xml` at the repo root. Tests execute in random order by default (`executionOrder="random"`) to surface hidden dependencies between tests early.
+
+## Test structure
+
+```
+tests/
+  src/
+    Abstract/           → Base classes (TestCase, Builder, Director)
+    Builders/           → Entity builders (fluent API for constructing test data)
+    Directors/          → Higher-level test directors using builders
+    Factories/          → Factory helpers
+    Traits/             → Shared test traits (Faker, AgentDirector, etc.)
+    Fixtures.php        → Shared fixture data
+    fixtures/           → Fixture files (JSON, etc.)
+    EntitiesTest.php    → Example test file
+    OpportunityPhasesTest.php
+    EvaluationMethodTechnicalTest.php
+    ...
+```
+
+## The `TestCase` base class
+
+All tests extend `Tests\Abstract\TestCase`, which extends PHPUnit's `TestCase`. The base class handles:
+
+* Starting a database transaction in `setUp()`
+* Rolling it back in `tearDown()` so every test leaves the database in a clean state
+* Providing `login()` and `logout()` helpers
+* Exposing `$this->app` as the application singleton
+
+```php  theme={null}
+<?php
+
+namespace Tests;
+
+use Tests\Abstract\TestCase;
+
+class MyFeatureTest extends TestCase
+{
+    public function testSomething(): void
+    {
+        // The database is in a transaction.
+        // Any changes made here are rolled back after the test.
+
+        $app = $this->app;
+
+        // Create a user and log in
+        $user = $this->userDirector->createUser();
+        $this->login($user);
+
+        // Your assertions here
+        $this->assertTrue(true);
+    }
+}
+```
+
+The transaction rollback pattern means you can write to the database freely without needing to clean up — each test gets a fresh snapshot.
+
+## Writing a test
+
+<Steps>
+  <Step title="Create the test class">
+    Create a file in `tests/src/` named after the feature you are testing. The class must extend `Tests\Abstract\TestCase`.
+
+    ```php  theme={null}
+    <?php
+
+    namespace Tests;
+
+    use Tests\Abstract\TestCase;
+    use Tests\Traits\UserDirector;
+    use Tests\Traits\AgentDirector;
+
+    class MyFeatureTest extends TestCase
+    {
+        use UserDirector, AgentDirector;
+    }
+    ```
+  </Step>
+
+  <Step title="Use builders and directors to create test data">
+    Builders provide a fluent API for constructing entities. Directors wrap builders to create common test scenarios in one call.
+
+    ```php  theme={null}
+    public function testAgentHasOwner(): void
+    {
+        $user = $this->userDirector->createUser();
+        $this->login($user);
+
+        $agent = $this->agentDirector->createAgent($user->profile);
+
+        $this->assertEquals($user->id, $agent->getOwnerUser()->id);
+    }
+    ```
+  </Step>
+
+  <Step title="Make HTTP-style assertions">
+    The base class provides helpers to make simulated API requests and assert on the response:
+
+    ```php  theme={null}
+    public function testApiReturnsAgent(): void
+    {
+        $user  = $this->userDirector->createUser();
+        $agent = $this->agentDirector->createAgent($user->profile);
+
+        $response = $this->request('GET', "/api/agent/{$agent->id}");
+
+        $this->assertEquals(200, $response->getStatusCode());
+    }
+    ```
+  </Step>
+
+  <Step title="Run the test">
+    ```bash  theme={null}
+    docker compose exec mapas vendor/bin/phpunit tests/src/MyFeatureTest.php
+    ```
+  </Step>
+</Steps>
+
+## Builders
+
+Builders in `tests/src/Builders/` construct entity instances with valid data. They use the [FakerPHP](https://fakerphp.org/) library to generate realistic fake data.
+
+Available builders:
+
+| Builder                                | Entity                          |
+| -------------------------------------- | ------------------------------- |
+| `AgentBuilder`                         | Agent                           |
+| `SpaceBuilder`                         | Space                           |
+| `EventBuilder`                         | Event                           |
+| `OpportunityBuilder`                   | Opportunity                     |
+| `RegistrationBuilder`                  | Registration                    |
+| `UserBuilder`                          | User                            |
+| `SealBuilder`                          | Seal                            |
+| `ProjectBuilder`                       | Project                         |
+| `EvaluationMethodSimpleBuilder`        | Simple evaluation method        |
+| `EvaluationMethodTechnicalBuilder`     | Technical evaluation method     |
+| `EvaluationMethodDocumentaryBuilder`   | Documentary evaluation method   |
+| `EvaluationMethodQualificationBuilder` | Qualification evaluation method |
+| `ValuerBuilder`                        | Evaluator (valuer)              |
+| `QuotaBuilder`                         | Evaluation quota                |
+
+Example — using `AgentBuilder` directly:
+
+```php  theme={null}
+use Tests\Builders\AgentBuilder;
+
+$user = $this->userDirector->createUser();
+$this->login($user);
+
+$agent = (new AgentBuilder())
+    ->reset($user)
+    ->fillRequiredProperties()
+    ->build();
+
+$this->assertNotNull($agent->id);
+```
+
+## Directors
+
+Directors in `tests/src/Directors/` compose builders into higher-level helpers that create complete, ready-to-use entities. Use directors in tests to keep setup code concise.
+
+```php  theme={null}
+// Create a complete opportunity with phases and an evaluation method
+$opportunity = $this->opportunityDirector->createOpportunity($user->profile);
+```
+
+Directors are included in test classes via traits:
+
+```php  theme={null}
+use Tests\Traits\UserDirector;
+use Tests\Traits\AgentDirector;
+use Tests\Traits\SpaceDirector;
+use Tests\Traits\OpportunityDirector;
+```
+
+## FakerPHP
+
+Builders use `FakerPHP` for generating realistic test data. The faker instance is available inside builders through the `Faker` trait:
+
+```php  theme={null}
+// Inside a builder
+$this->instance->name             = $this->faker->name();
+$this->instance->shortDescription = $this->faker->text(400);
+$this->instance->document         = $this->faker->cpf();
+```
+
+## Helper methods on `TestCase`
+
+| Method                             | Description                                          |
+| ---------------------------------- | ---------------------------------------------------- |
+| `$this->login(User $user)`         | Authenticate as the given user                       |
+| `$this->logout()`                  | Clear the authenticated user                         |
+| `$this->processJobs(string $date)` | Execute pending background jobs up to the given date |
+| `$this->processPCache()`           | Rebuild the permission cache                         |
+
+## Generating coverage
+
+Code coverage requires the `pcov` extension (available in the container):
+
+```bash  theme={null}
+docker compose exec mapas \
+  php -d pcov.enabled=1 \
+      -d pcov.directory=/var/www/src \
+      -d memory_limit=512M \
+  vendor/bin/phpunit \
+      --configuration phpunit.xml \
+      --coverage-clover tests/coverage/clover.xml
+```
+
+Coverage source paths are configured in `phpunit.xml` under `<source>`. Expand the included directories as new modules are covered by tests.
+
+## Test file conventions
+
+* One test class per file.
+* File and class names use `PascalCase` with a `Test` suffix: `OpportunityPhasesTest.php`.
+* Test method names start with `test` in camelCase: `testRegistrationStatusChange`.
+* Use descriptive assertion messages as the last argument to assertion methods:
+
+```php  theme={null}
+$this->assertEquals(
+    $expected,
+    $actual,
+    'Registration status should be SELECTED after evaluation is complete'
+);
+```

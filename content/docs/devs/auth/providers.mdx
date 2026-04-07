@@ -1,0 +1,232 @@
+---
+title: Authentication Providers
+---
+> Configure how users log in to your Mapas Culturais installation.
+
+Mapas Culturais delegates authentication to pluggable **auth providers**. Each provider is a PHP class that extends the abstract `AuthProvider` base class and is responsible for identifying users, creating accounts on first login, and managing sessions.
+
+Set the active provider in `config/config.php` with the `auth.provider` key. Only one provider can be active at a time.
+
+## Available providers
+
+<CardGroup cols={2}>
+  <Card title="Fake" icon="flask" color="#e57373">
+    Development and testing only. Shows a user list and a simple creation form — no external service required.
+  </Card>
+
+  <Card title="OpauthOpenId" icon="id-card">
+    Generic OpenID provider. Works with any OpenID-compatible server, including self-hosted Id da Cultura instances.
+  </Card>
+
+  <Card title="OpauthLoginCidadao" icon="landmark">
+    Brazilian federal government SSO (Login Cidadão / ID Cultura). Uses OAuth 2.0 with custom endpoints.
+  </Card>
+
+  <Card title="OpauthAuthentik" icon="shield-check">
+    Modern OAuth 2.0 / OIDC provider. Suitable for organizations that self-host Authentik as their identity provider.
+  </Card>
+</CardGroup>
+
+***
+
+## Fake
+
+**Class:** `MapasCulturais\AuthProviders\Fake`
+
+The Fake provider bypasses all external authentication. When a user visits the login page, they see a searchable list of every account in the database and a form to create new accounts on the spot.
+
+<Warning>
+  Never use the Fake provider in a production environment. It allows anyone with access to the login page to authenticate as any user, including administrators.
+</Warning>
+
+```php config/config.php theme={null}
+'auth.provider' => 'Fake',
+```
+
+### Development shortcut: FAKE\_AUTH environment variable
+
+In Docker-based dev environments you can enable fake authentication through the `FakeAuthentication` module by setting the `FAKE_AUTH` environment variable instead of editing config files.
+
+```dotenv .env theme={null}
+FAKE_AUTH=true
+```
+
+***
+
+## OpauthOpenId
+
+**Class:** `MapasCulturais\AuthProviders\OpauthOpenId`
+
+This provider uses the [Opauth](http://opauth.org/) library with the OpenID strategy. It works with any standards-compliant OpenID provider, including self-hosted [Id da Cultura](https://github.com/hacklabr/mapasculturais-openid) instances.
+
+<Note>
+  Id da Cultura (the self-hosted OpenID server) is a separate project from **ID Cultura** — the federal government service managed by the Ministry of Culture and based on Login Cidadão. See [OpauthLoginCidadao](#opauthlogincidadao) for that integration.
+</Note>
+
+```php config/config.php theme={null}
+'auth.provider' => 'OpauthOpenId',
+'auth.config' => [
+    // Replace with your OpenID provider domain
+    'login_url'  => 'https://id.example.org/openid/',
+    'logout_url' => 'https://id.example.org/accounts/logout/',
+    'salt'       => 'RANDOM_SECURITY_STRING_AT_LEAST_40_CHARS',
+    'timeout'    => '24 hours',
+],
+```
+
+| Key          | Description                                                       |
+| ------------ | ----------------------------------------------------------------- |
+| `login_url`  | URL of the OpenID endpoint on your identity provider              |
+| `logout_url` | URL that ends the session on the identity provider                |
+| `salt`       | Random string used to sign Opauth session tokens                  |
+| `timeout`    | How long a session remains valid (e.g. `'24 hours'`, `'8 hours'`) |
+
+***
+
+## OpauthLoginCidadao
+
+**Class:** `MapasCulturais\AuthProviders\OpauthLoginCidadao`
+
+Login Cidadão is the Brazilian federal government's single sign-on service, also marketed as **ID Cultura** when used by the Ministry of Culture. Authentication uses OAuth 2.0 with dedicated token and user-info endpoints.
+
+```php config/config.php theme={null}
+'auth.provider' => 'OpauthLoginCidadao',
+'auth.config'   => [
+    'client_id'         => 'YOUR-CLIENT-ID',
+    'client_secret'     => 'YOUR-CLIENT-SECRET',
+    'auth_endpoint'     => 'https://id.cultura.gov.br/oauth/v2/auth',
+    'token_endpoint'    => 'https://id.cultura.gov.br/oauth/v2/token',
+    'user_info_endpoint'=> 'https://id.cultura.gov.br/api/v1/person.json',
+    'timeout'           => '24 hours',
+    'salt'              => 'RANDOM_SECURITY_STRING_AT_LEAST_40_CHARS',
+],
+```
+
+| Key                  | Description                                 |
+| -------------------- | ------------------------------------------- |
+| `client_id`          | OAuth client ID issued by Login Cidadão     |
+| `client_secret`      | OAuth client secret issued by Login Cidadão |
+| `auth_endpoint`      | Authorization URL for the OAuth flow        |
+| `token_endpoint`     | Token exchange URL                          |
+| `user_info_endpoint` | URL to fetch authenticated user details     |
+| `timeout`            | Session duration                            |
+| `salt`               | Random string for token signing             |
+
+### Logout inside the application
+
+Login Cidadão does not support federated logout automatically. To log a user out of the identity provider from within Mapas Culturais, add a JavaScript function to your theme's header template.
+
+<Steps>
+  <Step title="Open the header template">
+    ```bash  theme={null}
+    vi src/themes/YOUR_THEME/layouts/parts/header-main-nav.php
+    ```
+  </Step>
+
+  <Step title="Add the logout function">
+    Append the following script at the end of the file, replacing `YOUR_LC_DOMAIN` with the hostname of your Login Cidadão instance:
+
+    ```html  theme={null}
+    <script type="text/javascript">
+    function logoutForce() {
+        window.open('https://YOUR_LC_DOMAIN/logout', '_blank');
+        alert('Logout efetuado com sucesso!');
+        location.reload();
+    }
+    </script>
+    ```
+  </Step>
+
+  <Step title="Wire the logout link">
+    Find the logout anchor tag and attach the function:
+
+    ```php  theme={null}
+    <a href="<?php echo $app->createUrl('auth', 'logout'); ?>"
+       onclick="return logoutForce()">Sair</a>
+    ```
+  </Step>
+</Steps>
+
+***
+
+## OpauthAuthentik
+
+**Class:** `MapasCulturais\AuthProviders\OpauthAuthentik`
+
+[Authentik](https://goauthentik.io/) is an open-source identity provider that supports OAuth 2.0 and OIDC. Use this provider when your organization self-hosts Authentik.
+
+```php config/config.php theme={null}
+'auth.provider' => 'OpauthAuthentik',
+'auth.config'   => [
+    'client_id'           => 'YOUR-CLIENT-ID',
+    'client_secret'       => 'YOUR-CLIENT-SECRET',
+    'login_url'           => 'https://authentik.example.org',
+    'logout_url'          => 'https://authentik.example.org/application/o/YOUR_APP/end-session/',
+    'change_password_url' => 'https://authentik.example.org/if/user/#/settings',
+    'timeout'             => '24 hours',
+    'salt'                => 'RANDOM_SECURITY_STRING_AT_LEAST_40_CHARS',
+],
+```
+
+| Key                   | Description                                               |
+| --------------------- | --------------------------------------------------------- |
+| `client_id`           | OAuth client ID from your Authentik application           |
+| `client_secret`       | OAuth client secret from your Authentik application       |
+| `login_url`           | Base URL of your Authentik instance                       |
+| `logout_url`          | End-session URL for federated logout                      |
+| `change_password_url` | Optional URL shown in the user panel for password changes |
+| `timeout`             | Session duration                                          |
+| `salt`                | Random string for token signing                           |
+
+<Tip>
+  When `change_password_url` is set, Mapas Culturais displays a "Change password" button in the user account panel that redirects to the identity provider's settings page.
+</Tip>
+
+***
+
+## Session configuration
+
+All providers share a `timeout` option that controls how long an authenticated session remains valid. The value is a human-readable duration string parsed by PHP's `strtotime`.
+
+```php config/config.php theme={null}
+'auth.config' => [
+    // ...
+    'timeout' => '8 hours',  // or '30 minutes', '7 days', etc.
+],
+```
+
+After the timeout elapses, the user is treated as a guest and redirected to the login page on the next request that requires authentication.
+
+## Provider capabilities often implemented in custom integrations
+
+The legacy documentation included a dedicated guide for a richer local-auth setup (`MultipleLocalAuth`). Even if that exact plugin is not part of the new canonical tree, the underlying capabilities are still relevant when evaluating an auth provider strategy.
+
+Common capabilities that may live in a custom provider, installation plugin, or theme integration include:
+
+* multiple sign-in methods on the same screen
+* password strength policies and recovery UX
+* CPF or local identifier login
+* reCAPTCHA on login or registration flows
+* federated login buttons for external providers
+* custom logout behavior inside the active installation theme
+
+When documenting or debugging authentication, separate **core provider behavior** from **installation-specific UX and policy layers**. In RedeMapas, those layers often meet in the theme and surrounding configuration rather than in the provider class alone.
+
+***
+
+## How the auth provider is called
+
+The application resolves the active provider through `App::getAuth()`. Controllers call `$controller->requireAuthentication()` at the top of any action that needs a logged-in user; this redirects anonymous visitors to the login page and resumes execution after authentication.
+
+```php  theme={null}
+// Retrieve the active auth provider
+$auth = $app->getAuth();
+
+// Get the currently authenticated user (returns GuestUser if not logged in)
+$user = $auth->getAuthenticatedUser();
+
+// Check whether a user is logged in
+$isLoggedIn = $auth->isUserAuthenticated();
+```
+
+On successful login, the provider fires the `auth.successful` hook, which updates `lastLoginTimestamp` and sends any pending notifications.
