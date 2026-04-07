@@ -1,11 +1,11 @@
 ---
 title: Visão Geral da API
 ---
-> Introduction to the Mapas Culturais REST API — entities, endpoints, HTTP methods, authentication, and response format.
+> Introdução à API REST do Mapas Culturais: entidades, endpoints, métodos HTTP, autenticação e formato de resposta.
 
-## Introduction
+## Introdução
 
-Mapas Culturais exposes a REST API that allows external systems to read, create, update, and delete cultural entities. All responses are JSON. The API is available on every installation and follows a consistent URL structure across entity types.
+O Mapas Culturais expõe uma API REST que permite a sistemas externos ler, criar, atualizar e remover entidades culturais. Todas as respostas são em JSON. A API está disponível em qualquer instalação e segue uma estrutura de URL consistente entre os tipos de entidade.
 
 ## Base URL
 
@@ -13,53 +13,53 @@ Mapas Culturais exposes a REST API that allows external systems to read, create,
 {baseUrl}/api/{entity}/{action}
 ```
 
-| Segment   | Description                                                       |
+| Segment   | Descrição                                                       |
 | --------- | ----------------------------------------------------------------- |
-| `baseUrl` | Root URL of the installation, e.g. `https://mapas.cultura.gov.br` |
-| `entity`  | One of the supported entity types (see below)                     |
-| `action`  | The operation to perform — `find`, `findOne`, `describe`, etc.    |
+| `baseUrl` | URL raiz da instalação, por exemplo `https://mapas.cultura.gov.br` |
+| `entity`  | Um dos tipos de entidade suportados (veja abaixo)                  |
+| `action`  | A operação a executar, como `find`, `findOne`, `describe` etc.     |
 
-**Example:**
+**Exemplo:**
 
 ```bash  theme={null}
-# Find all published agents, selecting id and name
+# Busca todos os agentes publicados, retornando apenas id e nome
 curl "https://your-instance.example.com/api/agent/find?@select=id,name&status=EQ(1)"
 ```
 
-## Supported Entities
+## Entidades suportadas
 
-| Entity slug    | Description                                             |
-| -------------- | ------------------------------------------------------- |
-| `agent`        | Individuals or collectives registered in the platform   |
-| `space`        | Physical or virtual cultural spaces                     |
-| `event`        | Cultural events with occurrences and schedules          |
-| `project`      | Cultural projects grouping events or opportunities      |
-| `opportunity`  | Calls for proposals, grants, and registration processes |
-| `registration` | Submissions made by agents to opportunities             |
+| Slug da entidade | Descrição                                                |
+| --------------- | -------------------------------------------------------- |
+| `agent`         | Indivíduos ou coletivos cadastrados na plataforma        |
+| `space`         | Espaços culturais físicos ou virtuais                    |
+| `event`         | Eventos culturais com ocorrências e agenda               |
+| `project`       | Projetos culturais que agrupam eventos ou oportunidades  |
+| `opportunity`   | Editais, chamadas e processos de inscrição               |
+| `registration`  | Inscrições enviadas por agentes em oportunidades         |
 
-## HTTP Methods and Actions
+## Métodos HTTP e ações
 
-| HTTP method | URL pattern              | Description                                   |
+| Método HTTP | Padrão de URL            | Descrição                                     |
 | ----------- | ------------------------ | --------------------------------------------- |
-| `GET`       | `/api/{entity}/find`     | Returns an array of matching entities         |
-| `GET`       | `/api/{entity}/findOne`  | Returns a single matching entity              |
-| `GET`       | `/api/{entity}/describe` | Returns the entity schema with field metadata |
-| `POST`      | `/{entity}/index`        | Creates a new entity                          |
-| `PATCH`     | `/{entity}/single/{id}`  | Partially updates an existing entity          |
-| `PUT`       | `/{entity}/single/{id}`  | Fully replaces an existing entity             |
-| `DELETE`    | `/{entity}/single/{id}`  | Soft-deletes an entity                        |
+| `GET`       | `/api/{entity}/find`     | Retorna um array de entidades compatíveis     |
+| `GET`       | `/api/{entity}/findOne`  | Retorna uma única entidade compatível         |
+| `GET`       | `/api/{entity}/describe` | Retorna o schema da entidade com metadados    |
+| `POST`      | `/{entity}/index`        | Cria uma nova entidade                        |
+| `PATCH`     | `/{entity}/single/{id}`  | Atualiza parcialmente uma entidade existente  |
+| `PUT`       | `/{entity}/single/{id}`  | Substitui integralmente uma entidade existente |
+| `DELETE`    | `/{entity}/single/{id}`  | Faz exclusão lógica de uma entidade           |
 
 <Note>
-  Write operations use URLs **without** the `/api/` prefix. For example: `POST /agent/index` to create an agent, `PATCH /agent/single/42` to update agent 42.
+  Operações de escrita usam URLs **sem** o prefixo `/api/`. Exemplo: `POST /agent/index` para criar um agente e `PATCH /agent/single/42` para atualizar o agente 42.
 </Note>
 
 <Note>
-  Write operations (`POST`, `PATCH`, `PUT`, `DELETE`) require authentication via JWT. Read-only `find` and `findOne` requests can be made without credentials for public entities.
+  Operações de escrita (`POST`, `PATCH`, `PUT`, `DELETE`) exigem autenticação via JWT. Requisições somente leitura com `find` e `findOne` podem ser feitas sem credenciais quando a entidade é pública.
 </Note>
 
-## Response Format
+## Formato de resposta
 
-### `find` — array of objects
+### `find` — array de objetos
 
 ```json  theme={null}
 [
@@ -69,12 +69,12 @@ curl "https://your-instance.example.com/api/agent/find?@select=id,name&status=EQ
     "status": 1,
     "createTimestamp": { "date": "2023-04-01 10:00:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
     "updateTimestamp": { "date": "2024-01-15 14:30:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
-    "@entityType": "agent"
+    "@entityTipo": "agent"
   }
 ]
 ```
 
-### `findOne` — single object
+### `findOne` — objeto único
 
 ```json  theme={null}
 {
@@ -83,13 +83,13 @@ curl "https://your-instance.example.com/api/agent/find?@select=id,name&status=EQ
   "status": 1,
   "createTimestamp": { "date": "2023-04-01 10:00:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
   "updateTimestamp": { "date": "2024-01-15 14:30:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
-  "@entityType": "agent"
+  "@entityTipo": "agent"
 }
 ```
 
-### Pagination metadata header
+### Cabeçalho de metadados de paginação
 
-When `@page`, `@offset`, or `@limit` are used, the server adds an `API-Metadata` response header:
+Quando `@page`, `@offset` ou `@limit` são usados, o servidor adiciona um cabeçalho `API-Metadata` à resposta:
 
 ```json  theme={null}
 {
@@ -102,93 +102,93 @@ When `@page`, `@offset`, or `@limit` are used, the server adds an `API-Metadata`
 }
 ```
 
-### Common response fields
+### Campos comuns da resposta
 
-| Field             | Type    | Description                                                                   |
-| ----------------- | ------- | ----------------------------------------------------------------------------- |
-| `id`              | integer | Unique identifier                                                             |
-| `name`            | string  | Display name of the entity                                                    |
-| `status`          | integer | `1` = published, `0` = draft, `-9` = disabled, `-10` = trash, `-2` = archived |
-| `createTimestamp` | object  | Creation timestamp (PHP DateTime format)                                      |
-| `updateTimestamp` | object  | Last update timestamp (PHP DateTime format)                                   |
-| `@entityType`     | string  | Controller slug identifying the entity type                                   |
+| Campo             | Tipo    | Descrição                                                                    |
+| ----------------- | ------- | ---------------------------------------------------------------------------- |
+| `id`              | integer | Identificador único da entidade                                              |
+| `name`            | string  | Nome de exibição da entidade                                                 |
+| `status`          | integer | `1` = publicado, `0` = rascunho, `-9` = desabilitado, `-10` = lixeira, `-2` = arquivado |
+| `createTimestamp` | object  | Data e hora de criação (formato PHP DateTime)                                |
+| `updateTimestamp` | object  | Data e hora da última atualização (formato PHP DateTime)                     |
+| `@entityTipo`     | string  | Slug do controller que identifica o tipo de entidade                         |
 
-## HTTP Status Codes
+## Códigos de status HTTP
 
-| Code | Meaning                                                             |
-| ---- | ------------------------------------------------------------------- |
-| 200  | Success — the request was processed and a response body is returned |
-| 401  | Unauthorized — authentication is required                           |
-| 403  | Forbidden — the authenticated user lacks permission for this action |
-| 404  | Not Found — the requested entity or endpoint does not exist         |
+| Código | Significado                                                           |
+| ------ | --------------------------------------------------------------------- |
+| 200    | Sucesso: a requisição foi processada e um corpo de resposta foi retornado |
+| 401    | Não autorizado: autenticação é obrigatória                            |
+| 403    | Proibido: o usuário autenticado não tem permissão para essa ação      |
+| 404    | Não encontrado: a entidade ou endpoint solicitado não existe          |
 
-## Authentication
+## Autenticação
 
-The API supports two authentication modes:
+A API suporta dois modos de autenticação:
 
-### Session-based (browser)
+### Baseada em sessão (navegador)
 
-When accessing the API from a browser where the user is already logged in, the existing session cookie is used automatically. No additional headers are required.
+Quando a API é acessada por um navegador em que o usuário já está autenticado, o cookie de sessão existente é usado automaticamente. Nenhum cabeçalho adicional é necessário.
 
-### JWT / API key (server-to-server)
+### JWT / chave de API (servidor para servidor)
 
-Write operations and access to private data require a JSON Web Token (JWT) generated from a registered app key pair. The JWT is validated by the `Apps` module using the `firebase/php-jwt` library.
+Operações de escrita e acesso a dados privados exigem um JSON Web Token (JWT) gerado a partir de um par de chaves de aplicativo registrado. O JWT é validado pelo módulo `Apps` usando a biblioteca `firebase/php-jwt`.
 
-Every authenticated write request must include two headers:
+Toda requisição autenticada de escrita deve incluir dois cabeçalhos:
 
 ```http  theme={null}
 authorization: <your-jwt-token>
 MapasSDK-REQUEST: true
 ```
 
-The `authorization` header carries the JWT. The `MapasSDK-REQUEST: true` header signals the server to return a JSON response instead of an HTTP redirect.
+O cabeçalho `authorization` carrega o JWT. O cabeçalho `MapasSDK-REQUEST: true` sinaliza ao servidor que ele deve retornar JSON em vez de um redirecionamento HTTP.
 
-The JWT payload must include the `pk` field with your app's public key identifier, and a `tm` field with the current Unix timestamp:
+O payload do JWT deve incluir o campo `pk` com o identificador da chave pública do aplicativo e um campo `tm` com o timestamp Unix atual:
 
 ```json  theme={null}
 { "tm": "1493823078.9774", "pk": "your-app-public-key" }
 ```
 
-The default signing algorithm is `HS256`. The app's private key (registered in the platform under your user account) is used to sign and verify the token.
+O algoritmo de assinatura padrão é `HS256`. A chave privada do aplicativo, registrada na plataforma sob sua conta de usuário, é usada para assinar e verificar o token.
 
 ## CORS
 
 CORS support is configurable per installation. Check with the platform administrator for the allowed origins on a specific instance.
 
-## Rate Limiting
+## Rate limiting
 
 Rate limiting depends on the installation configuration. There is no built-in global rate limit in the application; infrastructure-level limits (e.g. nginx, CDN) may apply.
 
-## Field Selection with `@select`
+## Seleção de campos com `@select`
 
-All `find` and `findOne` requests accept the `@select` parameter to control which fields are returned. Omitting `@select` returns all available fields.
+Todas as requisições `find` e `findOne` aceitam o parâmetro `@select` para controlar quais campos são retornados. Se `@select` for omitido, todos os campos disponíveis serão retornados.
 
 ```bash  theme={null}
-# Return only id and name
+# Retorna apenas id e nome
 curl "https://your-instance.example.com/api/agent/find?@select=id,name"
 
-# Include a related entity field
+# Inclui um campo de entidade relacionada
 curl "https://your-instance.example.com/api/space/find?@select=id,name,owner.name"
 ```
 
 See [Consultando a API](/docs/devs/api/querying) for the full query syntax including filters, pagination, and ordering.
 
-## Quick Reference
+## Referência rápida
 
 <CardGroup cols={2}>
   <Card title="Consultando a API" icon="magnifying-glass" href="/docs/devs/api/querying">
-    Filter operators, pagination, ordering, keyword search, and geospatial queries.
+    Operadores de filtro, paginação, ordenação, busca por palavra-chave e consultas geoespaciais.
   </Card>
 
-  <Card title="Agents API" icon="user" href="/docs/devs/api/agents">
-    Query agents — individuals and collectives registered on the platform.
+  <Card title="API de Agentes" icon="user" href="/docs/devs/api/agents">
+    Consulte agentes: indivíduos e coletivos cadastrados na plataforma.
   </Card>
 
-  <Card title="Spaces API" icon="building" href="/docs/devs/api/spaces">
-    Query cultural spaces, including geolocation and address data.
+  <Card title="API de Espaços" icon="building" href="/docs/devs/api/spaces">
+    Consulte espaços culturais, incluindo geolocalização e dados de endereço.
   </Card>
 
-  <Card title="Events API" icon="calendar" href="/docs/devs/api/events">
-    Query events with occurrences, schedules, and taxonomies.
+  <Card title="API de Eventos" icon="calendar" href="/docs/devs/api/events">
+    Consulte eventos com ocorrências, agenda e taxonomias.
   </Card>
 </CardGroup>

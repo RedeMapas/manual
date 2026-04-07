@@ -1,122 +1,122 @@
 ---
-title: Spaces API
+title: API de Espaços
 ---
-> API endpoints for managing cultural spaces in Mapas Culturais.
+> Endpoints da API para gerenciar espaços culturais no Mapas Culturais.
 
-A **space** represents a physical or virtual location where cultural events and activities take place — theaters, galleries, community centers, museums, and similar venues. Spaces are owned by agents and can host events.
+Um **espaço** representa um local físico ou virtual onde eventos e atividades culturais acontecem, como teatros, galerias, centros culturais e museus. Espaços pertencem a agentes e podem sediar eventos.
 
-Base path: `/api/space/`
+Caminho base: `/api/space/`
 
 <Info>
-  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+  Operações de leitura são públicas. Operações de escrita (`create`, `save`, `delete`) exigem autenticação com token JWT. Veja o [guia de autenticação](/docs/devs/auth/providers) para detalhes.
 </Info>
 
 ## Endpoints
 
-| Method   | Path                 | Description              |
+| Método   | Caminho                 | Descrição              |
 | -------- | -------------------- | ------------------------ |
-| `GET`    | `/api/space/find`    | List or search spaces    |
-| `GET`    | `/api/space/findOne` | Find a single space      |
-| `POST`   | `/space/index`       | Create a new space       |
-| `PATCH`  | `/space/single/{id}` | Update an existing space |
+| `GET`    | `/api/space/find`    | Listar ou buscar spaces    |
+| `GET`    | `/api/space/findOne` | Buscar um único space      |
+| `POST`   | `/space/index`       | Criar um novo space       |
+| `PATCH`  | `/space/single/{id}` | Atualizar um existente space |
 | `DELETE` | `/space/single/{id}` | Delete a space           |
 
 ***
 
 ## GET /api/space/find
 
-Returns a paginated list of spaces. Supports filtering, sorting, field selection, and full-text search.
+Retorna uma lista paginada de spaces. Suporta filtros, ordenação, seleção de campos e busca textual.
 
-### Query parameters
+### Parâmetros de consulta
 
-**Control parameters** (prefixed with `@`)
+**Parâmetros de controle** (prefixados com `@`)
 
 <ParamField query="@select" type="string">
-  Comma-separated list of fields to include in the response. Supports dot notation for related objects (e.g., `owner.name`).
+  Lista de campos separada por vírgula para incluir na resposta. Supports dot notation for related objects (e.g., `owner.name`).
 
-  Example: `@select=id,name,address,location`
+  Exemplo: `@select=id,name,address,location`
 </ParamField>
 
 <ParamField query="@page" type="integer" default="1">
-  Page number for paginated results. Starts at `1`.
+  Número da página para resultados paginados. Começa em `1`.
 </ParamField>
 
 <ParamField query="@limit" type="integer" default="10">
-  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+  Número máximo de resultados por página. Use `-1` para desativar a paginação, com cautela em conjuntos grandes.
 </ParamField>
 
 <ParamField query="@order" type="string">
-  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+  Expressão de ordenação. Formato: `campo DIR`, em que `DIR` é `ASC` ou `DESC`.
 
-  Example: `@order=name ASC`
+  Exemplo: `@order=name ASC`
 </ParamField>
 
 <ParamField query="@keyword" type="string">
-  Full-text search keyword. Searches across name and description fields.
+  Palavra-chave de busca textual. Pesquisa nos campos de nome e descrição.
 </ParamField>
 
 <ParamField query="@or" type="integer">
-  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+  Quando definido como `1`, combina todos os parâmetros de filtro com lógica `OR`, em vez do `AND` padrão.
 </ParamField>
 
-**Filter parameters**
+**Parâmetros de filtro**
 
 <ParamField query="id" type="string">
-  Filter by space ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+  Filtra por space ID. Suporta operadores: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
 
-  Example: `id=EQ(10)` or `id=IN(1,2,3)`
+  Exemplo: `id=EQ(10)` or `id=IN(1,2,3)`
 </ParamField>
 
 <ParamField query="name" type="string">
-  Filter by space name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+  Filtra por space name. Suporta operadores: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
 
-  Example: `name=ILIKE(teatro*)` matches names starting with "teatro".
+  Exemplo: `name=ILIKE(teatro*)` matches names starting with "teatro".
 </ParamField>
 
 <ParamField query="status" type="integer">
-  Filter by publication status.
+  Filtra por publication status.
 
   | Value | Meaning   |
   | ----- | --------- |
-  | `1`   | Published |
-  | `0`   | Draft     |
-  | `-2`  | Archived  |
-  | `-9`  | Disabled  |
-  | `-10` | Trash     |
+  | `1`   | Publicado |
+  | `0`   | Rascunho     |
+  | `-2`  | Arquivado  |
+  | `-9`  | Desabilitado  |
+  | `-10` | Lixeira     |
 
-  Example: `status=EQ(1)`
+  Exemplo: `status=EQ(1)`
 </ParamField>
 
 <ParamField query="type" type="integer">
-  Filter by space type. Type IDs vary by instance configuration.
+  Filtra por space type. Tipo IDs vary by instance configuration.
 
-  Example: `type=EQ(5)`
+  Exemplo: `type=EQ(5)`
 </ParamField>
 
 <ParamField query="public" type="boolean">
-  Filter by whether the space is public.
+  Filtra por whether the space is public.
 
-  Example: `public=EQ(true)`
+  Exemplo: `public=EQ(true)`
 </ParamField>
 
 <ParamField query="owner" type="string">
-  Filter by the owning agent using entity reference syntax.
+  Filtra por the owning agent using entity reference syntax.
 
-  Example: `owner=EQ(@Agent:42)` returns spaces owned by agent ID 42.
+  Exemplo: `owner=EQ(@Agent:42)` returns spaces owned by agent ID 42.
 </ParamField>
 
 <ParamField query="_geoLocation" type="string">
-  Filter by geographic proximity. Format: `GEONEAR(longitude,latitude,radius_meters)`.
+  Filtra por geographic proximity. Format: `GEONEAR(longitude,latitude,radius_meters)`.
 
-  Example: `_geoLocation=GEONEAR(-46.6475,-23.5413,1000)`
+  Exemplo: `_geoLocation=GEONEAR(-46.6475,-23.5413,1000)`
 </ParamField>
 
-### Response
+### Resposta
 
-Returns a JSON array of space objects. The fields returned depend on `@select`.
+Retorna um array JSON de space objects. The fields returned depend on `@select`.
 
 <ResponseField name="id" type="integer" required>
-  Unique space identifier.
+  Identificador único de space identifier.
 </ResponseField>
 
 <ResponseField name="name" type="string" required>
@@ -128,11 +128,11 @@ Returns a JSON array of space objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="shortDescription" type="string">
-  Short description (up to 400 characters).
+  Descrição curta (up to 400 characters).
 </ResponseField>
 
 <ResponseField name="longDescription" type="string">
-  Full long-form description.
+  Descrição longa completa.
 </ResponseField>
 
 <ResponseField name="public" type="boolean">
@@ -140,7 +140,7 @@ Returns a JSON array of space objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="location" type="object">
-  Geographic coordinates of the space.
+  Coordenadas geográficas of the space.
 
   <Expandable title="properties">
     <ResponseField name="latitude" type="number">
@@ -154,32 +154,32 @@ Returns a JSON array of space objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="status" type="integer">
-  Publication status. See status values below.
+  Status de publicação. See status values below.
 </ResponseField>
 
 <ResponseField name="createTimestamp" type="string">
-  ISO 8601 datetime when the space was created.
+  Data e hora em ISO 8601 when the space was created.
 </ResponseField>
 
 <ResponseField name="updateTimestamp" type="string">
-  ISO 8601 datetime of the last update.
+  Data e hora em ISO 8601 of the last update.
 </ResponseField>
 
 <ResponseField name="owner" type="object">
-  The agent that owns this space.
+  O agente proprietário deste space.
 
   <Expandable title="properties">
     <ResponseField name="id" type="integer">
-      Owner agent ID.
+      ID do agente proprietário.
     </ResponseField>
 
     <ResponseField name="name" type="string">
-      Owner agent name.
+      Nome do agente proprietário.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-### Examples
+### Exemplos
 
 <CodeGroup>
   ```bash Search spaces by keyword theme={null}
@@ -232,7 +232,7 @@ Returns a JSON array of space objects. The fields returned depend on `@select`.
 
 ## GET /api/space/findOne
 
-Returns a single space. Accepts the same filter parameters as `find`. Returns the first matching result.
+Retorna um único space. Aceita os mesmos parâmetros de filtro de `find`. Retorna o primeiro resultado encontrado.
 
 ```bash  theme={null}
 curl "https://instance.example.com/api/space/findOne?@select=id,name,shortDescription,location&id=EQ(10)"
@@ -242,30 +242,30 @@ curl "https://instance.example.com/api/space/findOne?@select=id,name,shortDescri
 
 ## POST /space/index
 
-Creates a new space. Requires authentication.
+Cria um novo space. Exige autenticação.
 
 <Warning>
   Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
 </Warning>
 
-### Request body
+### Corpo da requisição
 
-| Field              | Type    | Required | Description                                  |
+| Campo              | Tipo    | Obrigatório | Descrição                                  |
 | ------------------ | ------- | -------- | -------------------------------------------- |
-| `name`             | string  | Yes      | Space name                                   |
-| `type`             | integer | Yes      | Space type ID                                |
-| `shortDescription` | string  | Yes      | Short description (max 400 characters)       |
-| `longDescription`  | string  | No       | Full description                             |
-| `public`           | boolean | No       | Whether the space is publicly accessible     |
-| `location`         | array   | No       | `[longitude, latitude]`                      |
-| `endereco`         | string  | No       | Street address                               |
-| `terms`            | object  | No       | Taxonomy terms, e.g. `{"area": ["Theater"]}` |
+| `name`             | string  | Sim      | Space name                                   |
+| `type`             | integer | Sim      | Space type ID                                |
+| `shortDescription` | string  | Sim      | Descrição curta (máx. 400 caracteres)      |
+| `longDescription`  | string  | Não      | Descrição completa                          |
+| `public`           | boolean | Não       | Whether the space is publicly accessible     |
+| `location`         | array   | Não       | `[longitude, latitude]`                      |
+| `endereco`         | string  | Não       | Street address                               |
+| `terms`            | object  | Não       | Taxonomy terms, e.g. `{"area": ["Theater"]}` |
 
 ```bash  theme={null}
 curl -X POST "https://instance.example.com/space/index" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "name": "Centro Cultural Exemplo",
     "type": 5,
@@ -286,7 +286,7 @@ Updates an existing space. Requires authentication and ownership (or admin role)
 curl -X POST "https://instance.example.com/space/single/{id}" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "id": 10,
     "shortDescription": "Updated description."
@@ -312,10 +312,10 @@ curl -X DELETE "https://instance.example.com/space/single/{id}" \
 
 | Value | Constant          | Meaning                         |
 | ----- | ----------------- | ------------------------------- |
-| `1`   | `STATUS_ENABLED`  | Published and publicly visible  |
-| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner    |
-| `-2`  | `STATUS_ARCHIVED` | Archived                        |
-| `-9`  | `STATUS_DISABLED` | Disabled by admin               |
+| `1`   | `STATUS_ENABLED`  | Publicado and publicly visible  |
+| `0`   | `STATUS_DRAFT`    | Rascunho, visible only to owner    |
+| `-2`  | `STATUS_ARCHIVED` | Arquivado                        |
+| `-9`  | `STATUS_DISABLED` | Desabilitado by admin               |
 | `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash) |
 
 ## Tips

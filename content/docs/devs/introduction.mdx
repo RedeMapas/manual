@@ -3,109 +3,109 @@ title: Introdução ao Mapas Culturais
 ---
 > Uma plataforma livre de mapeamento e gestão cultural usada por municípios, estados e o governo federal brasileiro.
 
-Mapas Culturais is an open-source platform for cultural mapping and management. Used by hundreds of Brazilian municipalities, state governments, and federal institutions, it brings together cultural agents, spaces, events, and projects in a single collaborative environment — supporting the complete cultural funding journey from registration to final reporting.
+Mapas Culturais é uma plataforma livre de mapeamento e gestão cultural. Usada por centenas de municípios brasileiros, governos estaduais e instituições federais, ela reúne agentes culturais, espaços, eventos e projetos em um único ambiente colaborativo, apoiando a jornada completa do fomento cultural, do cadastro à prestação de contas final.
 
-The platform is maintained by a community network of developers and public managers, and is pursuing recognition as **Software Público** by the Brazilian government and as a **Digital Public Good** by the United Nations.
+A plataforma é mantida por uma rede comunitária de desenvolvedores e gestores públicos, e busca reconhecimento como **Software Público** pelo governo brasileiro e como **Digital Public Good** pelas Nações Unidas.
 
 <CardGroup cols={2}>
   <Card title="Início Rápido" icon="rocket" href="/docs/devs/quickstart">
-    Get a local instance running in minutes with Docker Compose.
+    Coloque uma instância local no ar em poucos minutos com Docker Compose.
   </Card>
 
   <Card title="Funcionalidades" icon="map" href="/docs/devs/features/agents">
-    Explore agents, spaces, events, projects, and opportunities.
+    Explore agentes, espaços, eventos, projetos e oportunidades.
   </Card>
 
   <Card title="Deploy em Produção" icon="server" href="/docs/devs/deploy/docker">
-    Deploy with Docker Compose or Kubernetes using the Helm chart.
+    Faça deploy com Docker Compose ou Kubernetes usando o Helm chart.
   </Card>
 
   <Card title="Desenvolvimento" icon="code" href="/docs/devs/development/architecture">
-    Understand the architecture and start contributing.
+    Entenda a arquitetura e comece a contribuir.
   </Card>
 </CardGroup>
 
-## What Mapas Culturais does
+## O que o Mapas Culturais faz
 
-Mapas Culturais provides a web environment for mapping, publishing, and managing cultural assets. Its core entities are:
+O Mapas Culturais oferece um ambiente web para mapear, publicar e gerenciar ativos culturais. Suas entidades centrais são:
 
-* **Agents** — individuals, collectives, and organizations with geolocation and profile data
-* **Spaces** — theaters, museums, cultural centers, and alternative venues
-* **Events** — scheduled activities with recurrence and geographic reference
-* **Projects** — grouped cultural initiatives with phases and participants
-* **Opportunities / Editais** — open calls with multi-phase evaluation workflows
-* **Registrations** — applications tied to opportunities, tracked through the full evaluation lifecycle
+* **Agentes**: indivíduos, coletivos e organizações com dados de perfil e geolocalização
+* **Espaços**: teatros, museus, centros culturais e outros locais
+* **Eventos**: atividades agendadas, com recorrência e referência geográfica
+* **Projetos**: iniciativas culturais agrupadas, com fases e participantes
+* **Oportunidades / editais**: chamadas públicas com fluxos de avaliação em múltiplas fases
+* **Inscrições**: candidaturas ligadas a oportunidades, acompanhadas por todo o ciclo de avaliação
 
-Together these entities implement the **Jornada Completa do Fomento Cultural** (complete cultural funding journey): from an agent's first registration on the platform through submitting to an edital, evaluation, selection, monitoring, and final accounting.
+Juntas, essas entidades implementam a **Jornada Completa do Fomento Cultural**: do primeiro cadastro de um agente na plataforma ao envio para um edital, avaliação, seleção, acompanhamento e prestação de contas.
 
-## Architecture overview
+## Visão geral da arquitetura
 
-Mapas Culturais is a server-side PHP application built around Slim, Doctrine, PostgreSQL/PostGIS, and a modular theme and module system. In practice, the codebase is split between framework core, feature modules, installation themes, and deployment/configuration layers.
+O Mapas Culturais é uma aplicação PHP server-side construída sobre Slim, Doctrine, PostgreSQL/PostGIS e um sistema modular de temas e módulos. Na prática, o código se divide entre o núcleo do framework, módulos de funcionalidade, temas de instalação e camadas de deploy e configuração.
 
-For the full stack, directory layout, runtime flows, and core abstractions, use the canonical architecture guide: [Architecture](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx).
+Para ver a stack completa, a organização de diretórios, os fluxos de execução e as abstrações centrais, consulte o guia canônico de [Arquitetura](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx).
 
-## Branch structure
+## Estrutura de branches
 
-The RedeMapas repository maintains two parallel development lines:
+O repositório do RedeMapas mantém duas linhas paralelas de desenvolvimento:
 
-| Branch         | Synchronized with               | Purpose                                               |
-| -------------- | ------------------------------- | ----------------------------------------------------- |
-| `main`         | —                               | RedeMapas production branch                           |
-| `develop`      | `mapasculturais/mapasculturais` | Community line — integrates open-source contributions |
-| `develop-minc` | `culturagovbr/mapasculturais`   | MinC line — integrates Ministério da Cultura features |
+| Branch         | Sincronizada com                | Finalidade                                           |
+| -------------- | ------------------------------- | ---------------------------------------------------- |
+| `main`         | —                               | Branch de produção do RedeMapas                      |
+| `develop`      | `mapasculturais/mapasculturais` | Linha comunitária, que integra contribuições livres  |
+| `develop-minc` | `culturagovbr/mapasculturais`   | Linha MinC, que integra funcionalidades do ministério |
 
-When contributing, identify which line your change belongs to and open a pull request against `develop` or `develop-minc`. Use the `-minc` suffix on branch names (e.g., `feat/something-minc`) for work on the MinC line.
+Ao contribuir, identifique a qual linha sua alteração pertence e abra o pull request contra `develop` ou `develop-minc`. Use o sufixo `-minc` no nome da branch, como `feat/algo-minc`, para trabalho voltado à linha MinC.
 
-## RedeMapas in practice
+## RedeMapas na prática
 
-The reference installation documented here is not a generic "vanilla Mapas" setup. It is the **RedeMapas / Rede das Artes** line, which combines:
+A instalação de referência documentada aqui não é um ambiente genérico de "Mapas puro". Ela corresponde à linha **RedeMapas / Rede das Artes**, que combina:
 
-* the Mapas Culturais core
-* a dedicated `RedeMapas` theme under `src/themes/`
-* deployment conventions for Docker Compose and Kubernetes
-* production concerns such as subsites, Web Push, and MinC-compatible authentication flows
+* o núcleo do Mapas Culturais
+* um tema dedicado `RedeMapas` em `src/themes/`
+* convenções de deploy com Docker Compose e Kubernetes
+* preocupações de produção como subsites, Web Push e fluxos de autenticação compatíveis com o MinC
 
-That distinction matters when you read or change the codebase. Some behavior lives in the framework core, some in modules, and some only in the active installation theme.
+Essa distinção importa ao ler ou alterar o código. Parte do comportamento fica no núcleo do framework, parte em módulos e parte apenas no tema ativo da instalação.
 
-## Contribution model
+## Modelo de contribuição
 
-When starting a change, answer these questions first:
+Ao iniciar uma alteração, responda primeiro a estas perguntas:
 
-1. Is this a **framework/core** change that belongs upstream?
-2. Is this a **RedeMapas installation** concern that should stay in the local theme or config?
-3. Is this specific to the **community line** (`develop`) or the **MinC line** (`develop-minc`)?
+1. Isso é uma mudança de **framework/core** que deve subir para o upstream?
+2. Isso é uma preocupação da **instalação RedeMapas** e deve ficar no tema local ou na configuração?
+3. Isso é específico da **linha comunitária** (`develop`) ou da **linha MinC** (`develop-minc`)?
 
-As a rule of thumb:
+Como regra prática:
 
-* framework and reusable platform improvements should target the appropriate upstream line
-* installation-specific UI and integration behavior should stay in the RedeMapas theme or deployment config
-* branch naming should make the target explicit, especially for MinC work
+* melhorias de framework e de plataforma reaproveitáveis devem mirar a linha upstream adequada
+* comportamento de UI e integrações específicos da instalação devem permanecer no tema do RedeMapas ou na configuração de deploy
+* o nome da branch deve deixar o alvo explícito, especialmente em trabalho para o MinC
 
-## Development flow
+## Fluxo de desenvolvimento
 
-For day-to-day work, keep the responsibilities split this way:
+No trabalho do dia a dia, mantenha as responsabilidades divididas assim:
 
-* use [Início Rápido](/mnt/data/code/redemapas/manual/content/docs/devs/quickstart.mdx) for local setup and first-run checks
-* use [Architecture](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx) for stack, request flow, and core abstractions
-* use [Docker Compose](/mnt/data/code/redemapas/manual/content/docs/devs/deploy/docker.mdx) for container operations and HTTPS local
-* use [Testing](/mnt/data/code/redemapas/manual/content/docs/devs/development/testing.mdx) for PHPUnit workflow
+* use [Início Rápido](/mnt/data/code/redemapas/manual/content/docs/devs/quickstart.mdx) para setup local e checagens da primeira execução
+* use [Arquitetura](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx) para stack, fluxo de requisição e abstrações centrais
+* use [Docker Compose](/mnt/data/code/redemapas/manual/content/docs/devs/deploy/docker.mdx) para operações com contêineres e HTTPS local
+* use [Testes](/mnt/data/code/redemapas/manual/content/docs/devs/development/testing.mdx) para o fluxo com PHPUnit
 
-## Active installations
+## Instalações ativas
 
-Mapas Culturais is deployed across dozens of Brazilian and international installations:
+O Mapas Culturais está implantado em dezenas de instalações brasileiras e internacionais:
 
-**Federal / International**
+**Federal / internacional**
 
 * [SNIIC](https://mapa.cultura.gov.br/) — Sistema Nacional de Informações e Indicadores Culturais
-* [Cultura Viva](https://culturaviva.cultura.gov.br/) — federal program for cultural points
+* [Cultura Viva](https://culturaviva.cultura.gov.br/) — programa federal dos pontos de cultura
 * [Rede das Artes](https://rededasartes.cultura.gov.br/) — Ministério da Cultura platform
-* [IberculturaViva](https://mapa.iberculturaviva.org/) — Ibero-American community culture network
-* [Mapa Uruguai](https://culturaenlinea.uy/) — Uruguay's national cultural map
+* [IberculturaViva](https://mapa.iberculturaviva.org/) — rede ibero-americana de cultura comunitária
+* [Mapa Uruguai](https://culturaenlinea.uy/) — mapa cultural nacional do Uruguai
 
-**State installations (selection)**
+**Instalações estaduais (seleção)**
 
-Amapá, Ceará, Espírito Santo, Goiás, Maranhão, Mato Grosso, Pará, Pernambuco, Paraíba, Piauí, Tocantins, and more than 20 others.
+Amapá, Ceará, Espírito Santo, Goiás, Maranhão, Mato Grosso, Pará, Pernambuco, Paraíba, Piauí, Tocantins e mais de vinte outras.
 
-## License
+## Licença
 
-Mapas Culturais is released under the [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) license. Source code is available at [github.com/redemapas/mapas](https://github.com/redemapas/mapas). Contributions are welcome — see the [contributing guide](https://github.com/redemapas/mapas/blob/main/CONTRIBUTING.md) for details.
+O Mapas Culturais é distribuído sob a licença [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html). O código-fonte está disponível em [github.com/redemapas/mapas](https://github.com/redemapas/mapas). Contribuições são bem-vindas. Veja o [guia de contribuição](https://github.com/redemapas/mapas/blob/main/CONTRIBUTING.md) para mais detalhes.

@@ -1,107 +1,107 @@
 ---
 title: Início Rápido
 ---
-> Get a local Mapas Culturais instance running in minutes using Docker Compose.
+> Coloque uma instância local do Mapas Culturais no ar em poucos minutos com Docker Compose.
 
-This guide walks you through cloning the RedeMapas repository and starting all services locally. The entire stack runs in Docker — no manual dependency installation required.
+Este guia mostra como clonar o repositório do RedeMapas e subir todos os serviços localmente. Toda a stack roda em Docker, sem necessidade de instalar dependências manualmente.
 
-## Prerequisites
+## Pré-requisitos
 
-* [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2 (`docker compose`, not `docker-compose`)
+* [Docker](https://docs.docker.com/get-docker/) com Docker Compose v2 (`docker compose`, não `docker-compose`)
 * [Git](https://git-scm.com/)
 
-## Starting the local environment
+## Iniciando o ambiente local
 
 <Steps>
-  <Step title="Clone the repository">
+  <Step title="Clone o repositório">
     ```bash  theme={null}
     git clone https://github.com/redemapas/mapas.git
     cd mapas
     ```
   </Step>
 
-  <Step title="Start the containers">
+  <Step title="Inicie os contêineres">
     ```bash  theme={null}
     docker compose up -d
     ```
 
-    This starts three services: the PHP application, PostgreSQL with PostGIS, and MailPit for email capture. Database migrations run automatically on first boot via the container entrypoint.
+    Isso inicia três serviços: a aplicação PHP, o PostgreSQL com PostGIS e o MailPit para captura de e-mails. As migrações do banco são executadas automaticamente na primeira inicialização pelo entrypoint do contêiner.
 
     <Note>
-      The application container waits for PostgreSQL to pass its health check before starting. On the first run, pulling images and running migrations may take a minute or two.
+      O contêiner da aplicação espera o PostgreSQL passar no health check antes de iniciar. Na primeira execução, o download das imagens e a execução das migrações podem levar um ou dois minutos.
     </Note>
   </Step>
 
-  <Step title="Access the application">
-    Open [http://localhost:8080](http://localhost:8080) in your browser.
+  <Step title="Acesse a aplicação">
+    Abra [http://localhost:8080](http://localhost:8080) no navegador.
   </Step>
 
-  <Step title="Check your email (optional)">
-    MailPit captures all outbound email from the application. Open [http://localhost:8025](http://localhost:8025) to view captured messages — useful for testing registration flows, password resets, and notifications.
+  <Step title="Confira os e-mails (opcional)">
+    O MailPit captura todos os e-mails enviados pela aplicação. Abra [http://localhost:8025](http://localhost:8025) para ver as mensagens capturadas. Isso é útil para testar fluxos de cadastro, redefinição de senha e notificações.
   </Step>
 
-  <Step title="Connect to PostgreSQL (optional)">
-    The database is exposed on `localhost:5432`. Connect with any PostgreSQL client using the credentials below, or use the `dev/psql.sh` wrapper script.
+  <Step title="Conecte ao PostgreSQL (opcional)">
+    O banco fica exposto em `localhost:5432`. Conecte usando qualquer cliente PostgreSQL com as credenciais abaixo, ou use o script auxiliar `dev/psql.sh`.
 
-    | Parameter | Value       |
+    | Parâmetro | Valor       |
     | --------- | ----------- |
     | Host      | `localhost` |
-    | Port      | `5432`      |
-    | Database  | `mapas`     |
-    | User      | `mapas`     |
-    | Password  | `mapas-dev` |
+    | Porta     | `5432`      |
+    | Banco     | `mapas`     |
+    | Usuário   | `mapas`     |
+    | Senha     | `mapas-dev` |
   </Step>
 </Steps>
 
-## Services at a glance
+## Serviços em resumo
 
-| Service     | URL                                            | Description                                 |
-| ----------- | ---------------------------------------------- | ------------------------------------------- |
-| Application | [http://localhost:8080](http://localhost:8080) | Main web interface                          |
-| MailPit     | [http://localhost:8025](http://localhost:8025) | Email capture UI                            |
-| PostgreSQL  | `localhost:5432`                               | Database (user: `mapas`, pass: `mapas-dev`) |
+| Serviço    | URL                                            | Descrição                                  |
+| ---------- | ---------------------------------------------- | ------------------------------------------ |
+| Aplicação  | [http://localhost:8080](http://localhost:8080) | Interface web principal                    |
+| MailPit    | [http://localhost:8025](http://localhost:8025) | Interface de captura de e-mails            |
+| PostgreSQL | `localhost:5432`                               | Banco de dados (`mapas` / `mapas-dev`)     |
 
-## After the stack is up
+## Depois que a stack subir
 
-Once the containers are running, these are the next guides you will usually need:
+Depois que os contêineres estiverem rodando, estes são os próximos guias de que você normalmente vai precisar:
 
-* [Docker Compose](/mnt/data/code/redemapas/manual/content/docs/devs/deploy/docker.mdx) for HTTPS with Caddy, container shell access, PsySH, PostgreSQL access, restores, and asset rebuild commands
-* [Testing](/mnt/data/code/redemapas/manual/content/docs/devs/development/testing.mdx) for PHPUnit usage, test structure, builders, and directors
-* [Architecture](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx) for stack, runtime flow, and workspace layout
+* [Docker Compose](/mnt/data/code/redemapas/manual/content/docs/devs/deploy/docker.mdx) para HTTPS com Caddy, shell dentro do contêiner, PsySH, acesso ao PostgreSQL, restauração e rebuild de assets
+* [Testes](/mnt/data/code/redemapas/manual/content/docs/devs/development/testing.mdx) para uso do PHPUnit, estrutura de testes, builders e directors
+* [Arquitetura](/mnt/data/code/redemapas/manual/content/docs/devs/development/architecture.mdx) para stack, fluxo de execução e organização do workspace
 
-If you are actively changing frontend code, the most common next command is:
+Se você estiver alterando o frontend, este costuma ser o próximo comando mais usado:
 
 ```bash  theme={null}
 dev/pnpm.sh -C src run watch
 ```
 
-## Local verification checklist
+## Checklist de verificação local
 
-After booting the stack or changing infrastructure-related code, verify these points before moving on:
+Depois de subir a stack ou mexer em infraestrutura, valide estes pontos antes de continuar:
 
-* `http://localhost:8080` loads the application
-* `https://mapas.localhost:8443` works if you are testing PWA or Web Push flows
-* MailPit receives outbound messages at `http://localhost:8025`
-* `dev/psql.sh` connects successfully and the `mapas` database is present
-* the test suite starts without environment errors
-* frontend assets rebuild normally through `dev/pnpm.sh -C src run watch`
+* `http://localhost:8080` carrega a aplicação
+* `https://mapas.localhost:8443` funciona se você estiver testando PWA ou Web Push
+* o MailPit recebe mensagens em `http://localhost:8025`
+* `dev/psql.sh` conecta com sucesso e o banco `mapas` existe
+* a suíte de testes inicia sem erros de ambiente
+* os assets de frontend recompilam normalmente com `dev/pnpm.sh -C src run watch`
 
-## Next steps
+## Próximos passos
 
 <CardGroup cols={2}>
   <Card title="Funcionalidades" icon="map" href="/docs/devs/features/agents">
-    Learn about agents, spaces, events, projects, and opportunities.
+    Entenda agentes, espaços, eventos, projetos e oportunidades.
   </Card>
 
   <Card title="Arquitetura" icon="diagram-project" href="/docs/devs/development/architecture">
-    Understand the PHP framework, ORM, hooks system, and theme hierarchy.
+    Entenda o framework PHP, o ORM, o sistema de hooks e a hierarquia de temas.
   </Card>
 
   <Card title="Temas e módulos" icon="palette" href="/docs/devs/development/themes">
-    Customize the platform by creating themes and feature modules.
+    Personalize a plataforma criando temas e módulos de funcionalidade.
   </Card>
 
   <Card title="Deploy em produção" icon="server" href="/docs/devs/deploy/docker">
-    Deploy with Docker Compose or Kubernetes using the included Helm chart.
+    Faça deploy com Docker Compose ou Kubernetes usando o Helm chart incluído.
   </Card>
 </CardGroup>

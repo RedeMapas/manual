@@ -1,11 +1,11 @@
 ---
-title: Hook system
+title: Sistema de hooks
 ---
-> Event-driven extensibility in Mapas Culturais: hook naming, registration, context binding, priorities, and common patterns.
+> Extensibilidade orientada a eventos no Mapas Culturais: nomenclatura de hooks, registro, binding de contexto, prioridades e padrões comuns.
 
-The hook system is the primary way to extend Mapas Culturais without modifying core files. A hook is a named event to which any number of PHP callbacks can be attached. When the application fires a hook, all registered callbacks for that name are invoked in priority order.
+O sistema de hooks é a principal forma de estender o Mapas Culturais sem modificar arquivos do núcleo. Um hook é um evento nomeado ao qual qualquer quantidade de callbacks PHP pode ser associada. Quando a aplicação dispara esse hook, todos os callbacks registrados para aquele nome são executados na ordem de prioridade.
 
-## Registering a hook
+## Registrando um hook
 
 ```php  theme={null}
 $app = MapasCulturais\App::i();
@@ -14,19 +14,19 @@ $app->hook('hook.name', function() {
     // callback body
 });
 
-// With a priority (lower number = higher priority; default is 10)
+// Com prioridade (número menor = prioridade maior; padrão é 10)
 $app->hook('hook.name', function() {
     // runs earlier
 }, 5);
 ```
 
-Register hooks inside a module's `_init()` method or a theme's `_init()` method so that they are set up before the first request is processed.
+Registre hooks dentro do método `_init()` de um módulo ou de um tema para que eles sejam configurados antes do processamento da primeira requisição.
 
 ## Hook naming syntax
 
-Hook names follow a structured pattern that allows both broad and targeted subscriptions.
+Os nomes dos hooks seguem um padrão estruturado que permite inscrições amplas e também específicas.
 
-### Entity hooks
+### Hooks de entidade
 
 ```
 entity.{action}:{timing}
@@ -58,7 +58,7 @@ $app->hook('entity(Agent).save:before', function() {
 });
 ```
 
-### Controller hooks
+### Hooks de controller
 
 ```
 {Method}({controllerId}.{actionName}):before
@@ -72,7 +72,7 @@ ALL({controllerId}.{actionName}):before
 | `POST(opportunity.create):after` | After POST /opportunity/create                   |
 | `ALL(registration.*):before`     | Before any action on the registration controller |
 
-### View hooks
+### Hooks de view
 
 ```
 view.render:before
@@ -93,7 +93,7 @@ view.partial({templateName}):after
 API({EntityClass}).params
 ```
 
-Use API hooks to modify query parameters before the API executes a search:
+Use hooks de API para modificar parâmetros de consulta antes que a API execute uma busca:
 
 ```php  theme={null}
 $app->hook('API(Agent).params', function(&$params) {
@@ -108,7 +108,7 @@ $app->hook('API(Agent).params', function(&$params) {
 template({controllerId}/{actionName})
 ```
 
-Template hooks let you inject HTML into specific points in a rendered page:
+Hooks de template permitem injetar HTML em pontos específicos de uma página renderizada:
 
 ```php  theme={null}
 $app->hook('template(agent/single)', function() {
@@ -124,9 +124,9 @@ module({ClassName}).init:after
 mapasculturais.init
 ```
 
-## The `$this` context
+## O contexto de `$this`
 
-When a hook fires from within an entity operation, the callback can be bound to the entity using `applyHookBoundTo`. This is handled automatically for entity hooks, so `$this` inside the callback refers to the triggering entity:
+Quando um hook dispara de dentro de uma operação de entidade, o callback pode ser vinculado à entidade usando `applyHookBoundTo`. Isso é tratado automaticamente nos hooks de entidade, então `$this` dentro do callback se refere à entidade que disparou o hook:
 
 ```php  theme={null}
 $app->hook('entity(Opportunity).insert:after', function() {
@@ -145,9 +145,9 @@ $app->hook('mapasculturais.init', function() use ($myService) {
 });
 ```
 
-## Passing arguments
+## Passagem de argumentos
 
-Hooks can pass additional arguments to callbacks. The `applyHook` and `applyHookBoundTo` methods accept an array of arguments:
+Hooks podem passar argumentos adicionais aos callbacks. Os métodos `applyHook` e `applyHookBoundTo` aceitam um array de argumentos:
 
 ```php  theme={null}
 // Hook fired with extra arguments
@@ -159,9 +159,9 @@ $app->hook('my.hook', function($entityId, $extraData) {
 });
 ```
 
-## Priorities
+## Prioridades
 
-The default priority is `10`. Lower numbers run first. When two callbacks share the same numeric priority, they run in registration order.
+A prioridade padrão é `10`. Números menores executam primeiro. Quando dois callbacks têm a mesma prioridade numérica, eles rodam na ordem em que foram registrados.
 
 ```php  theme={null}
 // Runs first

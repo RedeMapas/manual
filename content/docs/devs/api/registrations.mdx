@@ -1,110 +1,110 @@
 ---
-title: Registrations API
+title: API de Inscrições
 ---
-> API endpoints for managing registrations (applications) to opportunities in Mapas Culturais.
+> Endpoints da API para gerenciar inscrições em oportunidades no Mapas Culturais.
 
-A **registration** is an application submitted by an agent to an opportunity. Registrations move through a lifecycle from draft to sent, and may be evaluated and assigned a status (approved, waitlisted, not approved, etc.). Registration data is private — only the applicant and opportunity managers can view it.
+Uma **inscrição** é uma candidatura enviada por um agente para uma oportunidade. As inscrições percorrem um ciclo de vida do rascunho ao envio, podem ser avaliadas e receber um status, como aprovada, suplente ou não aprovada. Os dados da inscrição são privados e só podem ser vistos pelo proponente e pelos gestores da oportunidade.
 
-Base path: `/api/registration/`
+Caminho base: `/api/registration/`
 
 <Warning>
-  Registration data is private. All endpoints require authentication. Unauthenticated requests will not return registration records. Use a valid JWT token in the `Authorization` header and set `MapasSDK-REQUEST: true`.
+  Os dados de inscrição são privados. Todos os endpoints exigem autenticação. Requisições sem autenticação não retornam registros de inscrição. Use um token JWT válido no cabeçalho `Authorization` e defina `MapasSDK-REQUEST: true`.
 </Warning>
 
 ## Endpoints
 
-| Method   | Path                        | Description                     |
+| Método   | Caminho                        | Descrição                     |
 | -------- | --------------------------- | ------------------------------- |
-| `GET`    | `/api/registration/find`    | List or search registrations    |
-| `GET`    | `/api/registration/findOne` | Find a single registration      |
-| `POST`   | `/registration/index`       | Create a new registration       |
-| `PATCH`  | `/registration/single/{id}` | Update an existing registration |
+| `GET`    | `/api/registration/find`    | Listar ou buscar registrations    |
+| `GET`    | `/api/registration/findOne` | Buscar um único registration      |
+| `POST`   | `/registration/index`       | Criar um novo registration       |
+| `PATCH`  | `/registration/single/{id}` | Atualizar um existente registration |
 | `DELETE` | `/registration/single/{id}` | Delete a registration           |
 
 ***
 
 ## GET /api/registration/find
 
-Returns a paginated list of registrations. Only returns registrations the authenticated user has permission to view.
+Retorna uma lista paginada de registrations. Only returns registrations the authenticated user has permission to view.
 
-### Query parameters
+### Parâmetros de consulta
 
-**Control parameters** (prefixed with `@`)
+**Parâmetros de controle** (prefixados com `@`)
 
 <ParamField query="@select" type="string">
-  Comma-separated list of fields to include in the response.
+  Lista de campos separada por vírgula para incluir na resposta.
 
-  Example: `@select=id,number,status,opportunity,owner`
+  Exemplo: `@select=id,number,status,opportunity,owner`
 </ParamField>
 
 <ParamField query="@page" type="integer" default="1">
-  Page number for paginated results. Starts at `1`.
+  Número da página para resultados paginados. Começa em `1`.
 </ParamField>
 
 <ParamField query="@limit" type="integer" default="10">
-  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+  Número máximo de resultados por página. Use `-1` para desativar a paginação, com cautela em conjuntos grandes.
 </ParamField>
 
 <ParamField query="@order" type="string">
-  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+  Expressão de ordenação. Formato: `campo DIR`, em que `DIR` é `ASC` ou `DESC`.
 
-  Example: `@order=sentTimestamp DESC`
+  Exemplo: `@order=sentTimestamp DESC`
 </ParamField>
 
 <ParamField query="@or" type="integer">
-  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+  Quando definido como `1`, combina todos os parâmetros de filtro com lógica `OR`, em vez do `AND` padrão.
 </ParamField>
 
-**Filter parameters**
+**Parâmetros de filtro**
 
 <ParamField query="id" type="string">
-  Filter by registration ID. Supports operators: `EQ(n)`, `IN(a,b,c)`.
+  Filtra por registration ID. Suporta operadores: `EQ(n)`, `IN(a,b,c)`.
 
-  Example: `id=EQ(123456)`
+  Exemplo: `id=EQ(123456)`
 </ParamField>
 
 <ParamField query="number" type="string">
-  Filter by registration number (the human-readable reference code, e.g., `ABC123456`).
+  Filtra por registration number (the human-readable reference code, e.g., `ABC123456`).
 
-  Example: `number=EQ(ABC123456)`
+  Exemplo: `number=EQ(ABC123456)`
 </ParamField>
 
 <ParamField query="status" type="integer">
-  Filter by registration status. See status values below.
+  Filtra por registration status. See status values below.
 
-  Example: `status=EQ(1)` for sent/pending registrations.
+  Exemplo: `status=EQ(1)` for sent/pending registrations.
 </ParamField>
 
 <ParamField query="opportunity" type="string">
-  Filter by opportunity using entity reference syntax.
+  Filtra por opportunity using entity reference syntax.
 
-  Example: `opportunity=EQ(@Opportunity:15)` returns all registrations for opportunity ID 15.
+  Exemplo: `opportunity=EQ(@Opportunity:15)` returns all registrations for opportunity ID 15.
 </ParamField>
 
 <ParamField query="owner" type="string">
-  Filter by the applicant agent using entity reference syntax.
+  Filtra por the applicant agent using entity reference syntax.
 
-  Example: `owner=EQ(@Agent:42)` returns registrations belonging to agent ID 42.
+  Exemplo: `owner=EQ(@Agent:42)` returns registrations belonging to agent ID 42.
 </ParamField>
 
 <ParamField query="category" type="string">
-  Filter by registration category (if the opportunity uses categories).
+  Filtra por registration category (if the opportunity uses categories).
 
-  Example: `category=EQ(Pintura)`
+  Exemplo: `category=EQ(Pintura)`
 </ParamField>
 
 <ParamField query="proponentType" type="string">
-  Filter by proponent type.
+  Filtra por tipo de proponente.
 
-  Example: `proponentType=EQ(individual)`
+  Exemplo: `proponentType=EQ(individual)`
 </ParamField>
 
-### Response
+### Resposta
 
-Returns a JSON array of registration objects.
+Retorna um array JSON de registration objects.
 
 <ResponseField name="id" type="integer" required>
-  Unique registration identifier (randomly generated integer).
+  Identificador único de registration identifier (randomly generated integer).
 </ResponseField>
 
 <ResponseField name="number" type="string" required>
@@ -120,7 +120,7 @@ Returns a JSON array of registration objects.
 </ResponseField>
 
 <ResponseField name="proponentType" type="string">
-  The proponent type chosen by the applicant.
+  Tipo de proponente escolhido pela pessoa proponente.
 </ResponseField>
 
 <ResponseField name="range" type="string">
@@ -186,15 +186,15 @@ Returns a JSON array of registration objects.
 </ResponseField>
 
 <ResponseField name="createTimestamp" type="string">
-  ISO 8601 datetime when the registration was created.
+  Data e hora em ISO 8601 when the registration was created.
 </ResponseField>
 
 <ResponseField name="sentTimestamp" type="string">
-  ISO 8601 datetime when the registration was submitted. Null while still in draft.
+  Data e hora em ISO 8601 when the registration was submitted. Null while still in draft.
 </ResponseField>
 
 <ResponseField name="updateTimestamp" type="string">
-  ISO 8601 datetime of the last update.
+  Data e hora em ISO 8601 of the last update.
 </ResponseField>
 
 <ResponseField name="evaluationResultValue" type="mixed">
@@ -209,7 +209,7 @@ Returns a JSON array of registration objects.
   URL to the registration detail/view page.
 </ResponseField>
 
-### Examples
+### Exemplos
 
 <CodeGroup>
   ```bash List all registrations for an opportunity (requires opportunity manager role) theme={null}
@@ -280,7 +280,7 @@ Returns a JSON array of registration objects.
 
 ## GET /api/registration/findOne
 
-Returns a single registration. Accepts the same filter parameters as `find`. Returns the first matching result.
+Retorna um único registration. Aceita os mesmos parâmetros de filtro de `find`. Retorna o primeiro resultado encontrado.
 
 ```bash  theme={null}
 curl "https://instance.example.com/api/registration/findOne?@select=id,number,status,opportunity,owner&id=EQ(987654)" \
@@ -292,22 +292,22 @@ curl "https://instance.example.com/api/registration/findOne?@select=id,number,st
 
 ## POST /registration/index
 
-Creates a new registration (draft). Requires authentication. The authenticated user's agent becomes the registration owner.
+Cria um novo registration (draft). Exige autenticação. The authenticated user's agent becomes the registration owner.
 
-### Request body
+### Corpo da requisição
 
-| Field           | Type    | Required | Description                                           |
+| Campo           | Tipo    | Obrigatório | Descrição                                           |
 | --------------- | ------- | -------- | ----------------------------------------------------- |
-| `opportunityId` | integer | Yes      | The ID of the opportunity to apply to                 |
-| `category`      | string  | No       | Category selection (if the opportunity requires it)   |
-| `proponentType` | string  | No       | Proponent type (if the opportunity requires it)       |
-| `range`         | string  | No       | Range/tier selection (if the opportunity requires it) |
+| `opportunityId` | integer | Sim      | The ID of the opportunity to apply to                 |
+| `category`      | string  | Não       | Category selection (if the opportunity requires it)   |
+| `proponentType` | string  | Não       | Tipo de proponente, se a oportunidade exigir          |
+| `range`         | string  | Não       | Range/tier selection (if the opportunity requires it) |
 
 ```bash  theme={null}
 curl -X POST "https://instance.example.com/registration/index" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "opportunityId": 15,
     "category": "Pintura"
@@ -332,7 +332,7 @@ Updates an existing registration. Requires authentication and ownership.
 curl -X POST "https://instance.example.com/registration/single/{id}" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "id": 987654,
     "category": "Escultura"
@@ -360,7 +360,7 @@ Registrations use a distinct set of status codes from other entities:
 
 | Value | Constant             | Meaning                                          |
 | ----- | -------------------- | ------------------------------------------------ |
-| `0`   | `STATUS_DRAFT`       | Draft — not yet submitted, editable by applicant |
+| `0`   | `STATUS_DRAFT`       | Rascunho — not yet submitted, editable by applicant |
 | `1`   | `STATUS_SENT`        | Submitted / Pending evaluation                   |
 | `2`   | `STATUS_INVALID`     | Invalid — rejected for procedural reasons        |
 | `3`   | `STATUS_NOTAPPROVED` | Not selected                                     |
@@ -376,5 +376,5 @@ Registrations use a distinct set of status codes from other entities:
 * Only the applicant and opportunity managers can view registration data. Unauthenticated requests return empty results.
 * Filter all registrations for an opportunity with `opportunity=EQ(@Opportunity:id)`. This requires opportunity manager permissions.
 * Applicants can find their own registrations with `owner=EQ(@Agent:id)`.
-* Field data from custom registration form fields (type `field_*`) is included in the response when the user has view access.
+* Campo data from custom registration form fields (type `field_*`) is included in the response when the user has view access.
 * When `publishedRegistrations` is `true` on the parent opportunity, approved and waitlisted registrations become publicly visible.

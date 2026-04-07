@@ -1,116 +1,116 @@
 ---
-title: Events API
+title: API de Eventos
 ---
-> API endpoints for managing cultural events in Mapas Culturais.
+> Endpoints da API para gerenciar eventos culturais no Mapas Culturais.
 
-An **event** represents a cultural activity with one or more scheduled occurrences at spaces. Events belong to an agent (owner) and can optionally be linked to a project. Occurrences define when and where the event takes place.
+Um **evento** representa uma atividade cultural com uma ou mais ocorrências agendadas em espaços. Eventos pertencem a um agente (proprietário) e podem opcionalmente estar ligados a um projeto. As ocorrências definem quando e onde o evento acontece.
 
-Base path: `/api/event/`
+Caminho base: `/api/event/`
 
 <Info>
-  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+  Operações de leitura são públicas. Operações de escrita (`create`, `save`, `delete`) exigem autenticação com token JWT. Veja o [guia de autenticação](/docs/devs/auth/providers) para detalhes.
 </Info>
 
 ## Endpoints
 
-| Method   | Path                 | Description              |
+| Método   | Caminho                 | Descrição              |
 | -------- | -------------------- | ------------------------ |
-| `GET`    | `/api/event/find`    | List or search events    |
-| `GET`    | `/api/event/findOne` | Find a single event      |
-| `POST`   | `/event/index`       | Create a new event       |
-| `PATCH`  | `/event/single/{id}` | Update an existing event |
-| `DELETE` | `/event/single/{id}` | Delete an event          |
+| `GET`    | `/api/event/find`    | Listar ou buscar events    |
+| `GET`    | `/api/event/findOne` | Buscar um único event      |
+| `POST`   | `/event/index`       | Criar um novo event       |
+| `PATCH`  | `/event/single/{id}` | Atualizar um existente event |
+| `DELETE` | `/event/single/{id}` | Excluir um event          |
 
 ***
 
 ## GET /api/event/find
 
-Returns a paginated list of events. Supports filtering, sorting, field selection, and full-text search.
+Retorna uma lista paginada de events. Suporta filtros, ordenação, seleção de campos e busca textual.
 
-### Query parameters
+### Parâmetros de consulta
 
-**Control parameters** (prefixed with `@`)
+**Parâmetros de controle** (prefixados com `@`)
 
 <ParamField query="@select" type="string">
-  Comma-separated list of fields to include in the response. Supports dot notation for nested objects and nested field selection for occurrences.
+  Lista de campos separada por vírgula para incluir na resposta. Supports dot notation for nested objects and nested field selection for occurrences.
 
-  Example: `@select=id,name,occurrences.{id,space.{name},rule}`
+  Exemplo: `@select=id,name,occurrences.{id,space.{name},rule}`
 </ParamField>
 
 <ParamField query="@page" type="integer" default="1">
-  Page number for paginated results. Starts at `1`.
+  Número da página para resultados paginados. Começa em `1`.
 </ParamField>
 
 <ParamField query="@limit" type="integer" default="10">
-  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+  Número máximo de resultados por página. Use `-1` para desativar a paginação, com cautela em conjuntos grandes.
 </ParamField>
 
 <ParamField query="@order" type="string">
-  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+  Expressão de ordenação. Formato: `campo DIR`, em que `DIR` é `ASC` ou `DESC`.
 
-  Example: `@order=name ASC`
+  Exemplo: `@order=name ASC`
 </ParamField>
 
 <ParamField query="@keyword" type="string">
-  Full-text search keyword. Searches across name and description fields.
+  Palavra-chave de busca textual. Pesquisa nos campos de nome e descrição.
 </ParamField>
 
 <ParamField query="@or" type="integer">
-  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+  Quando definido como `1`, combina todos os parâmetros de filtro com lógica `OR`, em vez do `AND` padrão.
 </ParamField>
 
-**Filter parameters**
+**Parâmetros de filtro**
 
 <ParamField query="id" type="string">
-  Filter by event ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+  Filtra por event ID. Suporta operadores: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
 
-  Example: `id=BET(100,200)`
+  Exemplo: `id=BET(100,200)`
 </ParamField>
 
 <ParamField query="name" type="string">
-  Filter by event name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+  Filtra por event name. Suporta operadores: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
 
-  Example: `name=ILIKE(festival*)`
+  Exemplo: `name=ILIKE(festival*)`
 </ParamField>
 
 <ParamField query="status" type="integer">
-  Filter by publication status.
+  Filtra por publication status.
 
   | Value | Meaning   |
   | ----- | --------- |
-  | `1`   | Published |
-  | `0`   | Draft     |
-  | `-2`  | Archived  |
-  | `-9`  | Disabled  |
-  | `-10` | Trash     |
+  | `1`   | Publicado |
+  | `0`   | Rascunho     |
+  | `-2`  | Arquivado  |
+  | `-9`  | Desabilitado  |
+  | `-10` | Lixeira     |
 
-  Example: `status=EQ(1)`
+  Exemplo: `status=EQ(1)`
 </ParamField>
 
 <ParamField query="type" type="integer">
-  Filter by event type. Type IDs depend on instance configuration.
+  Filtra por event type. Tipo IDs depend on instance configuration.
 
-  Example: `type=EQ(1)`
+  Exemplo: `type=EQ(1)`
 </ParamField>
 
 <ParamField query="project" type="string">
-  Filter by associated project using entity reference syntax.
+  Filtra por associated project using entity reference syntax.
 
-  Example: `project=EQ(@Project:4)` returns events linked to project ID 4.
+  Exemplo: `project=EQ(@Project:4)` returns events linked to project ID 4.
 </ParamField>
 
 <ParamField query="owner" type="string">
-  Filter by owner agent using entity reference syntax.
+  Filtra por owner agent using entity reference syntax.
 
-  Example: `owner=EQ(@Agent:42)`
+  Exemplo: `owner=EQ(@Agent:42)`
 </ParamField>
 
-### Response
+### Resposta
 
-Returns a JSON array of event objects. The fields returned depend on `@select`.
+Retorna um array JSON de event objects. The fields returned depend on `@select`.
 
 <ResponseField name="id" type="integer" required>
-  Unique event identifier.
+  Identificador único de event identifier.
 </ResponseField>
 
 <ResponseField name="name" type="string" required>
@@ -122,11 +122,11 @@ Returns a JSON array of event objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="shortDescription" type="string">
-  Short description (up to 400 characters).
+  Descrição curta (up to 400 characters).
 </ResponseField>
 
 <ResponseField name="longDescription" type="string">
-  Full long-form description.
+  Descrição longa completa.
 </ResponseField>
 
 <ResponseField name="occurrences" type="array">
@@ -183,27 +183,27 @@ Returns a JSON array of event objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="status" type="integer">
-  Publication status. See status values below.
+  Status de publicação. See status values below.
 </ResponseField>
 
 <ResponseField name="createTimestamp" type="string">
-  ISO 8601 datetime when the event was created.
+  Data e hora em ISO 8601 when the event was created.
 </ResponseField>
 
 <ResponseField name="updateTimestamp" type="string">
-  ISO 8601 datetime of the last update.
+  Data e hora em ISO 8601 of the last update.
 </ResponseField>
 
 <ResponseField name="owner" type="object">
-  The agent that owns this event.
+  O agente proprietário deste event.
 
   <Expandable title="properties">
-    <ResponseField name="id" type="integer">Owner agent ID.</ResponseField>
-    <ResponseField name="name" type="string">Owner agent name.</ResponseField>
+    <ResponseField name="id" type="integer">ID do agente proprietário.</ResponseField>
+    <ResponseField name="name" type="string">Nome do agente proprietário.</ResponseField>
   </Expandable>
 </ResponseField>
 
-### Examples
+### Exemplos
 
 <CodeGroup>
   ```bash List published events theme={null}
@@ -272,7 +272,7 @@ Returns a JSON array of event objects. The fields returned depend on `@select`.
 
 ## GET /api/event/findOne
 
-Returns a single event. Accepts the same filter parameters as `find`. Returns the first matching result.
+Retorna um único event. Aceita os mesmos parâmetros de filtro de `find`. Retorna o primeiro resultado encontrado.
 
 ```bash  theme={null}
 curl "https://instance.example.com/api/event/findOne?@select=id,name,occurrences&id=EQ(101)"
@@ -282,22 +282,22 @@ curl "https://instance.example.com/api/event/findOne?@select=id,name,occurrences
 
 ## POST /event/index
 
-Creates a new event. Requires authentication.
+Cria um novo event. Exige autenticação.
 
 <Warning>
   Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
 </Warning>
 
-### Request body
+### Corpo da requisição
 
-| Field              | Type    | Required | Description                                     |
+| Campo              | Tipo    | Obrigatório | Descrição                                     |
 | ------------------ | ------- | -------- | ----------------------------------------------- |
-| `name`             | string  | Yes      | Event name                                      |
-| `type`             | integer | No       | Event type ID (defaults to `1`)                 |
-| `shortDescription` | string  | Yes      | Short description (max 400 characters)          |
-| `longDescription`  | string  | No       | Full description                                |
-| `projectId`        | integer | No       | ID of the project to associate the event with   |
-| `terms`            | object  | No       | Taxonomy terms, e.g. `{"linguagem": ["Music"]}` |
+| `name`             | string  | Sim      | Event name                                      |
+| `type`             | integer | Não       | Event type ID (defaults to `1`)                 |
+| `shortDescription` | string  | Sim      | Descrição curta (máx. 400 caracteres)         |
+| `longDescription`  | string  | Não      | Descrição completa                            |
+| `projectId`        | integer | Não       | ID of the project to associate the event with   |
+| `terms`            | object  | Não       | Taxonomy terms, e.g. `{"linguagem": ["Music"]}` |
 
 <Note>
   To link an event to a project, the authenticated user must have control over that project. If not, a workflow request is created for the project owner to approve.
@@ -307,7 +307,7 @@ Creates a new event. Requires authentication.
 curl -X POST "https://instance.example.com/event/index" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "name": "Festival de Jazz",
     "type": 1,
@@ -326,7 +326,7 @@ Updates an existing event. Requires authentication and ownership (or admin role)
 curl -X POST "https://instance.example.com/event/single/{id}" \
   -H "authorization: <jwt-token>" \
   -H "MapasSDK-REQUEST: true" \
-  -H "Content-Type: application/json" \
+  -H "Content-Tipo: application/json" \
   -d '{
     "id": 101,
     "shortDescription": "Updated description."
@@ -352,15 +352,15 @@ curl -X DELETE "https://instance.example.com/event/single/{id}" \
 
 | Value | Constant          | Meaning                                           |
 | ----- | ----------------- | ------------------------------------------------- |
-| `1`   | `STATUS_ENABLED`  | Published and publicly visible                    |
-| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner and project managers |
-| `-2`  | `STATUS_ARCHIVED` | Archived                                          |
-| `-9`  | `STATUS_DISABLED` | Disabled by admin                                 |
+| `1`   | `STATUS_ENABLED`  | Publicado and publicly visible                    |
+| `0`   | `STATUS_DRAFT`    | Rascunho, visible only to owner and project managers |
+| `-2`  | `STATUS_ARCHIVED` | Arquivado                                          |
+| `-9`  | `STATUS_DISABLED` | Desabilitado by admin                                 |
 | `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash)                   |
 
 ## Tips
 
 * Use `@select=id,name,occurrences.{id,space.{name},rule}` to retrieve structured occurrence data with space and recurrence info in a single request.
 * The `rule.description` field inside each occurrence contains a human-readable date/time summary.
-* Filter by taxonomy with `term:linguagem=LIKE(Cinema)` syntax where `linguagem` is the taxonomy slug.
+* Filtra por taxonomy with `term:linguagem=LIKE(Cinema)` syntax where `linguagem` is the taxonomy slug.
 * Project managers can also publish events within their project.

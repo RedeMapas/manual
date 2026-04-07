@@ -1,116 +1,116 @@
 ---
-title: Agents API
+title: API de Agentes
 ---
-> API endpoints for managing agents (individuals and collectives) in Mapas Culturais.
+> Endpoints da API para gerenciar agentes (indivíduos e coletivos) no Mapas Culturais.
 
-An **agent** represents a cultural individual or collective registered on the platform — artists, producers, cultural managers, and similar roles. Agents are the primary ownership entity for spaces, events, projects, and opportunities.
+Um **agente** representa uma pessoa ou coletivo cultural cadastrado na plataforma, como artistas, produtores e gestores culturais. Agents are the primary ownership entity for spaces, events, projects, and opportunities.
 
-Base path: `/api/agent/`
+Caminho base: `/api/agent/`
 
 <Info>
-  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+  Operações de leitura são públicas. Operações de escrita (`create`, `save`, `delete`) exigem autenticação com token JWT. Veja o [guia de autenticação](/docs/devs/auth/providers) para detalhes.
 </Info>
 
 ## Endpoints
 
-| Method   | Path                 | Description              |
+| Método   | Caminho                 | Descrição              |
 | -------- | -------------------- | ------------------------ |
-| `GET`    | `/api/agent/find`    | List or search agents    |
-| `GET`    | `/api/agent/findOne` | Find a single agent      |
-| `POST`   | `/agent/index`       | Create a new agent       |
-| `PATCH`  | `/agent/single/{id}` | Update an existing agent |
-| `DELETE` | `/agent/single/{id}` | Delete an agent          |
+| `GET`    | `/api/agent/find`    | Listar ou buscar agents    |
+| `GET`    | `/api/agent/findOne` | Buscar um único agent      |
+| `POST`   | `/agent/index`       | Criar um novo agent       |
+| `PATCH`  | `/agent/single/{id}` | Atualizar um existente agent |
+| `DELETE` | `/agent/single/{id}` | Excluir um agent          |
 
 ***
 
 ## GET /api/agent/find
 
-Returns a paginated list of agents. Supports filtering, sorting, field selection, and full-text search.
+Retorna uma lista paginada de agents. Suporta filtros, ordenação, seleção de campos e busca textual.
 
-### Query parameters
+### Parâmetros de consulta
 
-**Control parameters** (prefixed with `@`)
+**Parâmetros de controle** (prefixados com `@`)
 
 <ParamField query="@select" type="string">
-  Comma-separated list of fields to include in the response. Use this to limit payload size. Supports dot notation for related objects (e.g., `owner.name`).
+  Lista de campos separada por vírgula para incluir na resposta. Use isso para limitar o tamanho do payload. Supports dot notation for related objects (e.g., `owner.name`).
 
-  Example: `@select=id,name,email,type`
+  Exemplo: `@select=id,name,email,type`
 </ParamField>
 
 <ParamField query="@page" type="integer" default="1">
-  Page number for paginated results. Starts at `1`.
+  Número da página para resultados paginados. Começa em `1`.
 </ParamField>
 
 <ParamField query="@limit" type="integer" default="10">
-  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+  Número máximo de resultados por página. Use `-1` para desativar a paginação, com cautela em conjuntos grandes.
 </ParamField>
 
 <ParamField query="@order" type="string">
-  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+  Expressão de ordenação. Formato: `campo DIR`, em que `DIR` é `ASC` ou `DESC`.
 
-  Example: `@order=name ASC`
+  Exemplo: `@order=name ASC`
 </ParamField>
 
 <ParamField query="@keyword" type="string">
-  Full-text search keyword. Searches across name and description fields.
+  Palavra-chave de busca textual. Pesquisa nos campos de nome e descrição.
 </ParamField>
 
 <ParamField query="@or" type="integer">
-  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+  Quando definido como `1`, combina todos os parâmetros de filtro com lógica `OR`, em vez do `AND` padrão.
 </ParamField>
 
-**Filter parameters**
+**Parâmetros de filtro**
 
 <ParamField query="id" type="string">
-  Filter by agent ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+  Filtra por agent ID. Suporta operadores: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
 
-  Example: `id=EQ(42)` or `id=BET(100,200)`
+  Exemplo: `id=EQ(42)` or `id=BET(100,200)`
 </ParamField>
 
 <ParamField query="name" type="string">
-  Filter by agent name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+  Filtra por agent name. Suporta operadores: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
 
-  Example: `name=ILIKE(maria*)` matches names starting with "maria".
+  Exemplo: `name=ILIKE(maria*)` matches names starting with "maria".
 </ParamField>
 
 <ParamField query="status" type="integer">
-  Filter by publication status.
+  Filtra por publication status.
 
   | Value | Meaning   |
   | ----- | --------- |
-  | `1`   | Published |
-  | `0`   | Draft     |
-  | `-2`  | Archived  |
-  | `-9`  | Disabled  |
-  | `-10` | Trash     |
+  | `1`   | Publicado |
+  | `0`   | Rascunho     |
+  | `-2`  | Arquivado  |
+  | `-9`  | Desabilitado  |
+  | `-10` | Lixeira     |
 
-  Example: `status=EQ(1)`
+  Exemplo: `status=EQ(1)`
 </ParamField>
 
 <ParamField query="type" type="integer">
-  Filter by agent type. Common values: `1` (Individual), `2` (Collective).
+  Filtra por agent type. Common values: `1` (Individual), `2` (Collective).
 
-  Example: `type=EQ(1)`
+  Exemplo: `type=EQ(1)`
 </ParamField>
 
 <ParamField query="owner" type="string">
-  Filter by owner agent using entity reference syntax.
+  Filtra por owner agent using entity reference syntax.
 
-  Example: `owner=EQ(@Agent:1)` returns agents owned by agent ID 1.
+  Exemplo: `owner=EQ(@Agent:1)` returns agents owned by agent ID 1.
 </ParamField>
 
 <ParamField query="_geoLocation" type="string">
-  Filter by geographic proximity. Format: `GEONEAR(longitude,latitude,radius_meters)`.
+  Filtra por geographic proximity. Format: `GEONEAR(longitude,latitude,radius_meters)`.
 
-  Example: `_geoLocation=GEONEAR(-46.647,-23.541,700)`
+  Exemplo: `_geoLocation=GEONEAR(-46.647,-23.541,700)`
 </ParamField>
 
-### Response
+### Resposta
 
-Returns a JSON array of agent objects. The fields returned depend on `@select`.
+Retorna um array JSON de agent objects. The fields returned depend on `@select`.
 
 <ResponseField name="id" type="integer" required>
-  Unique agent identifier.
+  Identificador único de agent identifier.
 </ResponseField>
 
 <ResponseField name="name" type="string" required>
@@ -122,15 +122,15 @@ Returns a JSON array of agent objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="shortDescription" type="string">
-  Short description (up to 400 characters).
+  Descrição curta (up to 400 characters).
 </ResponseField>
 
 <ResponseField name="longDescription" type="string">
-  Full long-form description.
+  Descrição longa completa.
 </ResponseField>
 
 <ResponseField name="location" type="object">
-  Geographic coordinates. Only returned when `publicLocation` is true or the requester has permission to view private data.
+  Coordenadas geográficas. Only returned when `publicLocation` is true or the requester has permission to view private data.
 
   <Expandable title="properties">
     <ResponseField name="latitude" type="number">
@@ -144,15 +144,15 @@ Returns a JSON array of agent objects. The fields returned depend on `@select`.
 </ResponseField>
 
 <ResponseField name="status" type="integer">
-  Publication status. See status values above.
+  Status de publicação. See status values above.
 </ResponseField>
 
 <ResponseField name="createTimestamp" type="string">
-  ISO 8601 datetime when the agent was created.
+  Data e hora em ISO 8601 when the agent was created.
 </ResponseField>
 
 <ResponseField name="updateTimestamp" type="string">
-  ISO 8601 datetime of the last update.
+  Data e hora em ISO 8601 of the last update.
 </ResponseField>
 
 <ResponseField name="owner" type="object">
@@ -160,16 +160,16 @@ Returns a JSON array of agent objects. The fields returned depend on `@select`.
 
   <Expandable title="properties">
     <ResponseField name="id" type="integer">
-      Owner agent ID.
+      ID do agente proprietário.
     </ResponseField>
 
     <ResponseField name="name" type="string">
-      Owner agent name.
+      Nome do agente proprietário.
     </ResponseField>
   </Expandable>
 </ResponseField>
 
-### Examples
+### Exemplos
 
 <CodeGroup>
   ```bash List published agents theme={null}
@@ -180,7 +180,7 @@ Returns a JSON array of agent objects. The fields returned depend on `@select`.
   curl "https://instance.example.com/api/agent/find?@select=id,name,shortDescription&@keyword=teatro&@page=2&@limit=10"
   ```
 
-  ```bash Filter by type and order by name theme={null}
+  ```bash Filtra por type and order by name theme={null}
   curl "https://instance.example.com/api/agent/find?@select=id,name,type&type=EQ(2)&@order=name%20ASC"
   ```
 
@@ -221,7 +221,7 @@ Returns a JSON array of agent objects. The fields returned depend on `@select`.
 
 ## GET /api/agent/findOne
 
-Returns a single agent. Accepts the same filter parameters as `find`. Returns the first matching result.
+Retorna um único agent. Aceita os mesmos parâmetros de filtro de `find`. Retorna o primeiro resultado encontrado.
 
 ```bash  theme={null}
 curl "https://instance.example.com/api/agent/findOne?@select=id,name,shortDescription&id=EQ(42)"
@@ -231,23 +231,23 @@ curl "https://instance.example.com/api/agent/findOne?@select=id,name,shortDescri
 
 ## POST /agent/index
 
-Creates a new agent. Requires authentication.
+Cria um novo agent. Exige autenticação.
 
 <Warning>
-  Write operations use URLs **without** the `/api/` prefix. Include a JWT token in the `authorization` header and `MapasSDK-REQUEST: true` to receive a JSON response.
+  Operações de escrita use URLs **without** the `/api/` prefix. Include a JWT token in the `authorization` header and `MapasSDK-REQUEST: true` to receive a JSON response.
 </Warning>
 
-### Request body
+### Corpo da requisição
 
-| Field              | Type    | Required | Description                                     |
+| Campo              | Tipo    | Obrigatório | Descrição                                     |
 | ------------------ | ------- | -------- | ----------------------------------------------- |
-| `name`             | string  | Yes      | Agent name                                      |
-| `type`             | integer | Yes      | Agent type (`1` = Individual, `2` = Collective) |
-| `shortDescription` | string  | Yes      | Short description (max 400 characters)          |
-| `longDescription`  | string  | No       | Full description                                |
-| `location`         | array   | No       | `[longitude, latitude]`                         |
-| `endereco`         | string  | No       | Street address                                  |
-| `terms`            | object  | No       | Taxonomy terms, e.g. `{"area": ["Music"]}`      |
+| `name`             | string  | Sim      | Agent name                                      |
+| `type`             | integer | Sim      | Agent type (`1` = Individual, `2` = Collective) |
+| `shortDescription` | string  | Sim      | Descrição curta (máx. 400 caracteres)         |
+| `longDescription`  | string  | Não      | Descrição completa                            |
+| `location`         | array   | Não       | `[longitude, latitude]`                         |
+| `endereco`         | string  | Não       | Street address                                  |
+| `terms`            | object  | Não       | Taxonomy terms, e.g. `{"area": ["Music"]}`      |
 
 ```bash  theme={null}
 curl -X POST "https://instance.example.com/agent/index" \
@@ -291,10 +291,10 @@ curl -X DELETE "https://instance.example.com/agent/single/42" \
 
 | Value | Constant          | Meaning                         |
 | ----- | ----------------- | ------------------------------- |
-| `1`   | `STATUS_ENABLED`  | Published and publicly visible  |
-| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner    |
-| `-2`  | `STATUS_ARCHIVED` | Archived                        |
-| `-9`  | `STATUS_DISABLED` | Disabled by admin               |
+| `1`   | `STATUS_ENABLED`  | Publicado and publicly visible  |
+| `0`   | `STATUS_DRAFT`    | Rascunho, visible only to owner    |
+| `-2`  | `STATUS_ARCHIVED` | Arquivado                        |
+| `-9`  | `STATUS_DISABLED` | Desabilitado by admin               |
 | `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash) |
 
 ## Tips

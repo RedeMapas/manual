@@ -1,47 +1,47 @@
 ---
-title: Spaces
+title: Espaços
 ---
-> Spaces represent physical and virtual cultural venues — theaters, museums, cultural centers, and alternative spaces.
+> Espaços representam equipamentos culturais físicos e virtuais, como teatros, museus, centros culturais e espaços alternativos.
 
-A **Space** is a venue where cultural activities take place. Spaces can be physical locations with a geographic address or virtual environments. They are owned by agents and can host events or be linked to opportunities.
+Um **espaço** é um local onde atividades culturais acontecem. Espaços podem ser locais físicos com endereço geográfico ou ambientes virtuais. Eles pertencem a agentes e podem sediar eventos ou se vincular a oportunidades.
 
 <CardGroup cols={2}>
-  <Card title="Physical spaces" icon="building-2">
-    Theaters, cinemas, museums, galleries, cultural centers, libraries, community spaces, and any other fixed venue.
+  <Card title="Espaços físicos" icon="building-2">
+    Teatros, cinemas, museus, galerias, centros culturais, bibliotecas, espaços comunitários e qualquer outro equipamento fixo.
   </Card>
 
-  <Card title="Virtual spaces" icon="monitor">
-    Online platforms, streaming channels, and digital environments where cultural activities are held.
+  <Card title="Espaços virtuais" icon="monitor">
+    Plataformas online, canais de streaming e ambientes digitais onde atividades culturais são realizadas.
   </Card>
 </CardGroup>
 
-## Key fields
+## Campos principais
 
-| Field              | Description                                                                              |
+| Campo              | Descrição                                                                                |
 | ------------------ | ---------------------------------------------------------------------------------------- |
-| `name`             | Space name. Required.                                                                    |
-| `shortDescription` | Brief summary, up to 400 characters. Required.                                           |
-| `longDescription`  | Full description with rich text support.                                                 |
-| `type`             | Numeric type identifier. Required. Configured per installation.                          |
-| `public`           | Whether the space is open to the general public (`true`) or access-restricted (`false`). |
-| `location`         | PostGIS geographic point (`latitude, longitude`).                                        |
-| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash.           |
-| `createTimestamp`  | When the space was created. Read-only.                                                   |
-| `updateTimestamp`  | When the space was last modified. Read-only.                                             |
+| `name`             | Nome do espaço. Obrigatório.                                                             |
+| `shortDescription` | Resumo curto, com até 400 caracteres. Obrigatório.                                       |
+| `longDescription`  | Descrição completa com suporte a texto rico.                                             |
+| `type`             | Identificador numérico do tipo. Obrigatório. Configurado por instalação.                 |
+| `public`           | Indica se o espaço é aberto ao público geral (`true`) ou de acesso restrito (`false`).   |
+| `location`         | Ponto geográfico PostGIS (`latitude, longitude`).                                        |
+| `status`           | `1` = publicado, `0` = rascunho, `-2` = arquivado, `-9` = desabilitado, `-10` = lixeira. |
+| `createTimestamp`  | Momento em que o espaço foi criado. Somente leitura.                                     |
+| `updateTimestamp`  | Momento da última modificação do espaço. Somente leitura.                                |
 
-Additional fields such as street address, capacity, area in square meters, phone number, and website are stored as **metadata** and may vary by installation configuration.
+Campos adicionais, como endereço, capacidade, metragem, telefone e site, são armazenados como **metadados** e podem variar conforme a configuração da instalação.
 
-## Geolocation
+## Geolocalização
 
-Spaces have first-class geospatial support via PostGIS. The location is stored in two columns:
+Espaços têm suporte geoespacial nativo via PostGIS. A localização é armazenada em duas colunas:
 
-* `location` — a `point` column used internally.
-* `_geo_location` — a `geography` column that supports radius-based spatial queries (e.g., "find all spaces within 5 km of this coordinate").
+* `location` — uma coluna `point` usada internamente.
+* `_geo_location` — uma coluna `geography` que suporta consultas espaciais por raio, como "encontre todos os espaços em até 5 km desta coordenada".
 
-The platform exposes a map interface that renders space locations as pins. Users can search for spaces by geographic area directly from the map.
+A plataforma expõe uma interface de mapa que renderiza as localizações dos espaços como marcadores. Usuários podem buscar espaços por área geográfica diretamente no mapa.
 
 ```sql  theme={null}
--- Example: find spaces within 10 km of a coordinate (handled by PostGIS)
+-- Exemplo: encontra espaços em até 10 km de uma coordenada (via PostGIS)
 SELECT * FROM space
 WHERE ST_DWithin(
     _geo_location,
@@ -50,86 +50,90 @@ WHERE ST_DWithin(
 );
 ```
 
-## Space types
+## Tipos de espaço
 
-Space types are configured per installation and categorized using the entity-type system. Common examples include:
+Os tipos de espaço são configurados por instalação e categorizados pelo sistema de tipos de entidade. Exemplos comuns incluem:
 
-* Theater
-* Museum / Gallery
-* Cultural center
-* Library
-* Community space
-* Outdoor / public space
-* Virtual / online space
+* Teatro
+* Museu / galeria
+* Centro cultural
+* Biblioteca
+* Espaço comunitário
+* Espaço ao ar livre / público
+* Espaço virtual / online
 
-Each space must have a type assigned; the available types and their IDs depend on the installation's configuration.
+Cada espaço deve ter um tipo atribuído; os tipos disponíveis e seus IDs dependem da configuração da instalação.
 
-## Hierarchical spaces
+## Hierarquia de espaços
 
-Spaces support a parent–child hierarchy via the `parent` / `_children` relationship. This allows modeling large venues that contain smaller sub-spaces — for example, a cultural center (parent) with multiple rooms (children).
+Espaços suportam hierarquia pai-filho por meio da relação `parent` / `_children`. Isso permite modelar equipamentos maiores que contêm subespaços menores, como um centro cultural (pai) com várias salas (filhos).
 
-When a child space is updated, the parent's revision history is also updated.
+Quando um espaço filho é atualizado, o histórico de revisões do espaço pai também é atualizado.
 
-## Relations to other entities
+## Relações com outras entidades
 
 <CardGroup cols={2}>
-  <Card title="Owner agent" icon="user">
-    Every space is owned by exactly one agent. The owner is set via `agent_id` and can be changed subject to permission checks.
+  <Card title="Agente proprietário" icon="user">
+    Todo espaço pertence a exatamente um agente. O proprietário é definido por `agent_id` e pode ser alterado conforme as checagens de permissão.
   </Card>
 
-  <Card title="Events" icon="calendar">
-    Events are scheduled at spaces through `EventOccurrence` records. A space exposes its occurrences via the `eventOccurrences` collection.
+  <Card title="Eventos" icon="calendar">
+    Eventos são agendados em espaços por registros `EventOccurrence`. Um espaço expõe suas ocorrências pela coleção `eventOccurrences`.
   </Card>
 
-  <Card title="Opportunities" icon="megaphone">
-    Spaces can be linked to opportunities through `SpaceOpportunity` relations.
+  <Card title="Oportunidades" icon="megaphone">
+    Espaços podem ser vinculados a oportunidades por relações `SpaceOpportunity`.
   </Card>
 
-  <Card title="Agent relations" icon="users">
-    Additional agents (collaborators, managers) can be related to a space through `SpaceAgentRelation`.
+  <Card title="Relações de agente" icon="users">
+    Agentes adicionais, como colaboradores e gestores, podem se relacionar com um espaço via `SpaceAgentRelation`.
   </Card>
 </CardGroup>
 
-## Seals and verification
+## Selos e verificação
 
-Like agents, spaces can receive **seals** that certify or verify them. Seal relations are stored in `SpaceSealRelation`. Verified seals may lock specific fields to prevent unauthorized modifications after certification.
+Assim como agentes, espaços podem receber **selos** que os certificam ou verificam. As relações de selo ficam em `SpaceSealRelation`. Selos verificados podem travar campos específicos para evitar modificações não autorizadas após a certificação.
 
-## Tags and taxonomies
+## Tags e taxonomias
 
-Spaces support term relations (`SpaceTermRelation`) for tags, area classification, and other taxonomical vocabularies configured per installation.
+Espaços suportam relações de termos (`SpaceTermRelation`) para tags, classificação de área e outros vocabulários taxonômicos configurados por instalação.
 
-## Status lifecycle
+## Ciclo de status
 
-```text  theme={null}
-Draft (0) → Published (1) → Archived (-2)
-                           → Disabled (-9)
-                           → Trash (-10)
-```
+<Mermaid
+  chart={`
+flowchart TD
+    draft["Rascunho (0)"] --> published["Publicado (1)"]
+    published --> archived["Arquivado (-2)"]
+    published --> disabled["Desabilitado (-9)"]
+    published --> trash["Lixeira (-10)"]
+`}
+/>
 
 <Tip>
-  Set a space to **Draft** while you fill in its details. Only publish it when the information is complete and accurate, so it appears correctly on the public map.
+  Deixe o espaço em **Rascunho** enquanto preenche os detalhes. Publique apenas quando as informações estiverem completas e corretas, para que ele apareça adequadamente no mapa público.
 </Tip>
 
-## Creating a space
+## Criando um espaço
 
 <Steps>
-  <Step title="Navigate to spaces">
-    From your dashboard, select **My Spaces**.
+  <Step title="Acesse a área de espaços">
+    No painel, selecione **Meus Espaços**.
   </Step>
 
-  <Step title="Create a new space">
-    Click **New Space**, choose the space type, and fill in the required fields: name and short description.
+  <Step title="Crie um novo espaço">
+    Clique em **Novo Espaço**, escolha o tipo do espaço e preencha os campos obrigatórios: nome e descrição curta.
   </Step>
 
-  <Step title="Add location">
-    Enter the address or pin the location directly on the map. Accurate geolocation is important for users searching by proximity.
+  <Step title="Adicione a localização">
+    Informe o endereço ou marque a localização diretamente no mapa. Uma geolocalização precisa é importante para pessoas que buscam por proximidade.
   </Step>
 
-  <Step title="Complete the profile">
-    Add capacity, accessibility information, contact details, photos, and tags to help users find the space.
+  <Step title="Complete o perfil">
+    Adicione capacidade, informações de acessibilidade, dados de contato, fotos e tags para ajudar outras pessoas a encontrar o espaço.
   </Step>
 
-  <Step title="Publish">
-    Change the status from **Draft** to **Published** to make the space visible on the public map.
+  <Step title="Publique">
+    Altere o status de **Rascunho** para **Publicado** para tornar o espaço visível no mapa público.
   </Step>
 </Steps>

@@ -1,65 +1,65 @@
 ---
-title: Events
+title: Eventos
 ---
-> Events represent cultural activities with scheduling support, including one-time and recurring occurrences.
+> Eventos representam atividades culturais com suporte a agendamento, incluindo ocorrências únicas e recorrentes.
 
-An **Event** is a cultural activity that takes place at a specific time and place. Events range from single-day performances to long-running exhibitions with complex recurring schedules. They are owned by agents, scheduled at spaces, and can be grouped under projects.
+Um **evento** é uma atividade cultural que acontece em um tempo e lugar específicos. Eventos vão de apresentações de um único dia a exposições de longa duração com recorrência complexa. Eles pertencem a agentes, são agendados em espaços e podem ser agrupados em projetos.
 
 <CardGroup cols={3}>
-  <Card title="Performances" icon="music">
-    Concerts, theater plays, dance shows, and live performances.
+  <Card title="Apresentações" icon="music">
+    Shows, peças de teatro, espetáculos de dança e apresentações ao vivo.
   </Card>
 
-  <Card title="Exhibitions" icon="image">
-    Art exhibitions, fairs, and shows that run over extended periods.
+  <Card title="Exposições" icon="image">
+    Exposições de arte, feiras e mostras que acontecem ao longo de períodos estendidos.
   </Card>
 
-  <Card title="Workshops & talks" icon="presentation">
-    Workshops, lectures, seminars, and educational activities.
+  <Card title="Oficinas e palestras" icon="presentation">
+    Oficinas, palestras, seminários e atividades formativas.
   </Card>
 </CardGroup>
 
-## Key fields
+## Campos principais
 
-| Field              | Description                                                                    |
+| Campo              | Descrição                                                                      |
 | ------------------ | ------------------------------------------------------------------------------ |
-| `name`             | Event name. Required.                                                          |
-| `shortDescription` | Brief summary, up to 400 characters. Required.                                 |
-| `longDescription`  | Full description with rich text support.                                       |
-| `type`             | Numeric type identifier. Configured per installation.                          |
-| `rules`            | Additional rules or conditions for the event.                                  |
-| `project`          | Optional link to the project this event belongs to.                            |
-| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash. |
-| `createTimestamp`  | When the event was created. Read-only.                                         |
-| `updateTimestamp`  | When the event was last modified. Read-only.                                   |
+| `name`             | Nome do evento. Obrigatório.                                                   |
+| `shortDescription` | Resumo curto, com até 400 caracteres. Obrigatório.                             |
+| `longDescription`  | Descrição completa com suporte a texto rico.                                   |
+| `type`             | Identificador numérico do tipo. Configurado por instalação.                    |
+| `rules`            | Regras ou condições adicionais do evento.                                      |
+| `project`          | Vínculo opcional com o projeto ao qual este evento pertence.                   |
+| `status`           | `1` = publicado, `0` = rascunho, `-2` = arquivado, `-9` = desabilitado, `-10` = lixeira. |
+| `createTimestamp`  | Momento em que o evento foi criado. Somente leitura.                           |
+| `updateTimestamp`  | Momento da última modificação do evento. Somente leitura.                      |
 
-Additional fields such as price, accessibility information, classification rating, and languages are stored as **metadata** and vary by installation.
+Campos adicionais, como preço, informações de acessibilidade, classificação indicativa e idiomas, são armazenados como **metadados** e variam conforme a instalação.
 
-## Occurrences and recurrence
+## Ocorrências e recorrência
 
-An event itself is a descriptor — it defines what the event is. When and where it happens is captured through **EventOccurrence** records. A single event can have multiple occurrences across different spaces and dates.
+O evento em si é um descritor: ele define o que o evento é. Quando e onde ele acontece é registrado em **EventOccurrence**. Um mesmo evento pode ter várias ocorrências em diferentes espaços e datas.
 
-### EventOccurrence fields
+### Campos de `EventOccurrence`
 
-| Field         | Description                                    |
+| Campo         | Descrição                                      |
 | ------------- | ---------------------------------------------- |
-| `space`       | The space where this occurrence takes place.   |
-| `_startsOn`   | Start date.                                    |
-| `_endsOn`     | End date (for multi-day events).               |
-| `_startsAt`   | Start time.                                    |
-| `_endsAt`     | End time.                                      |
-| `frequency`   | Recurrence frequency (daily, weekly, monthly). |
-| `count`       | Number of recurrences.                         |
-| `_until`      | End date for recurrence.                       |
-| `rule`        | Full recurrence rule in iCal RRULE format.     |
-| `description` | Occurrence-specific notes.                     |
+| `space`       | Espaço onde a ocorrência acontece.             |
+| `_startsOn`   | Data de início.                                |
+| `_endsOn`     | Data de término (para eventos com vários dias). |
+| `_startsAt`   | Hora de início.                                |
+| `_endsAt`     | Hora de término.                               |
+| `frequency`   | Frequência da recorrência (diária, semanal, mensal). |
+| `count`       | Número de recorrências.                        |
+| `_until`      | Data final da recorrência.                     |
+| `rule`        | Regra completa de recorrência em formato iCal RRULE. |
+| `description` | Observações específicas da ocorrência.         |
 
-### Recurring events
+### Eventos recorrentes
 
-The platform uses a PostgreSQL stored function (`recurring_event_occurrence_for`) to expand recurrence rules into concrete occurrence instances for a given date range. This means recurrence is computed on the fly from the stored rule, avoiding storing each individual occurrence date in the database.
+A plataforma usa uma função armazenada no PostgreSQL (`recurring_event_occurrence_for`) para expandir regras de recorrência em instâncias concretas de ocorrência para um intervalo de datas. Isso significa que a recorrência é calculada dinamicamente a partir da regra armazenada, evitando gravar cada data individualmente no banco.
 
 ```sql  theme={null}
--- Used internally to expand recurring events into occurrences
+-- Usado internamente para expandir eventos recorrentes em ocorrências
 SELECT *
 FROM recurring_event_occurrence_for(
     :date_from,
@@ -71,15 +71,15 @@ WHERE event_id = :event_id;
 ```
 
 <Note>
-  Event occurrence queries accept `date_from` and `date_to` parameters. When not provided, both default to the current date, returning only today's occurrences.
+  Consultas de ocorrências aceitam os parâmetros `date_from` e `date_to`. Quando não são informados, ambos assumem a data atual, retornando apenas as ocorrências de hoje.
 </Note>
 
-## Relation to spaces
+## Relação com espaços
 
-An event occurrence is always tied to a specific space. You can query occurrences filtered by space and date range using `findOccurrencesBySpace()`:
+Uma ocorrência de evento está sempre ligada a um espaço específico. Você pode consultar ocorrências filtradas por espaço e intervalo de datas usando `findOccurrencesBySpace()`:
 
 ```php  theme={null}
-// Find all occurrences of an event at a specific space between two dates
+// Busca todas as ocorrências de um evento em um espaço específico entre duas datas
 $occurrences = $event->findOccurrencesBySpace(
     $space,
     '2024-03-01',
@@ -87,63 +87,67 @@ $occurrences = $event->findOccurrencesBySpace(
 );
 ```
 
-## Relation to projects
+## Relação com projetos
 
-Events can optionally belong to a **project**. When an event is linked to a project, the project's managers gain control over the event. Creating an event inside a project requires either ownership of the project or explicit permission granted by the project's owner.
+Eventos podem opcionalmente pertencer a um **projeto**. Quando um evento é vinculado a um projeto, os gestores desse projeto passam a ter controle sobre o evento. Criar um evento dentro de um projeto exige a titularidade do projeto ou uma permissão explícita do seu proprietário.
 
-If a workflow system is enabled, linking an event to a project can trigger an approval workflow (`RequestEventProject`).
+Se um sistema de workflow estiver habilitado, vincular um evento a um projeto pode disparar um fluxo de aprovação (`RequestEventProject`).
 
 ```php  theme={null}
-// Assigning a project to an event triggers permission checks
+// Atribuir um projeto a um evento dispara checagens de permissão
 $event->setProject($project);
 $event->save();
 ```
 
-## Permissions
+## Permissões
 
-| Action     | Who can perform it                                                                      |
+| Ação       | Quem pode executá-la                                                                    |
 | ---------- | --------------------------------------------------------------------------------------- |
-| Create     | Any authenticated user (or guest, depending on configuration).                          |
-| View draft | Owner agent or agents with `@control` permission on the event or its project.           |
-| Publish    | Owner, admins, or agents with `@control` permission.                                    |
-| Modify     | Owner or agents with `@control`. If the project changed, also requires project control. |
+| Criar      | Qualquer usuário autenticado, ou visitante, dependendo da configuração.                 |
+| Ver rascunho | Agente proprietário ou agentes com permissão `@control` sobre o evento ou projeto.    |
+| Publicar   | Proprietário, administradores ou agentes com permissão `@control`.                      |
+| Modificar  | Proprietário ou agentes com `@control`. Se o projeto mudou, também exige controle sobre o projeto. |
 
-## Status lifecycle
+## Ciclo de status
 
-```text  theme={null}
-Draft (0) → Published (1) → Archived (-2)
-                           → Disabled (-9)
-                           → Trash (-10)
-```
+<Mermaid
+  chart={`
+flowchart TD
+    draft["Rascunho (0)"] --> published["Publicado (1)"]
+    published --> archived["Arquivado (-2)"]
+    published --> disabled["Desabilitado (-9)"]
+    published --> trash["Lixeira (-10)"]
+`}
+/>
 
-## Creating an event
+## Criando um evento
 
 <Steps>
-  <Step title="Navigate to events">
-    From your dashboard, select **My Events**.
+  <Step title="Acesse a área de eventos">
+    No painel, selecione **Meus Eventos**.
   </Step>
 
-  <Step title="Create a new event">
-    Click **New Event** and fill in the required fields: name and short description.
+  <Step title="Crie um novo evento">
+    Clique em **Novo Evento** e preencha os campos obrigatórios: nome e descrição curta.
   </Step>
 
-  <Step title="Add occurrences">
-    Select the space where the event takes place, then set the date, time, and — if the event repeats — the recurrence rule.
+  <Step title="Adicione ocorrências">
+    Selecione o espaço onde o evento acontece e depois defina a data, o horário e, se ele se repetir, a regra de recorrência.
   </Step>
 
-  <Step title="Link to a project (optional)">
-    If the event is part of a cultural project, link it to the project. This requires permission from the project owner.
+  <Step title="Vincule a um projeto (opcional)">
+    Se o evento fizer parte de um projeto cultural, vincule-o ao projeto. Isso exige permissão do proprietário do projeto.
   </Step>
 
-  <Step title="Complete the details">
-    Add a long description, pricing, accessibility information, and classification tags.
+  <Step title="Complete os detalhes">
+    Adicione descrição longa, informações de preço, acessibilidade e tags de classificação.
   </Step>
 
-  <Step title="Publish">
-    Change the status from **Draft** to **Published** to make the event visible in the public calendar.
+  <Step title="Publique">
+    Altere o status de **Rascunho** para **Publicado** para tornar o evento visível no calendário público.
   </Step>
 </Steps>
 
-## Revision history
+## Histórico de revisões
 
-Every change to an event is tracked in the revision system. Revision data includes a snapshot of all occurrences (with space name, location, address, and scheduling details) and the linked project at the time of each save.
+Toda alteração em um evento é registrada no sistema de revisões. Os dados de revisão incluem um snapshot de todas as ocorrências, com nome do espaço, localização, endereço e detalhes de agenda, além do projeto vinculado no momento de cada salvamento.

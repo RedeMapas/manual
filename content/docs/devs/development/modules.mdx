@@ -1,22 +1,22 @@
 ---
-title: Modules
+title: Módulos
 ---
-> Extend Mapas Culturais with modules: structure, registration, configuration, lifecycle, and the full list of bundled modules.
+> Estenda o Mapas Culturais com módulos: estrutura, registro, configuração, ciclo de vida e lista dos módulos já incluídos.
 
-A module is a self-contained feature package that plugs into the Mapas Culturais core. Each module is a PHP class extending `MapasCulturais\Module`. Modules register their behavior — hooks, controllers, entities, job types — inside the `_init()` method, which the framework calls automatically during application boot.
+Um módulo é um pacote autocontido de funcionalidade que se acopla ao núcleo do Mapas Culturais. Cada módulo é uma classe PHP que estende `MapasCulturais\Module`. Os módulos registram seu comportamento, como hooks, controllers, entidades e tipos de job, dentro do método `_init()`, chamado automaticamente pelo framework durante o boot da aplicação.
 
-## Module structure
+## Estrutura de um módulo
 
 ```
 src/modules/MyModule/
-  Module.php       → Main module class (must extend MapasCulturais\Module)
-  Entities/        → Doctrine entities added by this module (optional)
-  Controllers/     → Controllers added by this module (optional)
-  Jobs/            → Background job types (optional)
-  views/           → View overrides or additions (optional)
+  Module.php       → Classe principal do módulo (deve estender `MapasCulturais\Module`)
+  Entities/        → Entidades Doctrine adicionadas pelo módulo (opcional)
+  Controllers/     → Controllers adicionados pelo módulo (opcional)
+  Jobs/            → Tipos de job em background (opcional)
+  views/           → Overrides ou novas views (opcional)
 ```
 
-## Writing a module
+## Escrevendo um módulo
 
 ```php  theme={null}
 <?php
@@ -55,12 +55,12 @@ class Module extends \MapasCulturais\Module
 ```
 
 <Note>
-  Module entities placed in `Entities/` are automatically discovered by Doctrine. No additional ORM configuration is needed.
+  Entidades de módulo colocadas em `Entities/` são descobertas automaticamente pelo Doctrine. Nenhuma configuração extra de ORM é necessária.
 </Note>
 
-## Registering a module
+## Registrando um módulo
 
-Add the module to the `plugins` key in your configuration file:
+Adicione o módulo à chave `plugins` do seu arquivo de configuração:
 
 ```php  theme={null}
 // config/config.php or dev/config.d/0.main.php
@@ -74,31 +74,31 @@ return [
 ];
 ```
 
-The key (`'MyModule'`) is an arbitrary identifier. The `namespace` value must match the module's PHP namespace. Any additional keys in the array are passed as the `$config` array available inside the module as `$this->_config`.
+A chave (`'MyModule'`) é um identificador arbitrário. O valor de `namespace` deve bater com o namespace PHP do módulo. Quaisquer chaves adicionais do array são passadas como `$config` e ficam disponíveis dentro do módulo em `$this->_config`.
 
-## Module lifecycle
+## Ciclo de vida do módulo
 
 <Steps>
-  <Step title="Constructor">
-    `Module::__construct()` runs when the module is instantiated. It fires `module({ClassName}).init:before`, calls `_init()`, then fires `module({ClassName}).init:after`.
+  <Step title="Construtor">
+    `Module::__construct()` roda quando o módulo é instanciado. Ele dispara `module({ClassName}).init:before`, chama `_init()` e depois dispara `module({ClassName}).init:after`.
   </Step>
 
   <Step title="_init()">
-    The module registers all its hooks, controllers, and services. This is where all module logic is wired in.
+    O módulo registra seus hooks, controllers e serviços. É aqui que toda a lógica do módulo é conectada.
   </Step>
 
   <Step title="register()">
-    Called earlier in the boot sequence for items that must be registered before `_init()` runs across all modules.
+    Chamado antes no boot para itens que precisam ser registrados antes de `_init()` rodar em todos os módulos.
   </Step>
 
-  <Step title="mapasculturais.init hook">
-    Once all modules have initialized, the application fires `mapasculturais.init`. Use this hook for code that depends on all modules being ready.
+  <Step title="Hook mapasculturais.init">
+    Quando todos os módulos terminaram de inicializar, a aplicação dispara `mapasculturais.init`. Use esse hook para código que depende de todos os módulos já estarem prontos.
   </Step>
 </Steps>
 
-## Accessing module configuration
+## Acessando a configuração do módulo
 
-Inside the module, configuration values are available through `$this->_config`:
+Dentro do módulo, valores de configuração ficam disponíveis via `$this->_config`:
 
 ```php  theme={null}
 function _init(): void
@@ -108,7 +108,7 @@ function _init(): void
 }
 ```
 
-## Bundled modules
+## Módulos incluídos
 
 <AccordionGroup>
   <Accordion title="Opportunities">

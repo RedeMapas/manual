@@ -1,199 +1,199 @@
 ---
-title: Opportunities
+title: Oportunidades
 ---
-> Opportunities are public calls, grants, residencies, and prizes that cultural agents can apply to.
+> Oportunidades são editais, chamadas públicas, residências e prêmios para os quais agentes culturais podem se candidatar.
 
-An **Opportunity** (edital) is a public call for applications. It defines the terms, timeline, and evaluation criteria for cultural agents seeking funding, recognition, or participation in a program. Opportunities are owned by agents and can be linked to other entities such as projects, events, or spaces.
+Uma **oportunidade** (edital) é uma chamada pública para inscrições. Ela define regras, cronograma e critérios de avaliação para agentes culturais que buscam financiamento, reconhecimento ou participação em um programa. Oportunidades pertencem a agentes e podem se vincular a outras entidades, como projetos, eventos ou espaços.
 
 <CardGroup cols={3}>
-  <Card title="Grants & funding" icon="hand-coins">
-    Public funding calls (editais de fomento) from government or private funders.
+  <Card title="Fomento e financiamento" icon="hand-coins">
+    Editais de fomento público ou chamadas financiadas por instituições privadas.
   </Card>
 
-  <Card title="Residencies & prizes" icon="award">
-    Artistic residencies, awards, and recognition programs.
+  <Card title="Residências e prêmios" icon="award">
+    Residências artísticas, premiações e programas de reconhecimento.
   </Card>
 
-  <Card title="Calls for participation" icon="megaphone">
-    Open calls for artists, groups, or organizations to participate in events or programs.
+  <Card title="Chamadas de participação" icon="megaphone">
+    Chamadas abertas para artistas, grupos ou organizações participarem de eventos ou programas.
   </Card>
 </CardGroup>
 
-## Key fields
+## Campos principais
 
-| Field                        | Description                                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------------------------------ |
-| `name`                       | Opportunity name. Required.                                                                      |
-| `shortDescription`           | Brief introduction. Required in some installation themes.                                        |
-| `longDescription`            | Full description of the opportunity.                                                             |
-| `type`                       | Numeric type identifier. Required. Configured per installation.                                  |
-| `registrationFrom`           | Start of the registration period.                                                                |
-| `registrationTo`             | End of the registration period. Must be ≥ `registrationFrom`.                                    |
-| `publishedRegistrations`     | Whether the results are publicly visible. Defaults to `false`.                                   |
-| `registrationCategories`     | List of categories applicants can choose from.                                                   |
-| `registrationProponentTypes` | List of accepted proponent types (e.g., individual, collective).                                 |
-| `registrationRanges`         | List of funding ranges or tiers applicants can apply for.                                        |
-| `autoPublish`                | Whether results are published automatically on a schedule.                                       |
-| `publishTimestamp`           | Scheduled date for automatic result publication.                                                 |
-| `publicityOnly`              | If `true`, the opportunity is for announcement only — registrations happen outside the platform. |
-| `status`                     | `1` = published, `0` = draft, `-2` = archived, `-1` = evaluation phase, `-20` = appeal phase.    |
+| Campo                        | Descrição                                                                                         |
+| ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `name`                       | Nome da oportunidade. Obrigatório.                                                                |
+| `shortDescription`           | Introdução breve. Obrigatória em alguns temas da instalação.                                      |
+| `longDescription`            | Descrição completa da oportunidade.                                                               |
+| `type`                       | Identificador numérico do tipo. Obrigatório. Configurado por instalação.                          |
+| `registrationFrom`           | Início do período de inscrição.                                                                   |
+| `registrationTo`             | Fim do período de inscrição. Deve ser ≥ `registrationFrom`.                                       |
+| `publishedRegistrations`     | Indica se os resultados ficam visíveis publicamente. O padrão é `false`.                          |
+| `registrationCategories`     | Lista de categorias que pessoas candidatas podem escolher.                                        |
+| `registrationProponentTypes` | Lista de tipos de proponente aceitos, como individual ou coletivo.                                |
+| `registrationRanges`         | Lista de faixas ou categorias de apoio às quais se pode concorrer.                                |
+| `autoPublish`                | Indica se os resultados são publicados automaticamente em uma data agendada.                      |
+| `publishTimestamp`           | Data agendada para publicação automática do resultado.                                            |
+| `publicityOnly`              | Se `true`, a oportunidade é apenas informativa; as inscrições ocorrem fora da plataforma.         |
+| `status`                     | `1` = publicado, `0` = rascunho, `-2` = arquivado, `-1` = fase de avaliação, `-20` = fase recursal. |
 
-## Opportunity owner entity
+## Entidade proprietária da oportunidade
 
-An opportunity is always associated with an owner entity — an agent, space, event, or project. This association determines which entity's managers have control over the opportunity. The entity type is captured via the Doctrine inheritance discriminator:
+Uma oportunidade está sempre associada a uma entidade proprietária: agente, espaço, evento ou projeto. Essa associação determina quais gestores dessa entidade têm controle sobre a oportunidade. O tipo de entidade é capturado pelo discriminador de herança do Doctrine:
 
-| Discriminator                     | Owner entity type  |
-| --------------------------------- | ------------------ |
-| `MapasCulturais\Entities\Agent`   | AgentOpportunity   |
-| `MapasCulturais\Entities\Space`   | SpaceOpportunity   |
-| `MapasCulturais\Entities\Event`   | EventOpportunity   |
-| `MapasCulturais\Entities\Project` | ProjectOpportunity |
+| Discriminador                     | Tipo de entidade proprietária |
+| --------------------------------- | ----------------------------- |
+| `MapasCulturais\Entities\Agent`   | `AgentOpportunity`            |
+| `MapasCulturais\Entities\Space`   | `SpaceOpportunity`            |
+| `MapasCulturais\Entities\Event`   | `EventOpportunity`            |
+| `MapasCulturais\Entities\Project` | `ProjectOpportunity`          |
 
-## Registration period
+## Período de inscrição
 
-The registration window is defined by `registrationFrom` and `registrationTo`. The method `isRegistrationOpen()` checks whether registrations are currently being accepted.
+A janela de inscrição é definida por `registrationFrom` e `registrationTo`. O método `isRegistrationOpen()` verifica se as inscrições estão abertas no momento.
 
 ```php  theme={null}
 if ($opportunity->isRegistrationOpen()) {
-    // show the apply button
+    // exibe o botão de inscrição
 }
 ```
 
-### Continuous flow
+### Fluxo contínuo
 
-Opportunities can operate in **continuous flow** mode, where registrations are accepted indefinitely (or until a defined end date). The `CONTINUOUS_FLOW_DATE` constant (`"2111-01-01 00:00"`) is used as a sentinel value for the `registrationTo` field when no actual end date applies.
+Oportunidades podem operar em modo de **fluxo contínuo**, no qual inscrições são aceitas indefinidamente, ou até uma data final definida. A constante `CONTINUOUS_FLOW_DATE` (`"2111-01-01 00:00"`) é usada como valor sentinela para `registrationTo` quando não há uma data real de encerramento.
 
-## Evaluation methods
+## Métodos de avaliação
 
-Each opportunity can be configured with one evaluation method. The method determines how submitted registrations are scored and ranked.
+Cada oportunidade pode ser configurada com um método de avaliação. Esse método determina como as inscrições enviadas são pontuadas e ranqueadas.
 
 <AccordionGroup>
   <Accordion title="Simple (Avaliação Simplificada)">
-    Evaluators select a status for each registration from a dropdown (approved, waitlist, rejected, invalid). Suitable for straightforward selection processes.
+    Avaliadores selecionam um status para cada inscrição em uma lista, como aprovada, suplente, rejeitada ou inválida. Adequado para processos seletivos mais simples.
   </Accordion>
 
   <Accordion title="Continuous (Avaliação Contínua)">
-    Designed for continuous-flow opportunities. Registrations are evaluated as they arrive, without waiting for a closed submission period.
+    Pensado para oportunidades em fluxo contínuo. As inscrições são avaliadas conforme chegam, sem esperar o encerramento do período.
   </Accordion>
 
   <Accordion title="Documentary (Avaliação Documental)">
-    Evaluators check whether required documents have been submitted correctly. Used in eligibility screening phases.
+    Avaliadores verificam se a documentação exigida foi enviada corretamente. Usado em etapas de habilitação documental.
   </Accordion>
 
   <Accordion title="Qualification (Avaliação de Habilitação)">
-    Evaluators assess whether applicants meet the qualification criteria defined in the opportunity.
+    Avaliadores verificam se as pessoas proponentes atendem aos critérios de habilitação definidos na oportunidade.
   </Accordion>
 
   <Accordion title="Technical (Avaliação Técnica)">
-    Numeric scoring with configurable criteria and weights. Produces a consolidated score per registration.
+    Pontuação numérica com critérios e pesos configuráveis. Produz uma nota consolidada por inscrição.
   </Accordion>
 </AccordionGroup>
 
-## Evaluation committee
+## Comissão de avaliação
 
-An opportunity can have an **evaluation committee** composed of multiple evaluators. Evaluators are added through `EvaluationMethodConfigurationAgentRelation`. The committee is responsible for submitting `RegistrationEvaluation` records for each registration.
+Uma oportunidade pode ter uma **comissão de avaliação** composta por múltiplos avaliadores. Os avaliadores são adicionados por `EvaluationMethodConfigurationAgentRelation`. A comissão é responsável por enviar registros `RegistrationEvaluation` para cada inscrição.
 
 ```php  theme={null}
-// Get the evaluation committee for an opportunity
+// Obtém a comissão de avaliação de uma oportunidade
 $committee = $opportunity->getEvaluationCommittee();
 ```
 
-Each evaluator submits their own evaluation. The platform consolidates evaluations into a final result using the configured evaluation method.
+Cada avaliador envia sua própria avaliação. A plataforma consolida essas avaliações em um resultado final usando o método de avaliação configurado.
 
-## Opportunity phases
+## Fases da oportunidade
 
-The Opportunities module supports **multi-phase** calls. Phases are child opportunities linked to a parent via the nested entity system (`parent` / `_children`). Each phase can have its own:
+O módulo `Opportunities` suporta chamadas **multifásicas**. As fases são oportunidades filhas vinculadas à oportunidade pai pelo sistema de entidades aninhadas (`parent` / `_children`). Cada fase pode ter seus próprios:
 
-* Registration fields and file requirements
-* Evaluation method and committee
-* Registration period
+* campos de inscrição e exigências de arquivo
+* método de avaliação e comissão
+* período de inscrição
 
-Registrations are carried forward between phases using `nextPhaseRegistrationId` and `previousPhaseRegistrationId` metadata pointers.
+As inscrições são carregadas de uma fase para outra usando os ponteiros de metadados `nextPhaseRegistrationId` e `previousPhaseRegistrationId`.
 
 <Note>
-  Only registrations that pass each phase move to the next. The `fixNextPhaseRegistrationIds()` method repairs broken phase links if data integrity issues arise.
+  Apenas inscrições aprovadas em cada fase avançam para a seguinte. O método `fixNextPhaseRegistrationIds()` repara vínculos quebrados entre fases caso ocorram problemas de integridade.
 </Note>
 
-## Registration fields and file requirements
+## Campos de inscrição e exigências de arquivo
 
-Administrators configure the fields and file uploads required for each registration through:
+Administradores configuram os campos e uploads exigidos para cada inscrição por meio de:
 
-* **`RegistrationFieldConfiguration`** — text, select, checkbox, date, and other input types.
-* **`RegistrationFileConfiguration`** — file upload slots with optional templates.
-* **`RegistrationStep`** — groups fields into named steps for multi-page forms.
+* **`RegistrationFieldConfiguration`** — campos de formulário, como texto, seleção, checkbox, data e outros tipos de entrada.
+* **`RegistrationFileConfiguration`** — slots de upload de arquivo, com templates opcionais.
+* **`RegistrationStep`** — agrupamento de campos em etapas nomeadas para formulários de múltiplas páginas.
 
-Fields can be conditional (visible only when another field has a specific value) and scoped to specific categories, proponent types, or ranges.
+Os campos podem ser condicionais, isto é, visíveis apenas quando outro campo possui um valor específico, e também podem ser limitados a categorias, tipos de proponente ou faixas específicas.
 
-## Additional modules
+## Módulos adicionais
 
 <CardGroup cols={2}>
-  <Card title="Appeal phase" icon="scale">
-    The OpportunityAppealPhase module adds a formal appeal window after results are published, allowing applicants to contest decisions.
+  <Card title="Fase recursal" icon="scale">
+    O módulo `OpportunityAppealPhase` adiciona uma janela formal de recurso após a publicação dos resultados, permitindo contestação pelas pessoas candidatas.
   </Card>
 
-  <Card title="Workplan" icon="list-checks">
-    The OpportunityWorkplan module lets opportunity managers define deliverables and milestones that approved applicants must fulfill.
+  <Card title="Plano de trabalho" icon="list-checks">
+    O módulo `OpportunityWorkplan` permite que gestores definam entregáveis e marcos que as pessoas aprovadas devem cumprir.
   </Card>
 
-  <Card title="Accountability" icon="file-check">
-    The OpportunityAccountability module tracks the delivery of project reports and financial statements from approved applicants.
+  <Card title="Prestação de contas" icon="file-check">
+    O módulo `OpportunityAccountability` acompanha a entrega de relatórios de projeto e documentos financeiros pelas pessoas aprovadas.
   </Card>
 
-  <Card title="Data export" icon="download">
-    The OpportunityExporter module provides structured export of registrations and evaluation data to spreadsheet formats.
+  <Card title="Exportação de dados" icon="download">
+    O módulo `OpportunityExporter` fornece exportação estruturada de inscrições e dados de avaliação em formatos de planilha.
   </Card>
 </CardGroup>
 
-## Publishing results
+## Publicação de resultados
 
-When the evaluation is complete, administrators publish results by calling `publishRegistrations()`. This action:
+Quando a avaliação termina, administradores publicam os resultados chamando `publishRegistrations()`. Essa ação:
 
-1. Sets `publishedRegistrations = true` on the opportunity.
-2. Applies configured seals to the owner agents of approved registrations.
-3. Fires hooks that modules can use for additional post-publication processing.
+1. Define `publishedRegistrations = true` na oportunidade.
+2. Aplica os selos configurados aos agentes proprietários das inscrições aprovadas.
+3. Dispara hooks que módulos podem usar para processamento adicional após a publicação.
 
 ```php  theme={null}
 $opportunity->publishRegistrations();
 ```
 
-Results can be unpublished via `unPublishRegistrations()`, which reverses seal assignments.
+Os resultados também podem ser despublicados por `unPublishRegistrations()`, que reverte a atribuição dos selos.
 
-## Status lifecycle
+## Ciclo de status
 
-```text  theme={null}
-Draft (0) → Published (1)
-                ↓
-         Evaluation phase (-1)
-                ↓
-         Appeal phase (-20)
-                ↓
-         Archived (-2)
-```
+<Mermaid
+  chart={`
+flowchart TD
+    draft["Rascunho (0)"] --> published["Publicado (1)"]
+    published --> evaluation["Fase de avaliação (-1)"]
+    evaluation --> appeal["Fase recursal (-20)"]
+    appeal --> archived["Arquivado (-2)"]
+`}
+/>
 
-## Creating an opportunity
+## Criando uma oportunidade
 
 <Steps>
-  <Step title="Navigate to opportunities">
-    From your dashboard, select **My Opportunities**.
+  <Step title="Acesse a área de oportunidades">
+    No painel, selecione **Minhas Oportunidades**.
   </Step>
 
-  <Step title="Create a new opportunity">
-    Click **New Opportunity**, choose the type, and fill in the required fields: name, type, and owner entity.
+  <Step title="Crie uma nova oportunidade">
+    Clique em **Nova Oportunidade**, escolha o tipo e preencha os campos obrigatórios: nome, tipo e entidade proprietária.
   </Step>
 
-  <Step title="Set registration dates">
-    Define the `registrationFrom` and `registrationTo` dates, or enable continuous flow mode.
+  <Step title="Defina as datas de inscrição">
+    Configure `registrationFrom` e `registrationTo`, ou ative o modo de fluxo contínuo.
   </Step>
 
-  <Step title="Configure registration fields">
-    Add the fields and file upload requirements that applicants must complete. Group them into steps if the form is long.
+  <Step title="Configure os campos de inscrição">
+    Adicione os campos e exigências de upload que as pessoas candidatas deverão preencher. Agrupe em etapas se o formulário for longo.
   </Step>
 
-  <Step title="Configure the evaluation method">
-    Select an evaluation method and add committee members who will evaluate the submissions.
+  <Step title="Configure o método de avaliação">
+    Selecione um método de avaliação e adicione os membros da comissão que irão avaliar as inscrições.
   </Step>
 
-  <Step title="Publish">
-    Change the status from **Draft** to **Published** to open the opportunity to applicants.
+  <Step title="Publique">
+    Altere o status de **Rascunho** para **Publicado** para abrir a oportunidade às inscrições.
   </Step>
 </Steps>

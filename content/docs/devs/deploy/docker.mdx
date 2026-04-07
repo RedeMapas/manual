@@ -1,141 +1,141 @@
 ---
 title: Docker Compose
 ---
-> Deploy Mapas Culturais with Docker Compose for local development and production-like environments.
+> Execute o Mapas Culturais com Docker Compose em ambientes locais e em cenários próximos de produção.
 
-## Prerequisites
+## Pré-requisitos
 
-* [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2 (bundled with Docker Desktop)
+* [Docker](https://docs.docker.com/get-docker/) com Docker Compose v2
 * Git
 
-## Standard setup
+## Setup padrão
 
 <Steps>
-  <Step title="Clone the repository">
+  <Step title="Clone o repositório">
     ```bash  theme={null}
     git clone https://github.com/redemapas/mapas.git
     cd mapas
     ```
   </Step>
 
-  <Step title="Start the services">
+  <Step title="Inicie os serviços">
     ```bash  theme={null}
     docker compose up -d
     ```
 
-    Docker Compose builds the application image and starts all services. The application container waits for PostgreSQL to pass its health check before starting.
+    O Docker Compose constrói a imagem da aplicação e inicia todos os serviços. O contêiner da aplicação espera o PostgreSQL passar no health check antes de iniciar.
   </Step>
 
-  <Step title="Wait for database migrations">
-    Database migrations (`db-updates.php`) run automatically inside the container entrypoint on every startup. No manual step is required.
+  <Step title="Aguarde as migrações do banco">
+    As migrações do banco (`db-updates.php`) rodam automaticamente dentro do entrypoint do contêiner em toda inicialização. Não há etapa manual obrigatória.
 
-    Check readiness with:
+    Verifique a prontidão com:
 
     ```bash  theme={null}
     docker compose logs -f mapas
     ```
 
-    The container is ready when you see the `/mapas-ready` flag created.
+    O contêiner está pronto quando você vir a flag `/mapas-ready` ser criada.
   </Step>
 
-  <Step title="Open the application">
-    The following services are now running:
+  <Step title="Abra a aplicação">
+    Os serviços abaixo estarão rodando:
 
-    | Service                  | URL                                            | Credentials                      |
+    | Serviço                  | URL                                            | Credenciais                      |
     | ------------------------ | ---------------------------------------------- | -------------------------------- |
-    | Application              | [http://localhost:8080](http://localhost:8080) | —                                |
-    | MailPit (e-mail testing) | [http://localhost:8025](http://localhost:8025) | —                                |
-    | PostgreSQL               | `localhost:5432`                               | user: `mapas`, pass: `mapas-dev` |
+    | Aplicação                | [http://localhost:8080](http://localhost:8080) | —                                |
+    | MailPit (teste de e-mail)| [http://localhost:8025](http://localhost:8025) | —                                |
+    | PostgreSQL               | `localhost:5432`                               | usuário: `mapas`, senha: `mapas-dev` |
 
-    All outbound e-mail from the application is captured by MailPit; nothing is sent to real addresses.
+    Todo e-mail enviado pela aplicação é capturado pelo MailPit. Nada é entregue a endereços reais.
   </Step>
 </Steps>
 
-## HTTPS local with Caddy
+## HTTPS local com Caddy
 
-PWA features and Web Push notifications require HTTPS. The repository ships a `compose.override.yml` that adds a Caddy reverse proxy with automatic local TLS.
+Recursos de PWA e notificações Web Push exigem HTTPS. O repositório inclui um `compose.override.yml` que adiciona um proxy reverso Caddy com TLS local automático.
 
-Docker Compose loads `compose.override.yml` automatically alongside `compose.yaml`, so no extra flags are needed:
+O Docker Compose carrega `compose.override.yml` automaticamente junto com `compose.yaml`, então não é necessário passar flags extras:
 
 ```bash  theme={null}
 docker compose up -d
 ```
 
-The Caddy service proxies requests to the application container and issues a locally-trusted certificate via the internal CA.
+O serviço Caddy encaminha as requisições para o contêiner da aplicação e emite um certificado localmente confiável usando sua CA interna.
 
-| Service             | URL                                                          |
-| ------------------- | ------------------------------------------------------------ |
-| Application (HTTPS) | [https://mapas.localhost:8443](https://mapas.localhost:8443) |
-| Application (HTTP)  | [http://mapas.localhost:8081](http://mapas.localhost:8081)   |
+| Serviço            | URL                                                          |
+| ------------------ | ------------------------------------------------------------ |
+| Aplicação (HTTPS)  | [https://mapas.localhost:8443](https://mapas.localhost:8443) |
+| Aplicação (HTTP)   | [http://mapas.localhost:8081](http://mapas.localhost:8081)   |
 
 <Note>
-  The `mapas.localhost` hostname resolves to `127.0.0.1` in most operating systems. If it does not, add `127.0.0.1 mapas.localhost` to your `/etc/hosts` file.
+  O hostname `mapas.localhost` resolve para `127.0.0.1` na maioria dos sistemas operacionais. Se isso não acontecer, adicione `127.0.0.1 mapas.localhost` ao seu arquivo `/etc/hosts`.
 </Note>
 
-### Trust the Caddy CA
+### Confie na CA do Caddy
 
-Browsers will show a security warning until the Caddy root certificate is trusted by your operating system. Run the following command after the services are up:
+Os navegadores vão exibir um aviso de segurança até que o certificado raiz do Caddy seja confiável pelo sistema operacional. Execute o comando abaixo depois que os serviços subirem:
 
 ```bash  theme={null}
 docker compose exec caddy caddy trust
 ```
 
-Restart your browser after trusting the CA.
+Reinicie o navegador depois de confiar na CA.
 
-## Container management
+## Gerenciamento de contêineres
 
-The `dev/` directory contains wrapper scripts for common operations:
+O diretório `dev/` reúne scripts auxiliares para operações comuns:
 
 ```bash  theme={null}
-dev/bash.sh          # Open a shell inside the PHP application container
-dev/psql.sh          # Connect to PostgreSQL
-dev/shell.sh         # Start an interactive PHP shell (psysh)
-dev/pnpm.sh <cmd>    # Run pnpm commands inside the container
+dev/bash.sh          # Abre um shell dentro do contêiner da aplicação PHP
+dev/psql.sh          # Conecta ao PostgreSQL
+dev/shell.sh         # Inicia um shell PHP interativo (psysh)
+dev/pnpm.sh <cmd>    # Executa comandos pnpm dentro do contêiner
 ```
 
-## Frontend build
+## Build do frontend
 
-The production image builds frontend assets at image build time. In development, you can rebuild assets without rebuilding the image:
+A imagem de produção compila os assets do frontend durante o build. Em desenvolvimento, você pode recompilá-los sem reconstruir a imagem:
 
 <CodeGroup>
-  ```bash install dependencies theme={null}
+  ```bash instalar dependências theme={null}
   dev/pnpm.sh -C src install
   ```
 
-  ```bash production build theme={null}
+  ```bash build de produção theme={null}
   dev/pnpm.sh -C src run build
   ```
 
-  ```bash watch mode theme={null}
+  ```bash modo watch theme={null}
   dev/pnpm.sh -C src run watch
   ```
 </CodeGroup>
 
-## Restoring a database dump
+## Restaurando um dump do banco
 
 ```bash  theme={null}
 scripts/restore-dump.sh -db=mapas -u=mapas -f=dump.sql
 ```
 
-The script connects to the running PostgreSQL container and restores the given SQL file.
+O script se conecta ao contêiner PostgreSQL em execução e restaura o arquivo SQL informado.
 
-## Container image
+## Imagem de contêiner
 
-The production image is published to the GitHub Container Registry:
+A imagem de produção é publicada no GitHub Container Registry:
 
 ```
 ghcr.io/redemapas/mapas
 ```
 
-The image is a multi-stage build:
+A imagem usa build em múltiplos estágios:
 
-1. **Node.js builder** — compiles frontend assets with pnpm.
-2. **Composer builder** — installs PHP dependencies.
-3. **Production stage** — PHP 8.4-FPM + Nginx on Alpine Linux.
-4. **Development stage** — extends production with Node.js, pnpm, and pcov for tests.
+1. **Stage Node.js**: compila os assets de frontend com pnpm.
+2. **Stage Composer**: instala as dependências PHP.
+3. **Stage de produção**: PHP 8.4-FPM + Nginx sobre Alpine Linux.
+4. **Stage de desenvolvimento**: estende a imagem de produção com Node.js, pnpm e pcov para testes.
 
-The development stage is used by `compose.yaml` (`target: development`). The production stage is used by the Helm chart.
+O estágio de desenvolvimento é usado em `compose.yaml` (`target: development`). O estágio de produção é usado pelo Helm chart.
 
 <Warning>
-  The default PostgreSQL password (`mapas-dev`) is intentionally weak and suitable for local development only. Never use it in production.
+  A senha padrão do PostgreSQL (`mapas-dev`) é propositalmente fraca e adequada apenas para desenvolvimento local. Nunca a use em produção.
 </Warning>

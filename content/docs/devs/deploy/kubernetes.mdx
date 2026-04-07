@@ -3,39 +3,39 @@ title: Kubernetes com Helm
 ---
 > Deploy Mapas Culturais em produção usando o Helm chart oficial em um cluster Kubernetes.
 
-The Mapas Culturais Helm chart deploys the full platform — application, PostgreSQL/PostGIS, and Redis — to any Kubernetes cluster. The container image is published at `ghcr.io/redemapas/mapas`.
+O Helm chart do Mapas Culturais faz o deploy da plataforma completa, incluindo aplicação, PostgreSQL/PostGIS e Redis, em qualquer cluster Kubernetes. A imagem de contêiner é publicada em `ghcr.io/redemapas/mapas`.
 
-## Prerequisites
+## Pré-requisitos
 
-* `kubectl` configured against your target cluster
-* Helm 3.x installed
-* Cluster with at least 512Mi memory available per pod
+* `kubectl` configurado para o cluster de destino
+* Helm 3.x instalado
+* cluster com ao menos 512Mi de memória disponível por pod
 
-## Quick Install
+## Instalação rápida
 
 ```bash  theme={null}
 helm install mapas ./helm/mapas \
   --set postgresql.settings.superuserPassword=$(openssl rand -base64 32)
 ```
 
-This installs Mapas Culturais with:
+Isso instala o Mapas Culturais com:
 
-* Internal PostgreSQL/PostGIS subchart
-* Two internal Redis instances (cache + sessions)
-* PersistentVolumeClaims for assets, files, and private files
+* subchart interno de PostgreSQL/PostGIS
+* duas instâncias internas de Redis, uma para cache e outra para sessões
+* PersistentVolumeClaims para assets, arquivos públicos e arquivos privados
 
-## Redis Configuration Modes
+## Modos de configuração do Redis
 
-The chart supports three Redis modes:
+O chart suporta estes modos de Redis:
 
-| Mode                              | Command                                                              |
-| --------------------------------- | -------------------------------------------------------------------- |
-| Internal Redis (default)          | `helm install mapas ./helm/mapas`                                    |
-| External Redis with password      | `helm install mapas ./helm/mapas -f helm/mapas/values-dev.yaml`      |
-| No Redis (filesystem/APCu)        | `--set redis-cache.enabled=false --set redis-sessions.enabled=false` |
-| Single Redis for cache + sessions | `--set mapas.useSameRedisForCacheAndSessions=true`                   |
+| Modo                               | Comando                                                              |
+| ---------------------------------- | -------------------------------------------------------------------- |
+| Redis interno (padrão)             | `helm install mapas ./helm/mapas`                                    |
+| Redis externo com senha            | `helm install mapas ./helm/mapas -f helm/mapas/values-dev.yaml`      |
+| Sem Redis (filesystem/APCu)        | `--set redis-cache.enabled=false --set redis-sessions.enabled=false` |
+| Redis único para cache + sessões   | `--set mapas.useSameRedisForCacheAndSessions=true`                   |
 
-### External Redis example
+### Exemplo de Redis externo
 
 ```yaml  theme={null}
 mapas:
@@ -58,70 +58,70 @@ redis-sessions:
   enabled: false
 ```
 
-## Key Values Reference
+## Referência das principais values
 
-### Application
+### Aplicação
 
-| Value                | Default      | Description                        |
-| -------------------- | ------------ | ---------------------------------- |
-| `mapas.appEnv`       | `production` | Runtime environment                |
-| `mapas.appDebug`     | `false`      | Enable debug mode                  |
-| `mapas.numProcesses` | `2`          | PHP worker processes               |
-| `mapas.jobsInterval` | `60`         | Background jobs interval (seconds) |
-| `mapas.buildAssets`  | `0`          | Build frontend assets on startup   |
+| Value                | Padrão       | Descrição                           |
+| -------------------- | ------------ | ----------------------------------- |
+| `mapas.appEnv`       | `production` | Ambiente de execução                |
+| `mapas.appDebug`     | `false`      | Ativa modo debug                    |
+| `mapas.numProcesses` | `2`          | Processos PHP workers               |
+| `mapas.jobsInterval` | `60`         | Intervalo dos jobs em segundo       |
+| `mapas.buildAssets`  | `0`          | Compila assets do frontend no boot  |
 
-### Database
+### Banco de dados
 
-| Value                           | Description                                         |
+| Value                           | Descrição                                           |
 | ------------------------------- | --------------------------------------------------- |
-| `mapas.database.host`           | External DB host (when `postgresql.enabled: false`) |
-| `mapas.database.port`           | DB port (default: 5432)                             |
-| `mapas.database.name`           | Database name                                       |
-| `mapas.database.user`           | Database user                                       |
-| `mapas.database.existingSecret` | K8s secret with DB password                         |
+| `mapas.database.host`           | Host do banco externo (quando `postgresql.enabled: false`) |
+| `mapas.database.port`           | Porta do banco (padrão: 5432)                       |
+| `mapas.database.name`           | Nome do banco                                       |
+| `mapas.database.user`           | Usuário do banco                                    |
+| `mapas.database.existingSecret` | Secret do Kubernetes com a senha do banco           |
 
-### Redis Cache
+### Cache Redis
 
-| Value                                | Description                                       |
+| Value                                | Descrição                                         |
 | ------------------------------------ | ------------------------------------------------- |
-| `mapas.redisCache.host`              | Redis host (empty = use APCu/filesystem fallback) |
-| `mapas.redisCache.port`              | Redis port (default: 6379)                        |
-| `mapas.redisCache.password`          | Inline password                                   |
-| `mapas.redisCache.existingSecret`    | K8s secret name                                   |
-| `mapas.redisCache.existingSecretKey` | Key in secret (default: `password`)               |
+| `mapas.redisCache.host`              | Host do Redis (vazio = usa fallback em APCu/filesystem) |
+| `mapas.redisCache.port`              | Porta do Redis (padrão: 6379)                     |
+| `mapas.redisCache.password`          | Senha inline                                      |
+| `mapas.redisCache.existingSecret`    | Nome do secret no K8s                             |
+| `mapas.redisCache.existingSecretKey` | Chave dentro do secret (padrão: `password`)       |
 
-### Redis Sessions
+### Sessões Redis
 
-Same structure as `redisCache`. Set `mapas.useSameRedisForCacheAndSessions: true` to share one Redis instance.
+Mesma estrutura de `redisCache`. Defina `mapas.useSameRedisForCacheAndSessions: true` para compartilhar uma única instância Redis.
 
 ### Mailer
 
-| Value                    | Default               | Description        |
-| ------------------------ | --------------------- | ------------------ |
-| `mapas.mailer.transport` | `smtp://localhost:25` | Symfony Mailer DSN |
-| `mapas.mailer.from`      | `noreply@mapas.local` | Sender address     |
+| Value                    | Padrão                | Descrição            |
+| ------------------------ | --------------------- | -------------------- |
+| `mapas.mailer.transport` | `smtp://localhost:25` | DSN do Symfony Mailer |
+| `mapas.mailer.from`      | `noreply@mapas.local` | Endereço remetente   |
 
-Supported transports: `smtp://`, `ses://`, `mailgun://`, `sendgrid://`, `mailchimp://`.
+Transportes suportados: `smtp://`, `ses://`, `mailgun://`, `sendgrid://`, `mailchimp://`.
 
 ### Web Push (RedeMapas)
 
-| Value                          | Description                       |
+| Value                          | Descrição                         |
 | ------------------------------ | --------------------------------- |
-| `mapas.webPush.enabled`        | Enable WebPush notifications      |
-| `mapas.webPush.vapidSubject`   | VAPID subject (mailto: or URL)    |
-| `mapas.webPush.vapidPublicKey` | VAPID public key                  |
-| `mapas.webPush.existingSecret` | K8s secret with VAPID private key |
+| `mapas.webPush.enabled`        | Habilita notificações Web Push    |
+| `mapas.webPush.vapidSubject`   | Subject do VAPID (`mailto:` ou URL) |
+| `mapas.webPush.vapidPublicKey` | Chave pública VAPID               |
+| `mapas.webPush.existingSecret` | Secret do K8s com a chave privada VAPID |
 
 ### Persistence
 
-Four PVCs are created by default:
+Quatro PVCs são criados por padrão:
 
-| Volume                     | Default Size | Description                |
-| -------------------------- | ------------ | -------------------------- |
-| `persistence.assets`       | 10Gi         | Public asset files         |
-| `persistence.publicFiles`  | 50Gi         | User-uploaded public files |
-| `persistence.privateFiles` | 10Gi         | Private registration files |
-| `persistence.varFiles`     | 5Gi          | Runtime var directory      |
+| Volume                     | Tamanho padrão | Descrição                      |
+| -------------------------- | -------------- | ------------------------------ |
+| `persistence.assets`       | 10Gi           | Arquivos públicos de assets    |
+| `persistence.publicFiles`  | 50Gi           | Arquivos públicos enviados por usuários |
+| `persistence.privateFiles` | 10Gi           | Arquivos privados de inscrição |
+| `persistence.varFiles`     | 5Gi            | Diretório `var` de runtime     |
 
 ### Ingress
 
@@ -140,19 +140,19 @@ ingress:
         - mapas.example.com
 ```
 
-## Skaffold (Cluster Development)
+## Skaffold (desenvolvimento em cluster)
 
 For iterative development against a local cluster (kind, minikube):
 
 ```bash  theme={null}
-# Hot-reload dev mode
+# Modo dev com hot reload
 skaffold dev
 
-# Build and deploy to production profile
+# Build e deploy para o perfil de produção
 skaffold run -p prod
 ```
 
-## Upgrading
+## Atualização
 
 ```bash  theme={null}
 helm upgrade mapas ./helm/mapas --reuse-values \
@@ -160,10 +160,10 @@ helm upgrade mapas ./helm/mapas --reuse-values \
 ```
 
 <Note>
-  Database migrations in `db-updates.php` run automatically on container startup via `entrypoint.sh`. No manual migration step is needed on upgrade.
+  As migrações em `db-updates.php` rodam automaticamente no startup do contêiner via `entrypoint.sh`. Nenhuma etapa manual de migração é necessária durante a atualização.
 </Note>
 
-## Scaling
+## Escalabilidade
 
 ```yaml  theme={null}
 replicaCount: 3
@@ -176,5 +176,5 @@ autoscaling:
 ```
 
 <Warning>
-  If you scale beyond one replica, ensure your PVCs use `ReadWriteMany` access mode or use an external shared storage (S3, NFS) for the assets and files volumes.
+  Se você escalar para mais de uma réplica, garanta que os PVCs usem modo de acesso `ReadWriteMany` ou utilize armazenamento compartilhado externo, como S3 ou NFS, para os volumes de assets e arquivos.
 </Warning>

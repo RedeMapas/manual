@@ -3,69 +3,69 @@ title: Configuração
 ---
 > Variáveis de ambiente e opções de configuração de uma instalação Mapas Culturais.
 
-Mapas Culturais is configured through environment variables (read at runtime) and PHP config files in the `config/` directory. Development overrides live in `dev/config.d/`.
+O Mapas Culturais é configurado por variáveis de ambiente, lidas em tempo de execução, e por arquivos de configuração PHP no diretório `config/`. Overrides de desenvolvimento ficam em `dev/config.d/`.
 
-## Environment Variables
+## Variáveis de ambiente
 
-The following environment variables control runtime behavior:
+As variáveis abaixo controlam o comportamento da aplicação em runtime:
 
-### Database
+### Banco de dados
 
-| Variable  | Description       | Example    |
-| --------- | ----------------- | ---------- |
-| `DB_HOST` | PostgreSQL host   | `postgres` |
-| `DB_PORT` | PostgreSQL port   | `5432`     |
-| `DB_NAME` | Database name     | `mapas`    |
-| `DB_USER` | Database user     | `mapas`    |
-| `DB_PASS` | Database password | `secret`   |
+| Variável  | Descrição              | Exemplo    |
+| --------- | ---------------------- | ---------- |
+| `DB_HOST` | Host do PostgreSQL     | `postgres` |
+| `DB_PORT` | Porta do PostgreSQL    | `5432`     |
+| `DB_NAME` | Nome do banco          | `mapas`    |
+| `DB_USER` | Usuário do banco       | `mapas`    |
+| `DB_PASS` | Senha do banco         | `secret`   |
 
-### Cache & Sessions
+### Cache e sessões
 
-| Variable             | Description                                            | Example              |
-| -------------------- | ------------------------------------------------------ | -------------------- |
-| `REDIS_CACHE`        | Redis DSN for cache (empty = APCu/filesystem fallback) | `redis://redis:6379` |
-| `SESSIONS_SAVE_PATH` | Redis DSN for PHP sessions (empty = filesystem)        | `tcp://redis:6379`   |
+| Variável             | Descrição                                                      | Exemplo              |
+| -------------------- | -------------------------------------------------------------- | -------------------- |
+| `REDIS_CACHE`        | DSN do Redis para cache (vazio = fallback em APCu/filesystem)  | `redis://redis:6379` |
+| `SESSIONS_SAVE_PATH` | DSN do Redis para sessões PHP (vazio = filesystem)             | `tcp://redis:6379`   |
 
-### Application
+### Aplicação
 
-| Variable           | Default | Description                                   |
-| ------------------ | ------- | --------------------------------------------- |
-| `APP_DEBUG`        | `false` | Enable debug mode; logs at `var/logs/app.log` |
-| `BASE_URL`         | —       | Public base URL (must end with `/`)           |
-| `DISABLE_SUBSITES` | `false` | Disable multi-tenancy subsite support         |
-| `BUILD_ASSETS`     | `0`     | Build frontend assets on container start      |
-| `NUM_PROCESSES`    | `2`     | PHP worker processes                          |
-| `JOBS_INTERVAL`    | `60`    | Background job runner interval (seconds)      |
+| Variável           | Padrão  | Descrição                                        |
+| ------------------ | ------- | ------------------------------------------------ |
+| `APP_DEBUG`        | `false` | Ativa modo de depuração; logs em `var/logs/app.log` |
+| `BASE_URL`         | —       | URL pública base, deve terminar com `/`         |
+| `DISABLE_SUBSITES` | `false` | Desativa suporte a subsites e multitenancy      |
+| `BUILD_ASSETS`     | `0`     | Compila assets do frontend na inicialização do contêiner |
+| `NUM_PROCESSES`    | `2`     | Quantidade de processos PHP                     |
+| `JOBS_INTERVAL`    | `60`    | Intervalo do executor de jobs em segundo        |
 
 ### Mailer
 
-| Variable           | Description          | Example                     |
-| ------------------ | -------------------- | --------------------------- |
-| `MAILER_TRANSPORT` | Symfony Mailer DSN   | `smtp://mailpit:1025`       |
-| `MAILER_FROM`      | Sender email address | `noreply@mapas.example.com` |
+| Variável           | Descrição              | Exemplo                     |
+| ------------------ | ---------------------- | --------------------------- |
+| `MAILER_TRANSPORT` | DSN do Symfony Mailer  | `smtp://mailpit:1025`       |
+| `MAILER_FROM`      | Endereço remetente     | `noreply@mapas.example.com` |
 
 <Tip>
-  Supported mailer transports: `smtp://`, `ses+smtp://` (Amazon SES), `mailgun+smtp://`, `sendgrid+smtp://`, `mailchimp+mandrill+smtp://`.
+  Transportes suportados: `smtp://`, `ses+smtp://` (Amazon SES), `mailgun+smtp://`, `sendgrid+smtp://` e `mailchimp+mandrill+smtp://`.
 </Tip>
 
 ### reCAPTCHA
 
-| Variable                   | Description                  |
-| -------------------------- | ---------------------------- |
-| `GOOGLE_RECAPTCHA_SITEKEY` | Google reCAPTCHA v2 site key |
-| `GOOGLE_RECAPTCHA_SECRET`  | Google reCAPTCHA v2 secret   |
+| Variável                   | Descrição                         |
+| -------------------------- | --------------------------------- |
+| `GOOGLE_RECAPTCHA_SITEKEY` | Chave pública do Google reCAPTCHA v2 |
+| `GOOGLE_RECAPTCHA_SECRET`  | Chave secreta do Google reCAPTCHA v2 |
 
 ### Web Push (RedeMapas)
 
-| Variable            | Description                      |
-| ------------------- | -------------------------------- |
-| `VAPID_SUBJECT`     | VAPID subject (`mailto:` or URL) |
-| `VAPID_PUBLIC_KEY`  | VAPID public key                 |
-| `VAPID_PRIVATE_KEY` | VAPID private key                |
+| Variável            | Descrição                             |
+| ------------------- | ------------------------------------- |
+| `VAPID_SUBJECT`     | Subject do VAPID (`mailto:` ou URL)   |
+| `VAPID_PUBLIC_KEY`  | Chave pública VAPID                   |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID                   |
 
-## Authentication Provider
+## Provedor de autenticação
 
-Set the authentication provider in your config file:
+Defina o provedor de autenticação no arquivo de configuração:
 
 ```php config/config.php theme={null}
 return [
@@ -81,11 +81,11 @@ return [
 ];
 ```
 
-See [Authentication Providers](/docs/devs/auth/providers) for all available providers.
+Veja [Provedores de autenticação](/docs/devs/auth/providers) para a lista completa.
 
-## Enabling Modules
+## Habilitando módulos
 
-Register modules in your config file:
+Registre os módulos no arquivo de configuração:
 
 ```php config/config.php theme={null}
 return [
@@ -103,40 +103,40 @@ return [
 ];
 ```
 
-See [Modules](/docs/devs/development/modules) for all available modules.
+Consulte [Módulos](/docs/devs/development/modules) para ver todos os módulos disponíveis.
 
-## Multitenancy (Subsites)
+## Multitenancy e subsites
 
-To enable multiple sub-installations on the same server, ensure `DISABLE_SUBSITES` is not set (or set to `false`). Each subsite maps to a domain and uses a separate theme namespace.
+Para habilitar múltiplas subinstalações no mesmo servidor, garanta que `DISABLE_SUBSITES` não esteja definido, ou esteja como `false`. Cada subsite é associado a um domínio e usa um namespace de tema separado.
 
 <Warning>
-  Subsite support is disabled in the development environment by default (`DISABLE_SUBSITES=true` in `compose.yaml`).
+  O suporte a subsites vem desativado por padrão no ambiente de desenvolvimento (`DISABLE_SUBSITES=true` em `compose.yaml`).
 </Warning>
 
-## Debug Mode
+## Modo debug
 
-Enable debug mode to get detailed error pages and verbose logging:
+Ative o modo debug para obter páginas de erro detalhadas e logs mais verbosos:
 
 ```bash  theme={null}
 APP_DEBUG=true
 ```
 
-Logs are written to `var/logs/app.log` inside the container.
+Os logs são gravados em `var/logs/app.log` dentro do contêiner.
 
-## Database Migrations
+## Migrações do banco
 
-Migrations are defined in `src/db-updates.php` and applied automatically when the container starts. No manual step is needed. To apply updates manually:
+As migrações ficam em `src/db-updates.php` e são aplicadas automaticamente quando o contêiner inicia. Nenhuma etapa manual é necessária. Para aplicar atualizações manualmente:
 
 ```bash  theme={null}
 docker compose exec mapas php /var/www/src/tools/apply-updates.php
 ```
 
-## RedeMapas-specific operational notes
+## Notas operacionais específicas do RedeMapas
 
-The RedeMapas installation adds a few concerns that are easy to overlook if you read the config only as a generic Mapas deployment:
+A instalação RedeMapas acrescenta algumas preocupações que passam fácil despercebidas se você ler a configuração como se fosse um deploy genérico do Mapas:
 
-* HTTPS is effectively required for realistic PWA and Web Push testing
-* authentication behavior may depend on Ministry of Culture or self-hosted provider endpoints
-* the active installation theme can introduce environment-sensitive behavior such as custom logout flows, manifests, and push subscription handling
+* HTTPS é praticamente obrigatório para testar de forma realista PWA e Web Push
+* o comportamento de autenticação pode depender de endpoints do Ministério da Cultura ou de provedores hospedados pela própria instalação
+* o tema ativo da instalação pode introduzir comportamento sensível ao ambiente, como fluxo customizado de logout, manifestos e assinatura de push
 
-Treat configuration, theme behavior, and deployment topology as a single operational unit during debugging.
+Durante o debugging, trate configuração, comportamento de tema e topologia de deploy como uma única unidade operacional.

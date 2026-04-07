@@ -1,58 +1,58 @@
 ---
-title: Testing
+title: Testes
 ---
-> Write and run PHPUnit tests for Mapas Culturais: test structure, base class, builders, directors, and practical examples.
+> Escreva e execute testes com PHPUnit no Mapas Culturais: estrutura, classe base, builders, directors e exemplos práticos.
 
-Mapas Culturais uses [PHPUnit 10](https://phpunit.de/) for its test suite. Tests require a live database connection, so they must run inside the Docker container (or an equivalent environment with PostgreSQL and PostGIS available).
+O Mapas Culturais usa [PHPUnit 10](https://phpunit.de/) em sua suíte de testes. Como os testes exigem conexão com um banco real, eles precisam rodar dentro do contêiner Docker, ou em um ambiente equivalente com PostgreSQL e PostGIS disponíveis.
 
-## Running tests
+## Executando testes
 
 ```bash  theme={null}
-# Run the full test suite
+# Roda a suíte completa
 docker compose exec mapas vendor/bin/phpunit tests/
 
-# Run a single test file
+# Roda um único arquivo de teste
 docker compose exec mapas vendor/bin/phpunit tests/src/EntitiesTest.php
 
-# Run a single test method
+# Roda um único método de teste
 docker compose exec mapas vendor/bin/phpunit tests/src/EntitiesTest.php --filter testAgentCreation
 
-# Via the convenience script
+# Via script auxiliar
 ./scripts/run-tests-docker.sh
 ```
 
 <Warning>
-  Tests must run inside the container. Running `vendor/bin/phpunit` directly on the host will fail because the host has no access to the PostgreSQL and Redis instances that the test suite depends on.
+  Os testes devem rodar dentro do contêiner. Executar `vendor/bin/phpunit` diretamente na máquina host vai falhar, porque o host não tem acesso às instâncias de PostgreSQL e Redis das quais a suíte depende.
 </Warning>
 
-PHPUnit is configured via `phpunit.xml` at the repo root. Tests execute in random order by default (`executionOrder="random"`) to surface hidden dependencies between tests early.
+O PHPUnit é configurado em `phpunit.xml`, na raiz do repositório. Por padrão, os testes rodam em ordem aleatória (`executionOrder="random"`), o que ajuda a expor cedo dependências ocultas entre testes.
 
-## Test structure
+## Estrutura de testes
 
 ```
 tests/
   src/
-    Abstract/           → Base classes (TestCase, Builder, Director)
-    Builders/           → Entity builders (fluent API for constructing test data)
-    Directors/          → Higher-level test directors using builders
-    Factories/          → Factory helpers
-    Traits/             → Shared test traits (Faker, AgentDirector, etc.)
-    Fixtures.php        → Shared fixture data
-    fixtures/           → Fixture files (JSON, etc.)
-    EntitiesTest.php    → Example test file
+    Abstract/           → Classes base (`TestCase`, `Builder`, `Director`)
+    Builders/           → Builders de entidades, com API fluente para montar dados de teste
+    Directors/          → Directors de nível mais alto, compostos sobre builders
+    Factories/          → Helpers de fábrica
+    Traits/             → Traits compartilhadas (`Faker`, `AgentDirector` etc.)
+    Fixtures.php        → Dados de fixture compartilhados
+    fixtures/           → Arquivos de fixture (`JSON` etc.)
+    EntitiesTest.php    → Arquivo de teste de exemplo
     OpportunityPhasesTest.php
     EvaluationMethodTechnicalTest.php
     ...
 ```
 
-## The `TestCase` base class
+## A classe base `TestCase`
 
-All tests extend `Tests\Abstract\TestCase`, which extends PHPUnit's `TestCase`. The base class handles:
+Todos os testes estendem `Tests\Abstract\TestCase`, que por sua vez estende `TestCase` do PHPUnit. A classe base cuida de:
 
-* Starting a database transaction in `setUp()`
-* Rolling it back in `tearDown()` so every test leaves the database in a clean state
-* Providing `login()` and `logout()` helpers
-* Exposing `$this->app` as the application singleton
+* iniciar uma transação de banco em `setUp()`
+* desfazê-la em `tearDown()`, garantindo que cada teste deixe o banco limpo
+* oferecer helpers de `login()` e `logout()`
+* expor `$this->app` como singleton da aplicação
 
 ```php  theme={null}
 <?php
@@ -80,13 +80,13 @@ class MyFeatureTest extends TestCase
 }
 ```
 
-The transaction rollback pattern means you can write to the database freely without needing to clean up — each test gets a fresh snapshot.
+Esse padrão de rollback permite escrever no banco livremente sem precisar limpar nada depois. Cada teste recebe um snapshot limpo.
 
-## Writing a test
+## Escrevendo um teste
 
 <Steps>
-  <Step title="Create the test class">
-    Create a file in `tests/src/` named after the feature you are testing. The class must extend `Tests\Abstract\TestCase`.
+  <Step title="Crie a classe de teste">
+    Crie um arquivo em `tests/src/` com nome relacionado à funcionalidade testada. A classe deve estender `Tests\Abstract\TestCase`.
 
     ```php  theme={null}
     <?php
@@ -104,8 +104,8 @@ The transaction rollback pattern means you can write to the database freely with
     ```
   </Step>
 
-  <Step title="Use builders and directors to create test data">
-    Builders provide a fluent API for constructing entities. Directors wrap builders to create common test scenarios in one call.
+  <Step title="Use builders e directors para montar dados">
+    Builders oferecem uma API fluente para construir entidades. Directors encapsulam builders para criar cenários comuns em uma única chamada.
 
     ```php  theme={null}
     public function testAgentHasOwner(): void
@@ -120,8 +120,8 @@ The transaction rollback pattern means you can write to the database freely with
     ```
   </Step>
 
-  <Step title="Make HTTP-style assertions">
-    The base class provides helpers to make simulated API requests and assert on the response:
+  <Step title="Faça assertions em estilo HTTP">
+    A classe base fornece helpers para simular requisições à API e fazer assertions sobre a resposta:
 
     ```php  theme={null}
     public function testApiReturnsAgent(): void
@@ -136,7 +136,7 @@ The transaction rollback pattern means you can write to the database freely with
     ```
   </Step>
 
-  <Step title="Run the test">
+  <Step title="Execute o teste">
     ```bash  theme={null}
     docker compose exec mapas vendor/bin/phpunit tests/src/MyFeatureTest.php
     ```
@@ -145,9 +145,9 @@ The transaction rollback pattern means you can write to the database freely with
 
 ## Builders
 
-Builders in `tests/src/Builders/` construct entity instances with valid data. They use the [FakerPHP](https://fakerphp.org/) library to generate realistic fake data.
+Os builders em `tests/src/Builders/` constroem instâncias de entidades com dados válidos. Eles usam [FakerPHP](https://fakerphp.org/) para gerar dados fictícios realistas.
 
-Available builders:
+Builders disponíveis:
 
 | Builder                                | Entity                          |
 | -------------------------------------- | ------------------------------- |
@@ -166,7 +166,7 @@ Available builders:
 | `ValuerBuilder`                        | Evaluator (valuer)              |
 | `QuotaBuilder`                         | Evaluation quota                |
 
-Example — using `AgentBuilder` directly:
+Exemplo, usando `AgentBuilder` diretamente:
 
 ```php  theme={null}
 use Tests\Builders\AgentBuilder;
@@ -184,14 +184,14 @@ $this->assertNotNull($agent->id);
 
 ## Directors
 
-Directors in `tests/src/Directors/` compose builders into higher-level helpers that create complete, ready-to-use entities. Use directors in tests to keep setup code concise.
+Os directors em `tests/src/Directors/` compõem builders em helpers de nível mais alto, capazes de criar entidades completas e prontas para uso. Use directors para manter o setup dos testes enxuto.
 
 ```php  theme={null}
-// Create a complete opportunity with phases and an evaluation method
+// Cria uma oportunidade completa, com fases e método de avaliação
 $opportunity = $this->opportunityDirector->createOpportunity($user->profile);
 ```
 
-Directors are included in test classes via traits:
+Os directors são incluídos nas classes de teste via traits:
 
 ```php  theme={null}
 use Tests\Traits\UserDirector;
@@ -202,27 +202,27 @@ use Tests\Traits\OpportunityDirector;
 
 ## FakerPHP
 
-Builders use `FakerPHP` for generating realistic test data. The faker instance is available inside builders through the `Faker` trait:
+Os builders usam `FakerPHP` para gerar dados de teste realistas. A instância do faker fica disponível dentro dos builders pela trait `Faker`:
 
 ```php  theme={null}
-// Inside a builder
+// Dentro de um builder
 $this->instance->name             = $this->faker->name();
 $this->instance->shortDescription = $this->faker->text(400);
 $this->instance->document         = $this->faker->cpf();
 ```
 
-## Helper methods on `TestCase`
+## Métodos auxiliares em `TestCase`
 
-| Method                             | Description                                          |
+| Método                             | Descrição                                            |
 | ---------------------------------- | ---------------------------------------------------- |
-| `$this->login(User $user)`         | Authenticate as the given user                       |
-| `$this->logout()`                  | Clear the authenticated user                         |
-| `$this->processJobs(string $date)` | Execute pending background jobs up to the given date |
-| `$this->processPCache()`           | Rebuild the permission cache                         |
+| `$this->login(User $user)`         | Autentica como o usuário informado                   |
+| `$this->logout()`                  | Limpa o usuário autenticado                          |
+| `$this->processJobs(string $date)` | Executa jobs pendentes até a data informada          |
+| `$this->processPCache()`           | Recria o cache de permissões                         |
 
-## Generating coverage
+## Gerando cobertura
 
-Code coverage requires the `pcov` extension (available in the container):
+A geração de cobertura exige a extensão `pcov`, já disponível no contêiner:
 
 ```bash  theme={null}
 docker compose exec mapas \
@@ -234,14 +234,14 @@ docker compose exec mapas \
       --coverage-clover tests/coverage/clover.xml
 ```
 
-Coverage source paths are configured in `phpunit.xml` under `<source>`. Expand the included directories as new modules are covered by tests.
+Os caminhos de código-fonte cobertos são configurados em `phpunit.xml`, sob `<source>`. Expanda os diretórios incluídos conforme novos módulos passarem a ter testes.
 
-## Test file conventions
+## Convenções para arquivos de teste
 
-* One test class per file.
-* File and class names use `PascalCase` with a `Test` suffix: `OpportunityPhasesTest.php`.
-* Test method names start with `test` in camelCase: `testRegistrationStatusChange`.
-* Use descriptive assertion messages as the last argument to assertion methods:
+* uma classe de teste por arquivo
+* nomes de arquivo e classe em `PascalCase`, com sufixo `Test`, como `OpportunityPhasesTest.php`
+* nomes de métodos de teste começando com `test` em camelCase, como `testRegistrationStatusChange`
+* use mensagens descritivas nas assertions, como último argumento do método
 
 ```php  theme={null}
 $this->assertEquals(

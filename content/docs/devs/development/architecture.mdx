@@ -1,9 +1,9 @@
 ---
-title: Architecture
+title: Arquitetura
 ---
-> Technical overview of Mapas Culturais: stack, directory structure, core abstractions, and key design patterns.
+> Visão técnica do Mapas Culturais: stack, estrutura de diretórios, abstrações centrais e padrões de projeto.
 
-Mapas Culturais is a PHP 8.3 web application for cultural mapping. It is built on [Slim 4](https://www.slimframework.com/) as the HTTP microframework, [Doctrine ORM 2](https://www.doctrine-project.org/) for database access, and [PostgreSQL](https://www.postgresql.org/) with the [PostGIS](https://postgis.net/) extension for geospatial data. Frontend assets are managed with [pnpm workspaces](https://pnpm.io/workspaces).
+O Mapas Culturais é uma aplicação web em PHP 8.3 voltada a mapeamento cultural. Ela é construída sobre [Slim 4](https://www.slimframework.com/) como microframework HTTP, [Doctrine ORM 2](https://www.doctrine-project.org/) para acesso a dados e [PostgreSQL](https://www.postgresql.org/) com [PostGIS](https://postgis.net/) para dados geoespaciais. Os assets de frontend são gerenciados com [pnpm workspaces](https://pnpm.io/workspaces).
 
 ## Stack
 
@@ -19,7 +19,7 @@ Mapas Culturais is a PHP 8.3 web application for cultural mapping. It is built o
 | Logging        | Monolog                             |
 | Validation     | Respect Validation                  |
 
-## Directory structure
+## Estrutura de diretórios
 
 ```
 src/
@@ -160,29 +160,42 @@ The legacy developer guide spent more time on how requests move across the stack
 
 ### Authentication flow
 
-1. The browser hits a controller action that requires authentication.
-2. The controller calls `requireAuthentication()` or checks the active auth provider.
-3. The configured provider (`$app->auth`) redirects to or validates against the external identity service.
-4. On success, the user is resolved or provisioned locally and the request resumes.
+<Mermaid
+  chart={`
+flowchart TD
+    browser["Browser requests protected controller action"] --> controller["Controller calls requireAuthentication() or checks $app->auth"]
+    controller --> provider["Active provider redirects to or validates against external identity service"]
+    provider --> success["User is resolved or provisioned locally"]
+    success --> resume["Original request resumes"]
+`}
+/>
 
 This is why auth bugs often span configuration, provider code, theme-level logout UI, and controller behavior at the same time.
 
 ### Entity creation flow
 
-1. A controller receives validated request data.
-2. The entity is instantiated and populated.
-3. Permission checks and hooks run before persistence.
-4. Doctrine persists the entity and related metadata.
-5. Post-save hooks may enqueue jobs, notifications, or search updates.
+<Mermaid
+  chart={`
+flowchart TD
+    request["Controller receives validated request data"] --> instantiate["Entity is instantiated and populated"]
+    instantiate --> checks["Permission checks and hooks run before persistence"]
+    checks --> persist["Doctrine persists the entity and related metadata"]
+    persist --> postSave["Post-save hooks may enqueue jobs, notifications, or search updates"]
+`}
+/>
 
 If an entity "saves but behaves strangely", inspect hooks and async jobs in addition to the controller itself.
 
 ### Search flow
 
-1. Request parameters are normalized by controller or API layer.
-2. Query expressions are translated to Doctrine / SQL constraints.
-3. Geospatial filters use PostgreSQL + PostGIS.
-4. Results are serialized and shaped by `@select`, pagination, and relation loading.
+<Mermaid
+  chart={`
+flowchart TD
+    params["Request parameters are normalized by controller or API layer"] --> query["Query expressions are translated to Doctrine / SQL constraints"]
+    query --> geo["Geospatial filters use PostgreSQL + PostGIS"]
+    geo --> serialize["Results are serialized and shaped by @select, pagination, and relation loading"]
+`}
+/>
 
 Search bugs frequently come from filter syntax, metadata visibility, or geospatial assumptions rather than from a broken endpoint.
 

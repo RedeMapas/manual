@@ -1,45 +1,45 @@
 ---
-title: Permissions and User Profiles
+title: Permissões e perfis de usuário
 ---
-> Understand the user role hierarchy and permission system in Mapas Culturais.
+> Entenda a hierarquia de papéis e o sistema de permissões no Mapas Culturais.
 
-Mapas Culturais uses a layered permission model. Every user has one or more **roles**, and each role grants a cumulative set of capabilities. Entity-level checks are evaluated at runtime so that custom modules can extend the default rules without modifying core code.
+O Mapas Culturais usa um modelo de permissões em camadas. Cada usuário tem um ou mais **papéis**, e cada papel concede um conjunto cumulativo de capacidades. As checagens em nível de entidade são avaliadas em runtime, permitindo que módulos personalizados estendam as regras padrão sem alterar o código do núcleo.
 
-## User profile hierarchy
+## Hierarquia de perfis de usuário
 
-Each level inherits all the capabilities of the levels below it.
+Cada nível herda todas as capacidades dos níveis abaixo.
 
 <Steps>
-  <Step title="Guest (visitor)">
-    An unauthenticated visitor. Guests can browse and read public data — agents, spaces, events, and projects — but cannot create, edit, or delete anything.
+  <Step title="Convidado (visitante)">
+    Visitante não autenticado. Pode navegar e ler dados públicos, como agentes, espaços, eventos e projetos, mas não pode criar, editar ou excluir nada.
 
     ```php  theme={null}
     $user->is('guest'); // true for unauthenticated users
     ```
   </Step>
 
-  <Step title="Authenticated user (usuário comum)">
-    Any logged-in user. Can create and manage their own agents, spaces, events, projects, and seals. Can apply to opportunities and edit entities where they have been added as a responsible agent.
+  <Step title="Usuário autenticado (usuário comum)">
+    Qualquer usuário logado. Pode criar e gerenciar seus próprios agentes, espaços, eventos, projetos e selos. Também pode se inscrever em oportunidades e editar entidades nas quais tenha sido adicionado como agente responsável.
   </Step>
 
-  <Step title="Administrator (admin)">
-    Has access to the administration panel. Can view and edit all entities within their installation (or subsite in a SaaS deployment). Cannot promote other users to admin.
+  <Step title="Administrador (admin)">
+    Tem acesso ao painel administrativo. Pode ver e editar todas as entidades da instalação, ou do subsite em um cenário SaaS. Não pode promover outros usuários a admin.
 
     ```php  theme={null}
     $user->is('admin');
     ```
   </Step>
 
-  <Step title="Super Administrator (superAdmin)">
-    Identical to Administrator, and can additionally grant or revoke the `admin` role for other users.
+  <Step title="Superadministrador (superAdmin)">
+    Tem os mesmos poderes do administrador e, além disso, pode conceder ou revogar o papel `admin` de outros usuários.
 
     ```php  theme={null}
     $user->is('superAdmin');
     ```
   </Step>
 
-  <Step title="SaaS roles (saasAdmin / superSaasAdmin)">
-    Available only in multi-tenant SaaS deployments. `saasAdmin` can manage multiple subsites and their entities. `superSaasAdmin` can additionally designate new SaaS administrators.
+  <Step title="Papéis SaaS (saasAdmin / superSaasAdmin)">
+    Disponíveis apenas em implantações SaaS multi-tenant. `saasAdmin` pode gerenciar múltiplos subsites e suas entidades. `superSaasAdmin` também pode designar novos administradores SaaS.
 
     ```php  theme={null}
     $user->is('saasAdmin');
@@ -49,16 +49,16 @@ Each level inherits all the capabilities of the levels below it.
 </Steps>
 
 <Note>
-  All roles are stored in the `role` database table through the `Role` entity and are linked to a user via the `usr` table. Roles can optionally be scoped to a specific subsite via `subsiteId`.
+  Todos os papéis são armazenados na tabela `role` por meio da entidade `Role` e associados ao usuário via tabela `usr`. Os papéis podem opcionalmente ficar restritos a um subsite específico via `subsiteId`.
 </Note>
 
 ***
 
-## Permission checking API
+## API de checagem de permissões
 
 ### `$entity->canUser($action)`
 
-Returns `true` if the current user (or the user passed as a second argument) may perform `$action` on the entity. Use this for conditional rendering or branching logic.
+Retorna `true` se o usuário atual, ou o usuário passado como segundo argumento, puder executar `$action` sobre a entidade. Use isso para renderização condicional ou lógica de desvio.
 
 ```php  theme={null}
 if ($agent->canUser('edit')) {
@@ -72,7 +72,7 @@ if ($event->canUser('publish')) {
 
 ### `$entity->checkPermission($action)`
 
-Like `canUser`, but throws `MapasCulturais\Exceptions\PermissionDenied` instead of returning `false`. Use at the start of write operations to guard against unauthorized access.
+Funciona como `canUser`, mas lança `MapasCulturais\Exceptions\PermissionDenied` em vez de retornar `false`. Use no início de operações de escrita para bloquear acesso não autorizado.
 
 ```php  theme={null}
 $entity->checkPermission('edit');
@@ -83,7 +83,7 @@ $entity->checkPermission('view');
 
 ### `$user->is($role)`
 
-Checks whether the user has a given role. Works for both named roles and the virtual `guest` role.
+Verifica se o usuário possui um determinado papel. Funciona tanto para papéis nomeados quanto para o papel virtual `guest`.
 
 ```php  theme={null}
 $user->is('admin');      // has admin role
@@ -101,7 +101,7 @@ $canEdit = $user->can('edit', $space);
 
 ### `$app->getAuth()->getAuthenticatedUser()`
 
-Returns the authenticated `User` entity, or a `GuestUser` instance if no one is logged in.
+Retorna a entidade `User` autenticada ou uma instância de `GuestUser` se ninguém estiver logado.
 
 ```php  theme={null}
 $user = $app->getAuth()->getAuthenticatedUser();
@@ -122,23 +122,23 @@ public function GET_myAction() {
 
 ## Generic permission rules
 
-The `Entity` base class applies these rules before any entity-specific logic:
+A classe base `Entity` aplica estas regras antes de qualquer lógica específica de entidade:
 
 <AccordionGroup>
-  <Accordion title="Guests cannot modify anything">
-    Any write action (`create`, `edit`, `delete`, etc.) automatically returns `false` for unauthenticated visitors, regardless of the entity type.
+  <Accordion title="Visitantes não podem modificar nada">
+    Qualquer ação de escrita (`create`, `edit`, `delete` etc.) retorna automaticamente `false` para visitantes não autenticados, independentemente do tipo de entidade.
   </Accordion>
 
-  <Accordion title="Admins can do anything">
-    Users with the `admin` role pass all permission checks. This is evaluated early in `canUser()` so that admin overrides apply universally without requiring per-entity handling.
+  <Accordion title="Admins podem fazer tudo">
+    Usuários com o papel `admin` passam por todas as checagens de permissão. Isso é avaliado cedo em `canUser()`, para que o override de admin se aplique de forma universal sem exigir tratamento por entidade.
   </Accordion>
 
-  <Accordion title="Owners can modify their own entities">
-    The user who created an entity (its `owner`) can edit and delete it. Ownership is determined by comparing the entity's `owner` agent to the agents belonging to the current user.
+  <Accordion title="Proprietários podem modificar suas próprias entidades">
+    O usuário que criou uma entidade (seu `owner`) pode editá-la e excluí-la. A titularidade é determinada comparando o agente `owner` da entidade com os agentes pertencentes ao usuário atual.
   </Accordion>
 
-  <Accordion title="Agent relations with control">
-    If an agent has been added to an entity's agent relations with the `@control` flag, the user owning that agent can also modify the entity. This is how collaborative management of a shared space or event is enabled.
+  <Accordion title="Relações de agente com controle">
+    Se um agente foi adicionado às relações da entidade com a flag `@control`, o usuário dono desse agente também pode modificar a entidade. É assim que o gerenciamento colaborativo de um espaço ou evento compartilhado é habilitado.
   </Accordion>
 </AccordionGroup>
 
@@ -194,7 +194,7 @@ if ($app->isAccessControlEnabled()) {
 
 ## Role management
 
-Roles are assigned and revoked through the `User` entity's `addRole` and `removeRole` methods. The role name must be registered in the application before it can be used.
+Papéis são atribuídos e revogados pelos métodos `addRole` e `removeRole` da entidade `User`. O nome do papel precisa estar registrado na aplicação antes de ser usado.
 
 ```php  theme={null}
 // Grant a role

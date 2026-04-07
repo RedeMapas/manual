@@ -1,22 +1,22 @@
 ---
-title: Registrations
+title: Inscrições
 ---
-> Registrations are applications submitted by cultural agents to opportunities, tracking the full lifecycle from draft to final decision.
+> Inscrições são candidaturas enviadas por agentes culturais para oportunidades, acompanhando todo o ciclo do rascunho à decisão final.
 
-A **Registration** (inscrição) is an application submitted by a cultural agent to an opportunity. It captures the applicant's responses to the opportunity's configured fields, attached files, and agent relations at the time of submission. Registrations move through a defined status lifecycle from creation to final decision.
+Uma **inscrição** é uma candidatura enviada por um agente cultural para uma oportunidade. Ela registra as respostas da pessoa proponente aos campos configurados da oportunidade, os arquivos anexados e as relações entre agentes no momento do envio. As inscrições percorrem um ciclo de status definido, da criação até a decisão final.
 
-## Registration status lifecycle
+## Ciclo de status da inscrição
 
 <Tabs>
-  <Tab title="Status codes">
-    | Code | Name                | Description                                          |
-    | ---- | ------------------- | ---------------------------------------------------- |
-    | `0`  | Draft               | Being filled in by the applicant. Not yet submitted. |
-    | `1`  | Sent (Pending)      | Submitted and awaiting evaluation.                   |
-    | `2`  | Invalid             | Declared invalid by an evaluator or administrator.   |
-    | `3`  | Not approved        | Evaluated and not selected.                          |
-    | `8`  | Waitlist            | On the waiting list (suplente).                      |
-    | `10` | Approved / Selected | Selected by the opportunity.                         |
+  <Tab title="Códigos de status">
+    | Código | Nome                | Descrição                                             |
+    | ------ | ------------------- | ----------------------------------------------------- |
+    | `0`    | Rascunho            | Está sendo preenchida pela pessoa proponente. Ainda não enviada. |
+    | `1`    | Enviada (pendente)  | Enviada e aguardando avaliação.                       |
+    | `2`    | Inválida            | Marcada como inválida por um avaliador ou administrador. |
+    | `3`    | Não aprovada        | Avaliada e não selecionada.                           |
+    | `8`    | Suplente            | Está na lista de espera.                              |
+    | `10`   | Aprovada / selecionada | Selecionada pela oportunidade.                    |
   </Tab>
 
   <Tab title="PHP constants">
@@ -31,166 +31,168 @@ A **Registration** (inscrição) is an application submitted by a cultural agent
   </Tab>
 </Tabs>
 
-```text  theme={null}
-Draft (0) ──send()──→ Sent / Pending (1)
-                              ↓
-               ┌──────────────┼──────────────┐
-           Invalid (2)  Not approved (3)  Waitlist (8)
-                                               ↓
-                                         Approved (10)
-```
+<Mermaid
+  chart={`
+flowchart TD
+    draft["Rascunho (0)"] -->|send()| sent["Enviada / pendente (1)"]
+    sent --> invalid["Inválida (2)"]
+    sent --> notApproved["Não aprovada (3)"]
+    sent --> waitlist["Suplente (8)"]
+    waitlist --> approved["Aprovada (10)"]
+`}
+/>
 
 <Note>
-  The `STATUS_SENT` constant equals `1`, which is the same value as `Entity::STATUS_ENABLED`. The registration's `status` field uses `0` (draft) as its default on creation.
+  A constante `STATUS_SENT` equivale a `1`, o mesmo valor de `Entity::STATUS_ENABLED`. O campo `status` da inscrição usa `0` (rascunho) como valor padrão na criação.
 </Note>
 
-## Key fields
+## Campos principais
 
-| Field                | Description                                                                                         |
+| Campo                | Descrição                                                                                           |
 | -------------------- | --------------------------------------------------------------------------------------------------- |
-| `number`             | Human-readable registration number with a configurable prefix. Generated automatically on creation. |
-| `category`           | Selected category, chosen from the opportunity's `registrationCategories` list.                     |
-| `proponentType`      | Proponent type chosen by the applicant from `registrationProponentTypes`.                           |
-| `range`              | Funding range or tier chosen from `registrationRanges`.                                             |
-| `owner`              | The agent submitting the registration. Required.                                                    |
-| `opportunity`        | The opportunity this registration belongs to. Required. Immutable after creation.                   |
-| `status`             | Current status code (see table above).                                                              |
-| `sentTimestamp`      | When the registration was submitted. Set automatically on `send()`.                                 |
-| `agentsData`         | JSON snapshot of agent data captured at submission time.                                            |
-| `score`              | Numeric score computed from technical evaluations.                                                  |
-| `eligible`           | Whether the registration passed eligibility checks.                                                 |
-| `consolidatedResult` | Final result string produced by the evaluation method.                                              |
-| `editableUntil`      | Deadline for applicant to edit specific fields after submission.                                    |
-| `editableFields`     | List of fields the applicant is allowed to edit post-submission.                                    |
+| `number`             | Número legível da inscrição, com prefixo configurável. Gerado automaticamente na criação.           |
+| `category`           | Categoria selecionada, escolhida na lista `registrationCategories` da oportunidade.                 |
+| `proponentType`      | Tipo de proponente escolhido a partir de `registrationProponentTypes`.                              |
+| `range`              | Faixa ou categoria de apoio escolhida em `registrationRanges`.                                      |
+| `owner`              | Agente que envia a inscrição. Obrigatório.                                                          |
+| `opportunity`        | Oportunidade à qual esta inscrição pertence. Obrigatória. Imutável após a criação.                  |
+| `status`             | Código de status atual, conforme a tabela acima.                                                    |
+| `sentTimestamp`      | Momento em que a inscrição foi enviada. Definido automaticamente em `send()`.                       |
+| `agentsData`         | Snapshot JSON dos dados dos agentes capturados no momento do envio.                                 |
+| `score`              | Pontuação numérica calculada a partir das avaliações técnicas.                                      |
+| `eligible`           | Indica se a inscrição passou pelas verificações de elegibilidade.                                   |
+| `consolidatedResult` | Resultado final em texto produzido pelo método de avaliação.                                        |
+| `editableUntil`      | Prazo até o qual a pessoa proponente pode editar campos específicos após o envio.                   |
+| `editableFields`     | Lista de campos que a pessoa proponente pode editar após o envio.                                   |
 
-## Registration fields
+## Campos da inscrição
 
-Opportunities configure what information applicants must provide through:
+Oportunidades configuram quais informações as pessoas candidatas devem fornecer por meio de:
 
-* **`RegistrationFieldConfiguration`** — form fields (text, select, checkbox, date, number, etc.)
-* **`RegistrationFileConfiguration`** — file upload requirements
-* **`RegistrationStep`** — named groups of fields for multi-step forms
+* **`RegistrationFieldConfiguration`** — campos de formulário, como texto, seleção, checkbox, data e número
+* **`RegistrationFileConfiguration`** — exigências de upload de arquivo
+* **`RegistrationStep`** — grupos nomeados de campos para formulários em múltiplas etapas
 
-Field responses are stored as entity metadata with keys prefixed by `field_`. The field visibility system supports:
+As respostas dos campos são armazenadas como metadados de entidade com chaves prefixadas por `field_`. O sistema de visibilidade de campos suporta:
 
-* **Category-based visibility** — fields shown only to applicants of a specific category.
-* **Proponent-type-based visibility** — fields shown only to applicants of a specific proponent type.
-* **Range-based visibility** — fields shown only to applicants in a specific funding range.
-* **Conditional fields** — fields shown only when another field has a specific value.
+* **visibilidade por categoria** — campos mostrados apenas para candidaturas de uma categoria específica
+* **visibilidade por tipo de proponente** — campos mostrados apenas para determinado tipo de proponente
+* **visibilidade por faixa** — campos mostrados apenas para quem concorre em uma faixa específica
+* **campos condicionais** — campos exibidos apenas quando outro campo possui um valor específico
 
 ```php  theme={null}
-// Check if a field should be displayed for the current registration
+// Verifica se um campo deve ser exibido para a inscrição atual
 if ($registration->isFieldVisisble($fieldConfig)) {
-    // render the field
+    // renderiza o campo
 }
 ```
 
-## Submitting a registration
+## Envio da inscrição
 
-When the applicant calls `send()`, the platform:
+Quando a pessoa proponente chama `send()`, a plataforma:
 
-1. Validates all required fields, file attachments, and agent relations.
-2. Captures a JSON snapshot of the owner agent's data and any related agents into `agentsData`.
-3. Captures a snapshot of the linked space (if any) into `_spaceData`.
-4. Sets `status` to `STATUS_SENT` and records `sentTimestamp`.
-5. Triggers permission cache recreation.
+1. Valida todos os campos obrigatórios, anexos e relações entre agentes.
+2. Captura um snapshot JSON dos dados do agente proprietário e dos agentes relacionados em `agentsData`.
+3. Captura um snapshot do espaço vinculado, se houver, em `_spaceData`.
+4. Define `status` como `STATUS_SENT` e registra `sentTimestamp`.
+5. Dispara a recriação do cache de permissões.
 
 ```php  theme={null}
 $registration->send();
 ```
 
 <Warning>
-  Once submitted, the opportunity and agent owner of a registration cannot be changed. Attempting to modify `opportunity` after creation is silently ignored.
+  Depois de enviada, a oportunidade e o agente proprietário de uma inscrição não podem mais ser alterados. Tentar modificar `opportunity` após a criação é ignorado silenciosamente.
 </Warning>
 
-## Agent relations in registrations
+## Relações de agente nas inscrições
 
-Registrations can have multiple related agents beyond the primary owner. These are configured through `RegistrationAgentRelation` and are defined by the opportunity's `RegistrationAgentRelation` definitions. Common groups include:
+Inscrições podem ter múltiplos agentes relacionados além do proprietário principal. Essas relações são configuradas por `RegistrationAgentRelation` e definidas nas próprias regras da oportunidade. Grupos comuns incluem:
 
-* `owner` — the primary applicant agent (always required)
-* `coletivo` — an associated collective agent
-* `instituicao` — an associated institutional agent
+* `owner` — agente principal da candidatura, sempre obrigatório
+* `coletivo` — agente coletivo associado
+* `instituicao` — agente institucional associado
 
-Each related agent must confirm participation (relation status ≥ 0) before the registration can be submitted.
+Cada agente relacionado precisa confirmar participação, com `status` da relação ≥ 0, antes que a inscrição possa ser enviada.
 
-## Space relation
+## Relação com espaço
 
-If the opportunity requires a space, the applicant links one through `RegistrationSpaceRelation`. The space owner must authorize the link. The platform validates:
+Se a oportunidade exigir um espaço, a pessoa proponente vincula um por `RegistrationSpaceRelation`. O proprietário do espaço precisa autorizar o vínculo. A plataforma valida:
 
-* Whether a space is required (`useSpaceRelationIntituicao = 'required'`).
-* Whether a linked space has been authorized (status ≥ 0).
+* se o espaço é obrigatório (`useSpaceRelationIntituicao = 'required'`)
+* se o espaço vinculado já foi autorizado (`status` ≥ 0)
 
-## Evaluation flow
+## Fluxo de avaliação
 
 <Steps>
-  <Step title="Submission">
-    The applicant submits the registration (status → Sent).
+  <Step title="Envio">
+    A pessoa proponente envia a inscrição (status → Enviada).
   </Step>
 
-  <Step title="Committee assignment">
-    Evaluators are assigned to registrations either automatically or manually. Each evaluator is a member of the opportunity's `EvaluationMethodConfiguration` committee.
+  <Step title="Distribuição para a comissão">
+    Avaliadores são atribuídos às inscrições de forma automática ou manual. Cada avaliador é membro da comissão definida em `EvaluationMethodConfiguration`.
   </Step>
 
-  <Step title="Individual evaluation">
-    Each committee member creates or updates a `RegistrationEvaluation` record with their assessment. Evaluations move through their own status lifecycle: Draft → Evaluated (`STATUS_EVALUATED = 1`) → Sent (`STATUS_SENT = 2`).
+  <Step title="Avaliação individual">
+    Cada membro da comissão cria ou atualiza um registro `RegistrationEvaluation` com sua análise. As avaliações têm um ciclo próprio: Rascunho → Avaliada (`STATUS_EVALUATED = 1`) → Enviada (`STATUS_SENT = 2`).
   </Step>
 
-  <Step title="Result consolidation">
-    After each evaluation is saved or updated, the platform recomputes the consolidated result using the opportunity's evaluation method and stores it in `consolidatedResult`.
+  <Step title="Consolidação do resultado">
+    Após cada avaliação ser salva ou atualizada, a plataforma recalcula o resultado consolidado com base no método de avaliação da oportunidade e o armazena em `consolidatedResult`.
   </Step>
 
-  <Step title="Final status">
-    An administrator sets the final status (approved, waitlist, not approved, invalid) based on consolidated results.
+  <Step title="Status final">
+    Um administrador define o status final, como aprovada, suplente, não aprovada ou inválida, com base nos resultados consolidados.
   </Step>
 </Steps>
 
-## RegistrationEvaluation
+## `RegistrationEvaluation`
 
-A `RegistrationEvaluation` records a single evaluator's assessment of one registration.
+Uma `RegistrationEvaluation` registra a avaliação individual de um avaliador sobre uma inscrição.
 
-| Field            | Description                                                                       |
+| Campo            | Descrição                                                                       |
 | ---------------- | --------------------------------------------------------------------------------- |
-| `registration`   | The registration being evaluated.                                                 |
-| `user`           | The evaluator's user account.                                                     |
-| `evaluationData` | JSON object with the evaluator's responses, structured per the evaluation method. |
-| `result`         | The computed result string for this individual evaluation.                        |
-| `status`         | `0` = draft, `1` = evaluated (completed), `2` = sent (submitted to committee).    |
-| `isTiebreaker`   | Whether this evaluation was submitted to break a tie.                             |
-| `committee`      | The name of the committee group this evaluator belongs to.                        |
-| `sentTimestamp`  | When the evaluation was submitted.                                                |
+| `registration`   | Inscrição que está sendo avaliada.                                               |
+| `user`           | Conta de usuário do avaliador.                                                   |
+| `evaluationData` | Objeto JSON com as respostas do avaliador, estruturado conforme o método de avaliação. |
+| `result`         | Resultado textual calculado para essa avaliação individual.                      |
+| `status`         | `0` = rascunho, `1` = avaliada, `2` = enviada para a comissão.                   |
+| `isTiebreaker`   | Indica se a avaliação foi enviada para desempate.                                |
+| `committee`      | Nome do grupo de comissão ao qual o avaliador pertence.                          |
+| `sentTimestamp`  | Momento em que a avaliação foi enviada.                                          |
 
 ```php  theme={null}
-// Submit all evaluations for the current user
+// Envia todas as avaliações do usuário atual
 $opportunity->sendUserEvaluations($user);
 ```
 
-## Evaluator distribution
+## Distribuição de avaliadores
 
-The platform supports per-registration evaluator exceptions:
+A plataforma suporta exceções de distribuição por inscrição:
 
-* **`valuersIncludeList`** — user IDs that must evaluate this registration regardless of the default distribution.
-* **`valuersExcludeList`** — user IDs that must not evaluate this registration.
-* **`valuers`** — the final computed list of assigned evaluators.
+* **`valuersIncludeList`** — IDs de usuário que obrigatoriamente devem avaliar essa inscrição, independentemente da distribuição padrão
+* **`valuersExcludeList`** — IDs de usuário que não devem avaliar essa inscrição
+* **`valuers`** — lista final calculada de avaliadores atribuídos
 
-## Post-submission editing
+## Edição após o envio
 
-Opportunity managers can allow applicants to edit specific fields after submission by setting `editableUntil` and `editableFields`. The applicant submits their edits via `sendEditableFields()`.
+Gestores da oportunidade podem permitir que a pessoa proponente edite campos específicos após o envio, configurando `editableUntil` e `editableFields`. As alterações são enviadas via `sendEditableFields()`.
 
 ```php  theme={null}
-// Grant post-submission editing rights
+// Concede direito de edição após o envio
 $registration->editableUntil = new DateTime('2024-06-30 23:59:59');
 $registration->editableFields = ['field_123', 'field_456'];
 $registration->save();
 ```
 
-## Seals on approval
+## Selos em caso de aprovação
 
-When an opportunity publishes its results, approved registrations trigger automatic seal assignments on the relevant agents (owner, collective, institution) based on the opportunity's `registrationSeals` metadata configuration.
+Quando uma oportunidade publica seus resultados, inscrições aprovadas disparam a atribuição automática de selos aos agentes relevantes, como proprietário, coletivo e instituição, com base na configuração `registrationSeals`.
 
-## Export
+## Exportação
 
-The Spreadsheets module provides export of registrations and evaluation data. Exports can be generated per opportunity phase and filtered by status.
+O módulo `Spreadsheets` fornece exportação de inscrições e dados de avaliação. As exportações podem ser geradas por fase da oportunidade e filtradas por status.
 
-## Accountability
+## Prestação de contas
 
-The OpportunityAccountability module extends the registration workflow to track the delivery of accountability reports and financial documents from approved applicants after the grant period.
+O módulo `OpportunityAccountability` estende o fluxo de inscrições para acompanhar a entrega de relatórios de prestação de contas e documentos financeiros pelas pessoas aprovadas após o período de execução.

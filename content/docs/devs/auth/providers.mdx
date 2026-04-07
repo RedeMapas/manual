@@ -1,29 +1,29 @@
 ---
-title: Authentication Providers
+title: Provedores de autenticação
 ---
-> Configure how users log in to your Mapas Culturais installation.
+> Configure como os usuários fazem login na sua instalação do Mapas Culturais.
 
-Mapas Culturais delegates authentication to pluggable **auth providers**. Each provider is a PHP class that extends the abstract `AuthProvider` base class and is responsible for identifying users, creating accounts on first login, and managing sessions.
+O Mapas Culturais delega a autenticação a **provedores de autenticação** plugáveis. Cada provedor é uma classe PHP que estende a classe abstrata `AuthProvider` e é responsável por identificar usuários, criar contas no primeiro login e gerenciar sessões.
 
-Set the active provider in `config/config.php` with the `auth.provider` key. Only one provider can be active at a time.
+Defina o provedor ativo em `config/config.php`, usando a chave `auth.provider`. Apenas um provedor pode ficar ativo por vez.
 
-## Available providers
+## Provedores disponíveis
 
 <CardGroup cols={2}>
   <Card title="Fake" icon="flask" color="#e57373">
-    Development and testing only. Shows a user list and a simple creation form — no external service required.
+    Apenas para desenvolvimento e testes. Exibe uma lista de usuários e um formulário simples de criação, sem depender de serviço externo.
   </Card>
 
   <Card title="OpauthOpenId" icon="id-card">
-    Generic OpenID provider. Works with any OpenID-compatible server, including self-hosted Id da Cultura instances.
+    Provedor OpenID genérico. Funciona com qualquer servidor compatível com OpenID, incluindo instâncias auto-hospedadas do Id da Cultura.
   </Card>
 
   <Card title="OpauthLoginCidadao" icon="landmark">
-    Brazilian federal government SSO (Login Cidadão / ID Cultura). Uses OAuth 2.0 with custom endpoints.
+    SSO do governo federal brasileiro, como Login Cidadão e ID Cultura. Usa OAuth 2.0 com endpoints próprios.
   </Card>
 
   <Card title="OpauthAuthentik" icon="shield-check">
-    Modern OAuth 2.0 / OIDC provider. Suitable for organizations that self-host Authentik as their identity provider.
+    Provedor moderno de OAuth 2.0 / OIDC. Adequado para organizações que usam Authentik auto-hospedado como provedor de identidade.
   </Card>
 </CardGroup>
 
@@ -33,19 +33,19 @@ Set the active provider in `config/config.php` with the `auth.provider` key. Onl
 
 **Class:** `MapasCulturais\AuthProviders\Fake`
 
-The Fake provider bypasses all external authentication. When a user visits the login page, they see a searchable list of every account in the database and a form to create new accounts on the spot.
+O provedor Fake ignora toda autenticação externa. Quando uma pessoa acessa a página de login, vê uma lista pesquisável de todas as contas no banco de dados e um formulário para criar novas contas na hora.
 
 <Warning>
-  Never use the Fake provider in a production environment. It allows anyone with access to the login page to authenticate as any user, including administrators.
+  Nunca use o provedor Fake em produção. Ele permite que qualquer pessoa com acesso à página de login se autentique como qualquer usuário, incluindo administradores.
 </Warning>
 
 ```php config/config.php theme={null}
 'auth.provider' => 'Fake',
 ```
 
-### Development shortcut: FAKE\_AUTH environment variable
+### Atalho de desenvolvimento: variável de ambiente `FAKE_AUTH`
 
-In Docker-based dev environments you can enable fake authentication through the `FakeAuthentication` module by setting the `FAKE_AUTH` environment variable instead of editing config files.
+Em ambientes de desenvolvimento baseados em Docker, você pode habilitar a autenticação fake via módulo `FakeAuthentication` definindo a variável `FAKE_AUTH`, em vez de editar arquivos de configuração.
 
 ```dotenv .env theme={null}
 FAKE_AUTH=true
@@ -57,10 +57,10 @@ FAKE_AUTH=true
 
 **Class:** `MapasCulturais\AuthProviders\OpauthOpenId`
 
-This provider uses the [Opauth](http://opauth.org/) library with the OpenID strategy. It works with any standards-compliant OpenID provider, including self-hosted [Id da Cultura](https://github.com/hacklabr/mapasculturais-openid) instances.
+Esse provedor usa a biblioteca [Opauth](http://opauth.org/) com a estratégia OpenID. Ele funciona com qualquer provedor OpenID aderente ao padrão, incluindo instâncias auto-hospedadas do [Id da Cultura](https://github.com/hacklabr/mapasculturais-openid).
 
 <Note>
-  Id da Cultura (the self-hosted OpenID server) is a separate project from **ID Cultura** — the federal government service managed by the Ministry of Culture and based on Login Cidadão. See [OpauthLoginCidadao](#opauthlogincidadao) for that integration.
+  Id da Cultura, o servidor OpenID auto-hospedado, é um projeto separado do **ID Cultura**, serviço federal gerido pelo Ministério da Cultura e baseado em Login Cidadão. Veja [OpauthLoginCidadao](#opauthlogincidadao) para essa integração.
 </Note>
 
 ```php config/config.php theme={null}

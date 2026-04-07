@@ -1,7 +1,7 @@
 import defaultMdxComponents from 'fumadocs-ui/mdx';
 import type { MDXComponents } from 'mdx/types';
 import { ImageZoom } from 'fumadocs-ui/components/image-zoom';
-import { Card, Cards } from 'fumadocs-ui/components/card';
+import { Card as FumaCard, Cards } from 'fumadocs-ui/components/card';
 import { Step, Steps } from 'fumadocs-ui/components/steps';
 import {
   Tabs as FumaTabs,
@@ -14,12 +14,65 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { Mermaid } from '@/components/mdx/mermaid';
 import { Children, cloneElement, isValidElement } from 'react';
 import type { ComponentProps, ReactElement, ReactNode } from 'react';
+import * as LucideIcons from 'lucide-react';
 
 type TabChildProps = {
   title?: ReactNode;
   value?: string;
   children?: ReactNode;
 };
+
+const iconMap: Record<string, React.ComponentType<any>> = {
+  'rocket': LucideIcons.Rocket,
+  'map': LucideIcons.Map,
+  'server': LucideIcons.Server,
+  'code': LucideIcons.Code,
+  'user': LucideIcons.User,
+  'users': LucideIcons.Users,
+  'building': LucideIcons.Building,
+  'building-2': LucideIcons.Building2,
+  'monitor': LucideIcons.Monitor,
+  'map-pin': LucideIcons.MapPin,
+  'calendar': LucideIcons.Calendar,
+  'folder': LucideIcons.Folder,
+  'megaphone': LucideIcons.Megaphone,
+  'hand-coins': LucideIcons.HandCoins,
+  'heart-handshake': LucideIcons.HeartHandshake,
+  'flask': LucideIcons.FlaskConical,
+  'music': LucideIcons.Music,
+  'image': LucideIcons.Image,
+  'presentation': LucideIcons.Presentation,
+  'scale': LucideIcons.Scale,
+  'list-checks': LucideIcons.ListChecks,
+  'file-check': LucideIcons.FileCheck,
+  'download': LucideIcons.Download,
+  'magnifying-glass': LucideIcons.Search,
+  'diagram-project': LucideIcons.GitGraph,
+  'palette': LucideIcons.Palette,
+  'id-card': LucideIcons.IdCard,
+  'landmark': LucideIcons.Landmark,
+  'shield-check': LucideIcons.ShieldCheck,
+  'puzzle-piece': LucideIcons.Puzzle,
+  'circle-dot': LucideIcons.CircleDot,
+  'database': LucideIcons.Database,
+  'webhook': LucideIcons.Webhook,
+  'award': LucideIcons.Award,
+};
+
+type CardProps = ComponentProps<typeof FumaCard> & {
+  icon?: string;
+};
+
+function Card({ icon, ...props }: CardProps) {
+  const IconComponent = icon ? iconMap[icon] : undefined;
+  return (
+    <FumaCard
+      {...props}
+      icon={IconComponent ? <IconComponent /> : undefined}
+      className={`${props.className || ''} [&_div_svg]:size-8`}
+    />
+  );
+}
 
 function CardGroup(props: ComponentProps<typeof Cards>) {
   return <Cards {...props} />;

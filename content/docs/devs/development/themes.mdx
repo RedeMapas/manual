@@ -1,11 +1,11 @@
 ---
-title: Themes
+title: Temas
 ---
-> Create and customize installation themes: directory layout, asset enqueueing, template parts, view inheritance, and RedeMapas-specific features.
+> Crie e personalize temas da instalação: organização de diretórios, enqueue de assets, template parts, herança de views e particularidades do RedeMapas.
 
-A theme in Mapas Culturais controls every visual aspect of an installation: HTML templates, stylesheets, scripts, images, and page content. Each theme is a PHP class that extends `MapasCulturais\Theme`.
+No Mapas Culturais, um tema controla todos os aspectos visuais de uma instalação: templates HTML, folhas de estilo, scripts, imagens e conteúdo de página. Cada tema é uma classe PHP que estende `MapasCulturais\Theme`.
 
-The active theme is set in configuration:
+O tema ativo é definido em configuração:
 
 ```php  theme={null}
 // dev/config.d/0.main.php
@@ -14,26 +14,26 @@ return [
 ];
 ```
 
-## Available themes
+## Temas disponíveis
 
-| Theme             | Namespace                               | Description                                      |
+| Tema              | Namespace                               | Descrição                                        |
 | ----------------- | --------------------------------------- | ------------------------------------------------ |
-| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | First-generation base theme                      |
-| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Second-generation base theme (current default)   |
-| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | RedeMapas reference installation; extends BaseV2 |
-| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Ministry of Culture installation                 |
-| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Funarte installation                             |
-| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Periferia Viva installation                      |
-| `Pnab`            | `MapasCulturais\Themes\Pnab`            | PNAB installation                                |
-| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Multi-tenant subsite theme                       |
+| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | Tema base de primeira geração                    |
+| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Tema base de segunda geração, padrão atual       |
+| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Instalação de referência do RedeMapas; estende BaseV2 |
+| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Instalação do Ministério da Cultura              |
+| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Instalação da Funarte                            |
+| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Instalação Periferia Viva                        |
+| `Pnab`            | `MapasCulturais\Themes\Pnab`            | Instalação PNAB                                  |
+| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Tema de subsite em ambiente multi-tenant         |
 
-The inheritance chain for the active RedeMapas theme is:
+A cadeia de herança do tema ativo do RedeMapas é:
 
 ```
 RedeMapas → BaseV2 → BaseV1
 ```
 
-Files in a child theme override the corresponding file from any parent theme. The lookup walks up the chain until a matching file is found.
+Arquivos em um tema filho sobrescrevem o arquivo correspondente de qualquer tema pai. A busca sobe pela cadeia até encontrar uma correspondência.
 
 ## Historical ecosystem themes
 
@@ -51,9 +51,9 @@ Treat these names as historical references, not as a supported catalog for the c
 
 In the RedeMapas installation, the active theme is not just an example folder. It is a first-class part of the deployment and should be treated carefully during maintenance.
 
-The old developer guide highlighted one operational detail that is still easy to miss: changes to the active theme often need to be validated together with deployment config, authentication UI, and PWA / Web Push behavior, because the theme is where those installation-specific concerns meet.
+O guia antigo de desenvolvedores destacava um detalhe operacional que ainda passa despercebido com facilidade: alterações no tema ativo frequentemente precisam ser validadas junto com a configuração de deploy, a UI de autenticação e o comportamento de PWA / Web Push, porque é no tema que essas preocupações específicas da instalação se encontram.
 
-When auditing a UI or login issue, always confirm whether the behavior comes from:
+Ao auditar um problema de interface ou login, sempre confirme se o comportamento vem de:
 
 * framework core
 * module/plugin code
@@ -88,7 +88,7 @@ src/themes/MyTheme/
 
 ## Theme class
 
-The theme class lives in `Theme.php` and must extend the parent theme class:
+A classe do tema fica em `Theme.php` e deve estender a classe do tema pai:
 
 ```php  theme={null}
 <?php
@@ -152,7 +152,7 @@ Asset groups and their output order:
 | `vendor` | JS   | 4th          |
 | `app`    | JS   | 5th          |
 
-To get the public URL of an asset without printing it:
+Para obter a URL pública de um asset sem imprimi-la:
 
 ```php  theme={null}
 $url = $this->asset('img/logo.png', false);
@@ -186,7 +186,7 @@ Inside `layouts/parts/entity-card.php`, passed variables are available directly:
 
 ## Overriding parent theme views
 
-Any file under `views/`, `layouts/`, `layouts/parts/`, or `assets/` can be overridden by placing a file with the same relative path in the child theme. The framework searches the theme hierarchy from child to parent and uses the first match found.
+Qualquer arquivo em `views/`, `layouts/`, `layouts/parts/` ou `assets/` pode ser sobrescrito colocando um arquivo com o mesmo caminho relativo no tema filho. O framework percorre a hierarquia de temas do filho para o pai e usa a primeira correspondência encontrada.
 
 To override the default header:
 
@@ -199,14 +199,14 @@ To override the default header:
 
 ## Static Markdown pages
 
-Pages in `layouts/pages/` are Markdown files rendered by the framework. The URL is derived from the filename:
+Páginas em `layouts/pages/` são arquivos Markdown renderizados pelo framework. A URL é derivada do nome do arquivo:
 
 | File                  | URL                      |
 | --------------------- | ------------------------ |
 | `pages/about.md`      | `/page/site/about/`      |
 | `pages/how-to-use.md` | `/page/site/how-to-use/` |
 
-The first `h1` heading in the file becomes the browser tab title.
+O primeiro cabeçalho `h1` do arquivo se torna o título da aba do navegador.
 
 ## Variables available in views
 
