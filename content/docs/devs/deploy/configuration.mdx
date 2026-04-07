@@ -1,0 +1,142 @@
+---
+title: Configuração
+---
+> Variáveis de ambiente e opções de configuração de uma instalação Mapas Culturais.
+
+Mapas Culturais is configured through environment variables (read at runtime) and PHP config files in the `config/` directory. Development overrides live in `dev/config.d/`.
+
+## Environment Variables
+
+The following environment variables control runtime behavior:
+
+### Database
+
+| Variable  | Description       | Example    |
+| --------- | ----------------- | ---------- |
+| `DB_HOST` | PostgreSQL host   | `postgres` |
+| `DB_PORT` | PostgreSQL port   | `5432`     |
+| `DB_NAME` | Database name     | `mapas`    |
+| `DB_USER` | Database user     | `mapas`    |
+| `DB_PASS` | Database password | `secret`   |
+
+### Cache & Sessions
+
+| Variable             | Description                                            | Example              |
+| -------------------- | ------------------------------------------------------ | -------------------- |
+| `REDIS_CACHE`        | Redis DSN for cache (empty = APCu/filesystem fallback) | `redis://redis:6379` |
+| `SESSIONS_SAVE_PATH` | Redis DSN for PHP sessions (empty = filesystem)        | `tcp://redis:6379`   |
+
+### Application
+
+| Variable           | Default | Description                                   |
+| ------------------ | ------- | --------------------------------------------- |
+| `APP_DEBUG`        | `false` | Enable debug mode; logs at `var/logs/app.log` |
+| `BASE_URL`         | —       | Public base URL (must end with `/`)           |
+| `DISABLE_SUBSITES` | `false` | Disable multi-tenancy subsite support         |
+| `BUILD_ASSETS`     | `0`     | Build frontend assets on container start      |
+| `NUM_PROCESSES`    | `2`     | PHP worker processes                          |
+| `JOBS_INTERVAL`    | `60`    | Background job runner interval (seconds)      |
+
+### Mailer
+
+| Variable           | Description          | Example                     |
+| ------------------ | -------------------- | --------------------------- |
+| `MAILER_TRANSPORT` | Symfony Mailer DSN   | `smtp://mailpit:1025`       |
+| `MAILER_FROM`      | Sender email address | `noreply@mapas.example.com` |
+
+<Tip>
+  Supported mailer transports: `smtp://`, `ses+smtp://` (Amazon SES), `mailgun+smtp://`, `sendgrid+smtp://`, `mailchimp+mandrill+smtp://`.
+</Tip>
+
+### reCAPTCHA
+
+| Variable                   | Description                  |
+| -------------------------- | ---------------------------- |
+| `GOOGLE_RECAPTCHA_SITEKEY` | Google reCAPTCHA v2 site key |
+| `GOOGLE_RECAPTCHA_SECRET`  | Google reCAPTCHA v2 secret   |
+
+### Web Push (RedeMapas)
+
+| Variable            | Description                      |
+| ------------------- | -------------------------------- |
+| `VAPID_SUBJECT`     | VAPID subject (`mailto:` or URL) |
+| `VAPID_PUBLIC_KEY`  | VAPID public key                 |
+| `VAPID_PRIVATE_KEY` | VAPID private key                |
+
+## Authentication Provider
+
+Set the authentication provider in your config file:
+
+```php config/config.php theme={null}
+return [
+    'auth.provider' => 'OpauthLoginCidadao',
+    'auth.config' => [
+        'client_id'          => 'YOUR_CLIENT_ID',
+        'client_secret'      => 'YOUR_CLIENT_SECRET',
+        'auth_endpoint'      => 'https://id.cultura.gov.br/oauth/v2/auth',
+        'token_endpoint'     => 'https://id.cultura.gov.br/oauth/v2/token',
+        'user_info_endpoint' => 'https://id.cultura.gov.br/api/v1/person.json',
+        'timeout'            => '24 hours',
+    ],
+];
+```
+
+See [Authentication Providers](/docs/devs/auth/providers) for all available providers.
+
+## Enabling Modules
+
+Register modules in your config file:
+
+```php config/config.php theme={null}
+return [
+    'plugins' => [
+        'Opportunities'            => ['namespace' => 'Opportunities'],
+        'OpportunityPhases'        => ['namespace' => 'OpportunityPhases'],
+        'EvaluationMethodSimple'   => ['namespace' => 'EvaluationMethodSimple'],
+        'Notifications'            => ['namespace' => 'Notifications'],
+        'MailNotification'         => ['namespace' => 'MailNotification'],
+        'Seals'                    => ['namespace' => 'Seals'],
+        'LGPD'                     => ['namespace' => 'LGPD'],
+        'Reports'                  => ['namespace' => 'Reports'],
+        'GeoDivisions'             => ['namespace' => 'GeoDivisions'],
+    ],
+];
+```
+
+See [Modules](/docs/devs/development/modules) for all available modules.
+
+## Multitenancy (Subsites)
+
+To enable multiple sub-installations on the same server, ensure `DISABLE_SUBSITES` is not set (or set to `false`). Each subsite maps to a domain and uses a separate theme namespace.
+
+<Warning>
+  Subsite support is disabled in the development environment by default (`DISABLE_SUBSITES=true` in `compose.yaml`).
+</Warning>
+
+## Debug Mode
+
+Enable debug mode to get detailed error pages and verbose logging:
+
+```bash  theme={null}
+APP_DEBUG=true
+```
+
+Logs are written to `var/logs/app.log` inside the container.
+
+## Database Migrations
+
+Migrations are defined in `src/db-updates.php` and applied automatically when the container starts. No manual step is needed. To apply updates manually:
+
+```bash  theme={null}
+docker compose exec mapas php /var/www/src/tools/apply-updates.php
+```
+
+## RedeMapas-specific operational notes
+
+The RedeMapas installation adds a few concerns that are easy to overlook if you read the config only as a generic Mapas deployment:
+
+* HTTPS is effectively required for realistic PWA and Web Push testing
+* authentication behavior may depend on Ministry of Culture or self-hosted provider endpoints
+* the active installation theme can introduce environment-sensitive behavior such as custom logout flows, manifests, and push subscription handling
+
+Treat configuration, theme behavior, and deployment topology as a single operational unit during debugging.

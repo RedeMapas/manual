@@ -1,0 +1,139 @@
+---
+title: Projects
+---
+> Projects group cultural initiatives, events, and opportunities under a common organizational structure.
+
+A **Project** is an organizational container that groups related cultural activities. Projects represent funded programs, community initiatives, research efforts, cultural residencies, or any other multi-activity endeavor that benefits from a shared context and timeline.
+
+<CardGroup cols={3}>
+  <Card title="Funded programs" icon="hand-coins">
+    Government or privately funded cultural initiatives with a defined scope and budget.
+  </Card>
+
+  <Card title="Community programs" icon="heart-handshake">
+    Ongoing community-driven activities, workshops, and cultural programs.
+  </Card>
+
+  <Card title="Research & residencies" icon="flask">
+    Cultural research projects, artistic residencies, and academic programs.
+  </Card>
+</CardGroup>
+
+## Key fields
+
+| Field              | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `name`             | Project name. Required.                                                        |
+| `shortDescription` | Brief summary, up to 400 characters. Required.                                 |
+| `longDescription`  | Full description with rich text support.                                       |
+| `type`             | Numeric type identifier. Required. Configured per installation.                |
+| `startsOn`         | Project start date. Optional; if provided, `endsOn` is also required.          |
+| `endsOn`           | Project end date. Must be greater than or equal to `startsOn`.                 |
+| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash. |
+| `createTimestamp`  | When the project was created. Read-only.                                       |
+| `updateTimestamp`  | When the project was last modified. Read-only.                                 |
+
+## Status lifecycle
+
+Projects follow a standard entity lifecycle:
+
+```text  theme={null}
+Draft (0) → Published (1) → Archived (-2)
+                           → Disabled (-9)
+                           → Trash (-10)
+```
+
+A project in **Draft** status is only visible to its owner and collaborators. Publishing makes it visible in the public catalog.
+
+## Hierarchical projects
+
+Projects support a parent–child hierarchy via the `parent` / `_children` relationship. This allows modeling a large program (parent project) with sub-programs or phases (child projects).
+
+```php  theme={null}
+// A project can have sub-projects (children)
+$subProject->parent = $parentProject;
+$subProject->save();
+```
+
+## Relations to other entities
+
+<CardGroup cols={2}>
+  <Card title="Owner agent" icon="user">
+    Every project is owned by one agent. Ownership determines who controls the project by default.
+  </Card>
+
+  <Card title="Events" icon="calendar">
+    Projects can contain events. Events that belong to a project are accessible via `$project->events`. When a project is deleted, its events are unlinked (not deleted).
+  </Card>
+
+  <Card title="Opportunities" icon="megaphone">
+    Projects can be linked to opportunities through `ProjectOpportunity` relations, enabling calls for proposals attached to a project context.
+  </Card>
+
+  <Card title="Agent relations" icon="users">
+    Additional agents (collaborators, partners) can be related to a project through `ProjectAgentRelation`, enabling multi-agent governance.
+  </Card>
+</CardGroup>
+
+## Event management within projects
+
+Project managers can create and manage events directly within a project. The following permission rules apply:
+
+| Action                     | Who can perform it                                  |
+| -------------------------- | --------------------------------------------------- |
+| Create events in a project | Project owner or agents with `@control` permission. |
+| Request event relation     | Project owner, admins, or related agents.           |
+
+<Note>
+  If the workflow system is enabled, linking an event to a project may require approval from the project owner via a `RequestEventProject` workflow request.
+</Note>
+
+## Registration period
+
+Projects have an optional registration period defined by `startsOn` and `endsOn`. The `isRegistrationOpen()` method returns `true` if the current date falls within this window.
+
+```php  theme={null}
+if ($project->isRegistrationOpen()) {
+    // accept submissions
+}
+```
+
+<Warning>
+  If you provide a `startsOn` date, you must also provide an `endsOn` date. The end date must be on or after the start date. Saving a project with only one of the two dates set will fail validation.
+</Warning>
+
+## Seals and verification
+
+Projects can receive **seals** through `ProjectSealRelation`, allowing administrators to certify or endorse projects publicly.
+
+## Tags and taxonomies
+
+Projects support term relations (`ProjectTermRelation`) for tagging and classification across vocabularies such as cultural area, target audience, and geographic scope.
+
+## Creating a project
+
+<Steps>
+  <Step title="Navigate to projects">
+    From your dashboard, select **My Projects**.
+  </Step>
+
+  <Step title="Create a new project">
+    Click **New Project**, choose the project type, and fill in the required fields: name, short description, and type.
+  </Step>
+
+  <Step title="Set dates (optional)">
+    If the project has a defined timeline, set the start and end dates.
+  </Step>
+
+  <Step title="Add collaborators">
+    Invite other agents to collaborate by adding them as agent relations with the appropriate role.
+  </Step>
+
+  <Step title="Link events">
+    Create or associate events with the project to build up its activity schedule.
+  </Step>
+
+  <Step title="Publish">
+    Change the status from **Draft** to **Published** to make the project visible in the public catalog.
+  </Step>
+</Steps>

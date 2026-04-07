@@ -1,0 +1,194 @@
+---
+title: Visão Geral da API
+---
+> Introduction to the Mapas Culturais REST API — entities, endpoints, HTTP methods, authentication, and response format.
+
+## Introduction
+
+Mapas Culturais exposes a REST API that allows external systems to read, create, update, and delete cultural entities. All responses are JSON. The API is available on every installation and follows a consistent URL structure across entity types.
+
+## Base URL
+
+```
+{baseUrl}/api/{entity}/{action}
+```
+
+| Segment   | Description                                                       |
+| --------- | ----------------------------------------------------------------- |
+| `baseUrl` | Root URL of the installation, e.g. `https://mapas.cultura.gov.br` |
+| `entity`  | One of the supported entity types (see below)                     |
+| `action`  | The operation to perform — `find`, `findOne`, `describe`, etc.    |
+
+**Example:**
+
+```bash  theme={null}
+# Find all published agents, selecting id and name
+curl "https://your-instance.example.com/api/agent/find?@select=id,name&status=EQ(1)"
+```
+
+## Supported Entities
+
+| Entity slug    | Description                                             |
+| -------------- | ------------------------------------------------------- |
+| `agent`        | Individuals or collectives registered in the platform   |
+| `space`        | Physical or virtual cultural spaces                     |
+| `event`        | Cultural events with occurrences and schedules          |
+| `project`      | Cultural projects grouping events or opportunities      |
+| `opportunity`  | Calls for proposals, grants, and registration processes |
+| `registration` | Submissions made by agents to opportunities             |
+
+## HTTP Methods and Actions
+
+| HTTP method | URL pattern              | Description                                   |
+| ----------- | ------------------------ | --------------------------------------------- |
+| `GET`       | `/api/{entity}/find`     | Returns an array of matching entities         |
+| `GET`       | `/api/{entity}/findOne`  | Returns a single matching entity              |
+| `GET`       | `/api/{entity}/describe` | Returns the entity schema with field metadata |
+| `POST`      | `/{entity}/index`        | Creates a new entity                          |
+| `PATCH`     | `/{entity}/single/{id}`  | Partially updates an existing entity          |
+| `PUT`       | `/{entity}/single/{id}`  | Fully replaces an existing entity             |
+| `DELETE`    | `/{entity}/single/{id}`  | Soft-deletes an entity                        |
+
+<Note>
+  Write operations use URLs **without** the `/api/` prefix. For example: `POST /agent/index` to create an agent, `PATCH /agent/single/42` to update agent 42.
+</Note>
+
+<Note>
+  Write operations (`POST`, `PATCH`, `PUT`, `DELETE`) require authentication via JWT. Read-only `find` and `findOne` requests can be made without credentials for public entities.
+</Note>
+
+## Response Format
+
+### `find` — array of objects
+
+```json  theme={null}
+[
+  {
+    "id": 42,
+    "name": "Companhia do Teatro",
+    "status": 1,
+    "createTimestamp": { "date": "2023-04-01 10:00:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+    "updateTimestamp": { "date": "2024-01-15 14:30:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+    "@entityType": "agent"
+  }
+]
+```
+
+### `findOne` — single object
+
+```json  theme={null}
+{
+  "id": 42,
+  "name": "Companhia do Teatro",
+  "status": 1,
+  "createTimestamp": { "date": "2023-04-01 10:00:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+  "updateTimestamp": { "date": "2024-01-15 14:30:00.000000", "timezone_type": 3, "timezone": "America/Sao_Paulo" },
+  "@entityType": "agent"
+}
+```
+
+### Pagination metadata header
+
+When `@page`, `@offset`, or `@limit` are used, the server adds an `API-Metadata` response header:
+
+```json  theme={null}
+{
+  "count": 240,
+  "page": 2,
+  "limit": 20,
+  "numPages": 12,
+  "keyword": "",
+  "order": "name ASC"
+}
+```
+
+### Common response fields
+
+| Field             | Type    | Description                                                                   |
+| ----------------- | ------- | ----------------------------------------------------------------------------- |
+| `id`              | integer | Unique identifier                                                             |
+| `name`            | string  | Display name of the entity                                                    |
+| `status`          | integer | `1` = published, `0` = draft, `-9` = disabled, `-10` = trash, `-2` = archived |
+| `createTimestamp` | object  | Creation timestamp (PHP DateTime format)                                      |
+| `updateTimestamp` | object  | Last update timestamp (PHP DateTime format)                                   |
+| `@entityType`     | string  | Controller slug identifying the entity type                                   |
+
+## HTTP Status Codes
+
+| Code | Meaning                                                             |
+| ---- | ------------------------------------------------------------------- |
+| 200  | Success — the request was processed and a response body is returned |
+| 401  | Unauthorized — authentication is required                           |
+| 403  | Forbidden — the authenticated user lacks permission for this action |
+| 404  | Not Found — the requested entity or endpoint does not exist         |
+
+## Authentication
+
+The API supports two authentication modes:
+
+### Session-based (browser)
+
+When accessing the API from a browser where the user is already logged in, the existing session cookie is used automatically. No additional headers are required.
+
+### JWT / API key (server-to-server)
+
+Write operations and access to private data require a JSON Web Token (JWT) generated from a registered app key pair. The JWT is validated by the `Apps` module using the `firebase/php-jwt` library.
+
+Every authenticated write request must include two headers:
+
+```http  theme={null}
+authorization: <your-jwt-token>
+MapasSDK-REQUEST: true
+```
+
+The `authorization` header carries the JWT. The `MapasSDK-REQUEST: true` header signals the server to return a JSON response instead of an HTTP redirect.
+
+The JWT payload must include the `pk` field with your app's public key identifier, and a `tm` field with the current Unix timestamp:
+
+```json  theme={null}
+{ "tm": "1493823078.9774", "pk": "your-app-public-key" }
+```
+
+The default signing algorithm is `HS256`. The app's private key (registered in the platform under your user account) is used to sign and verify the token.
+
+## CORS
+
+CORS support is configurable per installation. Check with the platform administrator for the allowed origins on a specific instance.
+
+## Rate Limiting
+
+Rate limiting depends on the installation configuration. There is no built-in global rate limit in the application; infrastructure-level limits (e.g. nginx, CDN) may apply.
+
+## Field Selection with `@select`
+
+All `find` and `findOne` requests accept the `@select` parameter to control which fields are returned. Omitting `@select` returns all available fields.
+
+```bash  theme={null}
+# Return only id and name
+curl "https://your-instance.example.com/api/agent/find?@select=id,name"
+
+# Include a related entity field
+curl "https://your-instance.example.com/api/space/find?@select=id,name,owner.name"
+```
+
+See [Consultando a API](/docs/devs/api/querying) for the full query syntax including filters, pagination, and ordering.
+
+## Quick Reference
+
+<CardGroup cols={2}>
+  <Card title="Consultando a API" icon="magnifying-glass" href="/docs/devs/api/querying">
+    Filter operators, pagination, ordering, keyword search, and geospatial queries.
+  </Card>
+
+  <Card title="Agents API" icon="user" href="/docs/devs/api/agents">
+    Query agents — individuals and collectives registered on the platform.
+  </Card>
+
+  <Card title="Spaces API" icon="building" href="/docs/devs/api/spaces">
+    Query cultural spaces, including geolocation and address data.
+  </Card>
+
+  <Card title="Events API" icon="calendar" href="/docs/devs/api/events">
+    Query events with occurrences, schedules, and taxonomies.
+  </Card>
+</CardGroup>

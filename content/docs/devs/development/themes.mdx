@@ -1,0 +1,312 @@
+---
+title: Themes
+---
+> Create and customize installation themes: directory layout, asset enqueueing, template parts, view inheritance, and RedeMapas-specific features.
+
+A theme in Mapas Culturais controls every visual aspect of an installation: HTML templates, stylesheets, scripts, images, and page content. Each theme is a PHP class that extends `MapasCulturais\Theme`.
+
+The active theme is set in configuration:
+
+```php  theme={null}
+// dev/config.d/0.main.php
+return [
+    'themes.active' => 'redemapas',
+];
+```
+
+## Available themes
+
+| Theme             | Namespace                               | Description                                      |
+| ----------------- | --------------------------------------- | ------------------------------------------------ |
+| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | First-generation base theme                      |
+| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Second-generation base theme (current default)   |
+| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | RedeMapas reference installation; extends BaseV2 |
+| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Ministry of Culture installation                 |
+| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Funarte installation                             |
+| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Periferia Viva installation                      |
+| `Pnab`            | `MapasCulturais\Themes\Pnab`            | PNAB installation                                |
+| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Multi-tenant subsite theme                       |
+
+The inheritance chain for the active RedeMapas theme is:
+
+```
+RedeMapas → BaseV2 → BaseV1
+```
+
+Files in a child theme override the corresponding file from any parent theme. The lookup walks up the chain until a matching file is found.
+
+## Historical ecosystem themes
+
+Older documentation also indexed theme repositories from specific installations and forks. That catalog is useful only as a discovery aid when tracing UI ancestry:
+
+| Scope | Historical examples |
+| ----- | ------------------- |
+| State and network installations | `RedeMapas/mapas-AC`, `RedeMapas/mapas-MA`, `RedeMapas/mapas-TO`, `RedeMapas/mapas-RR`, `mapasculturais/theme-RS`, `mapasculturais/theme-SpCultura` |
+| Federal installations | `culturagovbr/theme-CulturaViva`, `culturagovbr/theme-MapaMinC`, `RedeMapas/theme-Funarte` |
+| Municipal and specialized themes | `mapasculturais/theme-Blumenau`, `mapasculturais/theme-JoaoPessoa`, `mapasculturais/theme-Museus`, `mapasculturais/theme-SantoAndre`, `mapasculturais/theme-SaoJose`, `mapasculturais/theme-Sobral` |
+
+Treat these names as historical references, not as a supported catalog for the current installation.
+
+## RedeMapas theme in the repository
+
+In the RedeMapas installation, the active theme is not just an example folder. It is a first-class part of the deployment and should be treated carefully during maintenance.
+
+The old developer guide highlighted one operational detail that is still easy to miss: changes to the active theme often need to be validated together with deployment config, authentication UI, and PWA / Web Push behavior, because the theme is where those installation-specific concerns meet.
+
+When auditing a UI or login issue, always confirm whether the behavior comes from:
+
+* framework core
+* module/plugin code
+* `src/themes/RedeMapas/`
+* environment-specific configuration
+
+## Directory structure
+
+Each theme lives under `src/themes/<ThemeName>/`:
+
+```
+src/themes/MyTheme/
+  Theme.php          → Main theme class; _init() registers hooks and assets
+  conf-base.php      → Theme-specific configuration defaults
+  assets/            → Compiled and static files (publicly served)
+    css/
+    fonts/
+    img/
+  assets-src/        → Source JS/CSS (compiled by pnpm into assets/)
+  views/             → PHP view templates, organized by controller
+    agent/
+    space/
+    event/
+    ...
+  layouts/           → Page layout wrappers
+    default.php
+    search.php
+    panel.php
+    parts/           → Reusable layout fragments
+  pages/             → Static Markdown pages
+```
+
+## Theme class
+
+The theme class lives in `Theme.php` and must extend the parent theme class:
+
+```php  theme={null}
+<?php
+namespace MapasCulturais\Themes\MyTheme;
+
+class Theme extends \MapasCulturais\Themes\BaseV2\Theme
+{
+    static function getThemeFolder(): string
+    {
+        return __DIR__;
+    }
+
+    protected function _init(): void
+    {
+        parent::_init();
+
+        $app = \MapasCulturais\App::i();
+
+        // Register assets, hooks, and configuration here
+        $app->hook('mapasculturais.init', function() {
+            $this->publishAssets();
+        });
+    }
+
+    protected function _publishAssets(): void
+    {
+        $app = \MapasCulturais\App::i();
+
+        $app->enqueueStyle('app', 'my-theme', 'css/my-theme.css');
+        $app->enqueueScript('app', 'my-theme', 'js/my-theme.js', ['jquery']);
+    }
+}
+```
+
+## Enqueueing assets
+
+Use the application's enqueue methods to load stylesheets and scripts. Assets are deduplicated and output in dependency order.
+
+```php  theme={null}
+// Enqueue a stylesheet
+// Parameters: $group, $name, $path_relative_to_assets/, $dependencies
+$app->enqueueStyle('app', 'my-style', 'css/my-style.css');
+
+// Enqueue a stylesheet that depends on another
+$app->enqueueStyle('app', 'my-style', 'css/my-style.css', ['base-style']);
+
+// Enqueue a script
+$app->enqueueScript('app', 'my-script', 'js/my-script.js');
+
+// Enqueue a script with dependencies
+$app->enqueueScript('app', 'my-script', 'js/my-script.js', ['jquery']);
+```
+
+Asset groups and their output order:
+
+| Group    | Type | Output order |
+| -------- | ---- | ------------ |
+| `vendor` | CSS  | 1st          |
+| `fonts`  | CSS  | 2nd          |
+| `app`    | CSS  | 3rd          |
+| `vendor` | JS   | 4th          |
+| `app`    | JS   | 5th          |
+
+To get the public URL of an asset without printing it:
+
+```php  theme={null}
+$url = $this->asset('img/logo.png', false);
+
+// Make a URL available to JavaScript
+$this->jsObject['assets']['logo'] = $this->asset('img/logo.png', false);
+```
+
+## Template parts
+
+Parts are reusable PHP fragments stored in `layouts/parts/`. Include them from any view, layout, or other part:
+
+```php  theme={null}
+// Include a part
+$this->part('header');
+
+// Pass variables into a part
+$this->part('entity-card', ['entity' => $agent, 'show_avatar' => true]);
+```
+
+Inside `layouts/parts/entity-card.php`, passed variables are available directly:
+
+```php  theme={null}
+<div class="card">
+    <?php if ($show_avatar): ?>
+        <img src="<?php $this->asset('img/' . $entity->type . '-avatar.png'); ?>" alt="">
+    <?php endif; ?>
+    <h3><?php echo $entity->name; ?></h3>
+</div>
+```
+
+## Overriding parent theme views
+
+Any file under `views/`, `layouts/`, `layouts/parts/`, or `assets/` can be overridden by placing a file with the same relative path in the child theme. The framework searches the theme hierarchy from child to parent and uses the first match found.
+
+To override the default header:
+
+1. Create `src/themes/MyTheme/layouts/parts/header.php`
+2. The child theme's version is used automatically — no registration required.
+
+<Tip>
+  Before overriding a file, check whether a hook can achieve the same result. Hooks require less maintenance when the parent theme is updated, because overridden files must be manually kept in sync with upstream changes.
+</Tip>
+
+## Static Markdown pages
+
+Pages in `layouts/pages/` are Markdown files rendered by the framework. The URL is derived from the filename:
+
+| File                  | URL                      |
+| --------------------- | ------------------------ |
+| `pages/about.md`      | `/page/site/about/`      |
+| `pages/how-to-use.md` | `/page/site/how-to-use/` |
+
+The first `h1` heading in the file becomes the browser tab title.
+
+## Variables available in views
+
+Inside any view, layout, or part:
+
+| Variable                    | Description                                           |
+| --------------------------- | ----------------------------------------------------- |
+| `$this`                     | The active theme instance (`MapasCulturais\Theme`)    |
+| `$this->controller`         | The controller that triggered the render              |
+| `$this->controller->action` | The action name                                       |
+| `$this->baseUrl`            | Root URL of the installation                          |
+| `$this->assetUrl`           | Public URL for theme assets                           |
+| `$this->jsObject`           | `ArrayObject` of data passed to the frontend JS       |
+| `$app`                      | The application singleton                             |
+| `$app->user`                | The authenticated user (or guest)                     |
+| `$entity`                   | The entity being viewed (on single/edit/create pages) |
+
+Check authentication state:
+
+```php  theme={null}
+<?php if (!$app->user->is('guest')): ?>
+    <p>Logged in as <?php echo $app->user->profile->name; ?></p>
+<?php else: ?>
+    <p>Not logged in.</p>
+<?php endif; ?>
+```
+
+## Layouts
+
+Layouts wrap view content with the page shell (HTML, head, header, footer). Views use the `default` layout by default. Override per view:
+
+```php  theme={null}
+<?php $this->layout = 'panel'; ?>
+```
+
+The minimum layout structure:
+
+```php  theme={null}
+<html>
+<head>
+    <title><?php echo $this->getTitle(); ?></title>
+    <?php mapasculturais_head(); ?>
+</head>
+<body>
+    <?php body_header(); ?>
+    <?php echo $TEMPLATE_CONTENT; ?>
+    <?php body_footer(); ?>
+</body>
+</html>
+```
+
+## RedeMapas-specific features
+
+### PWA support
+
+Progressive Web App support is implemented in `src/themes/RedeMapas/Pwa/`. It enables installation as a home screen app on mobile devices. HTTPS is required (use the Caddy override in development).
+
+### WebPush notifications
+
+Push notifications use the Web Push protocol with VAPID keys. Configure the keys via environment variables:
+
+```bash  theme={null}
+REDEMAPAS_VAPID_PUBLIC_KEY=<your-public-key>
+REDEMAPAS_VAPID_PRIVATE_KEY=<your-private-key>
+```
+
+The push flow is implemented in:
+
+* `src/themes/RedeMapas/Push/` — subscription management and payload building
+* `src/themes/RedeMapas/Jobs/SendWebPushNotification.php` — async job that dispatches pushes
+
+<Warning>
+  WebPush and PWA features require HTTPS. In local development, use the Caddy override (`compose.override.yml`) and trust the Caddy CA certificate in your browser.
+</Warning>
+
+### Asset source vs. compiled output
+
+For theme work, distinguish clearly between:
+
+* `assets-src/` — editable source files
+* `assets/` — compiled output served publicly
+
+In practice, most UI changes should start in `assets-src/` and be verified through the workspace build process instead of editing compiled files directly.
+
+### Subsite support
+
+The RedeMapas theme supports multi-tenant deployments through subsites, where multiple independent installations share a single server. Subsite support is disabled in the default development configuration (`DISABLE_SUBSITES=true`).
+
+Create a subsite via the interactive PHP shell:
+
+```php  theme={null}
+$app = MapasCulturais\App::i();
+$agent = $app->repo('Agent')->find(1);
+
+$subsite = new \MapasCulturais\Entities\Subsite();
+$subsite->name = 'My Subsite';
+$subsite->url  = 'subsite.example.org';
+
+$app->disableAccessControl();
+$app->em->persist($subsite);
+$app->em->flush();
+$app->enableAccessControl();
+```

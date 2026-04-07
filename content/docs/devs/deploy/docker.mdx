@@ -1,0 +1,141 @@
+---
+title: Docker Compose
+---
+> Deploy Mapas Culturais with Docker Compose for local development and production-like environments.
+
+## Prerequisites
+
+* [Docker](https://docs.docker.com/get-docker/) with Docker Compose v2 (bundled with Docker Desktop)
+* Git
+
+## Standard setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash  theme={null}
+    git clone https://github.com/redemapas/mapas.git
+    cd mapas
+    ```
+  </Step>
+
+  <Step title="Start the services">
+    ```bash  theme={null}
+    docker compose up -d
+    ```
+
+    Docker Compose builds the application image and starts all services. The application container waits for PostgreSQL to pass its health check before starting.
+  </Step>
+
+  <Step title="Wait for database migrations">
+    Database migrations (`db-updates.php`) run automatically inside the container entrypoint on every startup. No manual step is required.
+
+    Check readiness with:
+
+    ```bash  theme={null}
+    docker compose logs -f mapas
+    ```
+
+    The container is ready when you see the `/mapas-ready` flag created.
+  </Step>
+
+  <Step title="Open the application">
+    The following services are now running:
+
+    | Service                  | URL                                            | Credentials                      |
+    | ------------------------ | ---------------------------------------------- | -------------------------------- |
+    | Application              | [http://localhost:8080](http://localhost:8080) | —                                |
+    | MailPit (e-mail testing) | [http://localhost:8025](http://localhost:8025) | —                                |
+    | PostgreSQL               | `localhost:5432`                               | user: `mapas`, pass: `mapas-dev` |
+
+    All outbound e-mail from the application is captured by MailPit; nothing is sent to real addresses.
+  </Step>
+</Steps>
+
+## HTTPS local with Caddy
+
+PWA features and Web Push notifications require HTTPS. The repository ships a `compose.override.yml` that adds a Caddy reverse proxy with automatic local TLS.
+
+Docker Compose loads `compose.override.yml` automatically alongside `compose.yaml`, so no extra flags are needed:
+
+```bash  theme={null}
+docker compose up -d
+```
+
+The Caddy service proxies requests to the application container and issues a locally-trusted certificate via the internal CA.
+
+| Service             | URL                                                          |
+| ------------------- | ------------------------------------------------------------ |
+| Application (HTTPS) | [https://mapas.localhost:8443](https://mapas.localhost:8443) |
+| Application (HTTP)  | [http://mapas.localhost:8081](http://mapas.localhost:8081)   |
+
+<Note>
+  The `mapas.localhost` hostname resolves to `127.0.0.1` in most operating systems. If it does not, add `127.0.0.1 mapas.localhost` to your `/etc/hosts` file.
+</Note>
+
+### Trust the Caddy CA
+
+Browsers will show a security warning until the Caddy root certificate is trusted by your operating system. Run the following command after the services are up:
+
+```bash  theme={null}
+docker compose exec caddy caddy trust
+```
+
+Restart your browser after trusting the CA.
+
+## Container management
+
+The `dev/` directory contains wrapper scripts for common operations:
+
+```bash  theme={null}
+dev/bash.sh          # Open a shell inside the PHP application container
+dev/psql.sh          # Connect to PostgreSQL
+dev/shell.sh         # Start an interactive PHP shell (psysh)
+dev/pnpm.sh <cmd>    # Run pnpm commands inside the container
+```
+
+## Frontend build
+
+The production image builds frontend assets at image build time. In development, you can rebuild assets without rebuilding the image:
+
+<CodeGroup>
+  ```bash install dependencies theme={null}
+  dev/pnpm.sh -C src install
+  ```
+
+  ```bash production build theme={null}
+  dev/pnpm.sh -C src run build
+  ```
+
+  ```bash watch mode theme={null}
+  dev/pnpm.sh -C src run watch
+  ```
+</CodeGroup>
+
+## Restoring a database dump
+
+```bash  theme={null}
+scripts/restore-dump.sh -db=mapas -u=mapas -f=dump.sql
+```
+
+The script connects to the running PostgreSQL container and restores the given SQL file.
+
+## Container image
+
+The production image is published to the GitHub Container Registry:
+
+```
+ghcr.io/redemapas/mapas
+```
+
+The image is a multi-stage build:
+
+1. **Node.js builder** — compiles frontend assets with pnpm.
+2. **Composer builder** — installs PHP dependencies.
+3. **Production stage** — PHP 8.4-FPM + Nginx on Alpine Linux.
+4. **Development stage** — extends production with Node.js, pnpm, and pcov for tests.
+
+The development stage is used by `compose.yaml` (`target: development`). The production stage is used by the Helm chart.
+
+<Warning>
+  The default PostgreSQL password (`mapas-dev`) is intentionally weak and suitable for local development only. Never use it in production.
+</Warning>

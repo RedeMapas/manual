@@ -1,0 +1,326 @@
+---
+title: Spaces API
+---
+> API endpoints for managing cultural spaces in Mapas Culturais.
+
+A **space** represents a physical or virtual location where cultural events and activities take place — theaters, galleries, community centers, museums, and similar venues. Spaces are owned by agents and can host events.
+
+Base path: `/api/space/`
+
+<Info>
+  Read operations are public. Write operations (`create`, `save`, `delete`) require authentication via a JWT token. See the [Authentication guide](/docs/devs/auth/providers) for details.
+</Info>
+
+## Endpoints
+
+| Method   | Path                 | Description              |
+| -------- | -------------------- | ------------------------ |
+| `GET`    | `/api/space/find`    | List or search spaces    |
+| `GET`    | `/api/space/findOne` | Find a single space      |
+| `POST`   | `/space/index`       | Create a new space       |
+| `PATCH`  | `/space/single/{id}` | Update an existing space |
+| `DELETE` | `/space/single/{id}` | Delete a space           |
+
+***
+
+## GET /api/space/find
+
+Returns a paginated list of spaces. Supports filtering, sorting, field selection, and full-text search.
+
+### Query parameters
+
+**Control parameters** (prefixed with `@`)
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to include in the response. Supports dot notation for related objects (e.g., `owner.name`).
+
+  Example: `@select=id,name,address,location`
+</ParamField>
+
+<ParamField query="@page" type="integer" default="1">
+  Page number for paginated results. Starts at `1`.
+</ParamField>
+
+<ParamField query="@limit" type="integer" default="10">
+  Maximum number of results per page. Use `-1` to disable pagination (use with caution on large datasets).
+</ParamField>
+
+<ParamField query="@order" type="string">
+  Ordering expression. Format: `field DIR` where `DIR` is `ASC` or `DESC`.
+
+  Example: `@order=name ASC`
+</ParamField>
+
+<ParamField query="@keyword" type="string">
+  Full-text search keyword. Searches across name and description fields.
+</ParamField>
+
+<ParamField query="@or" type="integer">
+  When set to `1`, combines all filter parameters with `OR` logic instead of the default `AND`.
+</ParamField>
+
+**Filter parameters**
+
+<ParamField query="id" type="string">
+  Filter by space ID. Supports operators: `EQ(n)`, `IN(a,b,c)`, `BET(min,max)`, `!EQ(n)`.
+
+  Example: `id=EQ(10)` or `id=IN(1,2,3)`
+</ParamField>
+
+<ParamField query="name" type="string">
+  Filter by space name. Supports operators: `LIKE(pattern)`, `ILIKE(pattern)` (case-insensitive).
+
+  Example: `name=ILIKE(teatro*)` matches names starting with "teatro".
+</ParamField>
+
+<ParamField query="status" type="integer">
+  Filter by publication status.
+
+  | Value | Meaning   |
+  | ----- | --------- |
+  | `1`   | Published |
+  | `0`   | Draft     |
+  | `-2`  | Archived  |
+  | `-9`  | Disabled  |
+  | `-10` | Trash     |
+
+  Example: `status=EQ(1)`
+</ParamField>
+
+<ParamField query="type" type="integer">
+  Filter by space type. Type IDs vary by instance configuration.
+
+  Example: `type=EQ(5)`
+</ParamField>
+
+<ParamField query="public" type="boolean">
+  Filter by whether the space is public.
+
+  Example: `public=EQ(true)`
+</ParamField>
+
+<ParamField query="owner" type="string">
+  Filter by the owning agent using entity reference syntax.
+
+  Example: `owner=EQ(@Agent:42)` returns spaces owned by agent ID 42.
+</ParamField>
+
+<ParamField query="_geoLocation" type="string">
+  Filter by geographic proximity. Format: `GEONEAR(longitude,latitude,radius_meters)`.
+
+  Example: `_geoLocation=GEONEAR(-46.6475,-23.5413,1000)`
+</ParamField>
+
+### Response
+
+Returns a JSON array of space objects. The fields returned depend on `@select`.
+
+<ResponseField name="id" type="integer" required>
+  Unique space identifier.
+</ResponseField>
+
+<ResponseField name="name" type="string" required>
+  Space display name.
+</ResponseField>
+
+<ResponseField name="type" type="integer">
+  Space type identifier. Defined by instance configuration.
+</ResponseField>
+
+<ResponseField name="shortDescription" type="string">
+  Short description (up to 400 characters).
+</ResponseField>
+
+<ResponseField name="longDescription" type="string">
+  Full long-form description.
+</ResponseField>
+
+<ResponseField name="public" type="boolean">
+  Whether the space is publicly accessible.
+</ResponseField>
+
+<ResponseField name="location" type="object">
+  Geographic coordinates of the space.
+
+  <Expandable title="properties">
+    <ResponseField name="latitude" type="number">
+      Latitude coordinate.
+    </ResponseField>
+
+    <ResponseField name="longitude" type="number">
+      Longitude coordinate.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="status" type="integer">
+  Publication status. See status values below.
+</ResponseField>
+
+<ResponseField name="createTimestamp" type="string">
+  ISO 8601 datetime when the space was created.
+</ResponseField>
+
+<ResponseField name="updateTimestamp" type="string">
+  ISO 8601 datetime of the last update.
+</ResponseField>
+
+<ResponseField name="owner" type="object">
+  The agent that owns this space.
+
+  <Expandable title="properties">
+    <ResponseField name="id" type="integer">
+      Owner agent ID.
+    </ResponseField>
+
+    <ResponseField name="name" type="string">
+      Owner agent name.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Examples
+
+<CodeGroup>
+  ```bash Search spaces by keyword theme={null}
+  curl "https://instance.example.com/api/space/find?@select=id,name,address&@keyword=teatro"
+  ```
+
+  ```bash List published spaces with owner information theme={null}
+  curl "https://instance.example.com/api/space/find?@select=id,name,owner.name&status=EQ(1)&@limit=20"
+  ```
+
+  ```bash Geo-proximity search for spaces theme={null}
+  curl "https://instance.example.com/api/space/find?@select=id,name,location&_geoLocation=GEONEAR(-46.6475,-23.5413,1000)"
+  ```
+
+  ```bash Filter spaces by owner agent theme={null}
+  curl "https://instance.example.com/api/space/find?@select=id,name&owner=EQ(@Agent:42)"
+  ```
+
+  ```bash Select space name and nested owner name theme={null}
+  curl "https://instance.example.com/api/space/find?@select=id,name,owner.name"
+  ```
+</CodeGroup>
+
+<ResponseExample>
+  ```json 200 theme={null}
+  [
+    {
+      "id": 10,
+      "name": "Teatro Municipal",
+      "type": 5,
+      "shortDescription": "Teatro histórico no centro da cidade.",
+      "public": true,
+      "location": {
+        "latitude": -23.5498,
+        "longitude": -46.6338
+      },
+      "status": 1,
+      "createTimestamp": { "date": "2022-03-01 10:00:00", "timezone": "UTC" },
+      "updateTimestamp": { "date": "2024-02-20 08:30:00", "timezone": "UTC" },
+      "owner": {
+        "id": 7,
+        "name": "Secretaria de Cultura"
+      }
+    }
+  ]
+  ```
+</ResponseExample>
+
+***
+
+## GET /api/space/findOne
+
+Returns a single space. Accepts the same filter parameters as `find`. Returns the first matching result.
+
+```bash  theme={null}
+curl "https://instance.example.com/api/space/findOne?@select=id,name,shortDescription,location&id=EQ(10)"
+```
+
+***
+
+## POST /space/index
+
+Creates a new space. Requires authentication.
+
+<Warning>
+  Include a JWT token in the `Authorization` header. Add `MapasSDK-REQUEST: true` to receive JSON responses instead of HTTP redirects on write operations.
+</Warning>
+
+### Request body
+
+| Field              | Type    | Required | Description                                  |
+| ------------------ | ------- | -------- | -------------------------------------------- |
+| `name`             | string  | Yes      | Space name                                   |
+| `type`             | integer | Yes      | Space type ID                                |
+| `shortDescription` | string  | Yes      | Short description (max 400 characters)       |
+| `longDescription`  | string  | No       | Full description                             |
+| `public`           | boolean | No       | Whether the space is publicly accessible     |
+| `location`         | array   | No       | `[longitude, latitude]`                      |
+| `endereco`         | string  | No       | Street address                               |
+| `terms`            | object  | No       | Taxonomy terms, e.g. `{"area": ["Theater"]}` |
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/space/index" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Centro Cultural Exemplo",
+    "type": 5,
+    "shortDescription": "Espaço dedicado a artes cênicas.",
+    "public": true,
+    "location": ["-46.685684", "-23.540402"],
+    "endereco": "Av. Paulista, 100"
+  }'
+```
+
+***
+
+## POST /space/single/\{id\}
+
+Updates an existing space. Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X POST "https://instance.example.com/space/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "id": 10,
+    "shortDescription": "Updated description."
+  }'
+```
+
+***
+
+## DELETE /space/single/\{id\}
+
+Soft-deletes a space (moves to trash). Requires authentication and ownership (or admin role).
+
+```bash  theme={null}
+curl -X DELETE "https://instance.example.com/space/single/{id}" \
+  -H "authorization: <jwt-token>" \
+  -H "MapasSDK-REQUEST: true" \
+  -d 'id=10'
+```
+
+***
+
+## Status values
+
+| Value | Constant          | Meaning                         |
+| ----- | ----------------- | ------------------------------- |
+| `1`   | `STATUS_ENABLED`  | Published and publicly visible  |
+| `0`   | `STATUS_DRAFT`    | Draft, visible only to owner    |
+| `-2`  | `STATUS_ARCHIVED` | Archived                        |
+| `-9`  | `STATUS_DISABLED` | Disabled by admin               |
+| `-10` | `STATUS_TRASH`    | Deleted (soft delete, in trash) |
+
+## Tips
+
+* Use `@select=id,name,owner.name` to include nested related object fields with a single request.
+* Geo-proximity queries require the space to have a non-zero location set.
+* Always use `@select` to limit the fields returned for better performance.
+* A space can have a parent space (e.g., a room within a building). Use `parent` to filter by parent space ID.

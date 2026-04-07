@@ -1,0 +1,226 @@
+---
+title: Permissions and User Profiles
+---
+> Understand the user role hierarchy and permission system in Mapas Culturais.
+
+Mapas Culturais uses a layered permission model. Every user has one or more **roles**, and each role grants a cumulative set of capabilities. Entity-level checks are evaluated at runtime so that custom modules can extend the default rules without modifying core code.
+
+## User profile hierarchy
+
+Each level inherits all the capabilities of the levels below it.
+
+<Steps>
+  <Step title="Guest (visitor)">
+    An unauthenticated visitor. Guests can browse and read public data — agents, spaces, events, and projects — but cannot create, edit, or delete anything.
+
+    ```php  theme={null}
+    $user->is('guest'); // true for unauthenticated users
+    ```
+  </Step>
+
+  <Step title="Authenticated user (usuário comum)">
+    Any logged-in user. Can create and manage their own agents, spaces, events, projects, and seals. Can apply to opportunities and edit entities where they have been added as a responsible agent.
+  </Step>
+
+  <Step title="Administrator (admin)">
+    Has access to the administration panel. Can view and edit all entities within their installation (or subsite in a SaaS deployment). Cannot promote other users to admin.
+
+    ```php  theme={null}
+    $user->is('admin');
+    ```
+  </Step>
+
+  <Step title="Super Administrator (superAdmin)">
+    Identical to Administrator, and can additionally grant or revoke the `admin` role for other users.
+
+    ```php  theme={null}
+    $user->is('superAdmin');
+    ```
+  </Step>
+
+  <Step title="SaaS roles (saasAdmin / superSaasAdmin)">
+    Available only in multi-tenant SaaS deployments. `saasAdmin` can manage multiple subsites and their entities. `superSaasAdmin` can additionally designate new SaaS administrators.
+
+    ```php  theme={null}
+    $user->is('saasAdmin');
+    $user->is('superSaasAdmin');
+    ```
+  </Step>
+</Steps>
+
+<Note>
+  All roles are stored in the `role` database table through the `Role` entity and are linked to a user via the `usr` table. Roles can optionally be scoped to a specific subsite via `subsiteId`.
+</Note>
+
+***
+
+## Permission checking API
+
+### `$entity->canUser($action)`
+
+Returns `true` if the current user (or the user passed as a second argument) may perform `$action` on the entity. Use this for conditional rendering or branching logic.
+
+```php  theme={null}
+if ($agent->canUser('edit')) {
+    // show edit button
+}
+
+if ($event->canUser('publish')) {
+    // allow publishing
+}
+```
+
+### `$entity->checkPermission($action)`
+
+Like `canUser`, but throws `MapasCulturais\Exceptions\PermissionDenied` instead of returning `false`. Use at the start of write operations to guard against unauthorized access.
+
+```php  theme={null}
+$entity->checkPermission('edit');
+// execution continues only if allowed
+
+$entity->checkPermission('view');
+```
+
+### `$user->is($role)`
+
+Checks whether the user has a given role. Works for both named roles and the virtual `guest` role.
+
+```php  theme={null}
+$user->is('admin');      // has admin role
+$user->is('superAdmin'); // has superAdmin role
+$user->is('guest');      // not logged in
+```
+
+### `$user->can($action, $entity)`
+
+Convenience wrapper around `$entity->canUser($action, $user)`. Useful when you have a user instance and want to check permission against an entity.
+
+```php  theme={null}
+$canEdit = $user->can('edit', $space);
+```
+
+### `$app->getAuth()->getAuthenticatedUser()`
+
+Returns the authenticated `User` entity, or a `GuestUser` instance if no one is logged in.
+
+```php  theme={null}
+$user = $app->getAuth()->getAuthenticatedUser();
+```
+
+### `$controller->requireAuthentication()`
+
+Defined in the abstract `Controller` class. Redirects anonymous users to the login page and resumes the original request after successful authentication. Call it at the top of any controller action that requires a session.
+
+```php  theme={null}
+public function GET_myAction() {
+    $this->requireAuthentication();
+    // rest of action — only reached by logged-in users
+}
+```
+
+***
+
+## Generic permission rules
+
+The `Entity` base class applies these rules before any entity-specific logic:
+
+<AccordionGroup>
+  <Accordion title="Guests cannot modify anything">
+    Any write action (`create`, `edit`, `delete`, etc.) automatically returns `false` for unauthenticated visitors, regardless of the entity type.
+  </Accordion>
+
+  <Accordion title="Admins can do anything">
+    Users with the `admin` role pass all permission checks. This is evaluated early in `canUser()` so that admin overrides apply universally without requiring per-entity handling.
+  </Accordion>
+
+  <Accordion title="Owners can modify their own entities">
+    The user who created an entity (its `owner`) can edit and delete it. Ownership is determined by comparing the entity's `owner` agent to the agents belonging to the current user.
+  </Accordion>
+
+  <Accordion title="Agent relations with control">
+    If an agent has been added to an entity's agent relations with the `@control` flag, the user owning that agent can also modify the entity. This is how collaborative management of a shared space or event is enabled.
+  </Accordion>
+</AccordionGroup>
+
+### Custom permission methods
+
+Entity classes can override specific permission checks by implementing protected methods named `canUser{Action}`. These are automatically discovered and invoked by the base `canUser()` dispatcher.
+
+```php  theme={null}
+// Example from the User entity — only superAdmin can remove another admin's role
+protected function canUserRemoveRoleAdmin(User $user): bool
+{
+    return $user->is('superAdmin') && $user->id !== $this->id;
+}
+```
+
+```php  theme={null}
+// Example — restrict who can change entity status
+protected function canUserModifyStatus(User $user): bool
+{
+    return $user->is('admin') || $this->getOwnerUser()->equals($user);
+}
+```
+
+***
+
+## Temporarily disabling access control
+
+Some internal operations — such as system-initiated status changes or data migrations — need to bypass the normal permission checks. Use `disableAccessControl()` / `enableAccessControl()` in a tightly scoped block.
+
+<Warning>
+  Always re-enable access control in a `finally` block or immediately after the privileged operation. Leaving it disabled will silently allow any subsequent operation in the same request to bypass all checks.
+</Warning>
+
+```php  theme={null}
+$app->disableAccessControl();
+try {
+    $registration->status = Registration::STATUS_APPROVED;
+    $registration->save(true);
+} finally {
+    $app->enableAccessControl();
+}
+```
+
+You can also inspect the current state:
+
+```php  theme={null}
+if ($app->isAccessControlEnabled()) {
+    // normal flow
+}
+```
+
+***
+
+## Role management
+
+Roles are assigned and revoked through the `User` entity's `addRole` and `removeRole` methods. The role name must be registered in the application before it can be used.
+
+```php  theme={null}
+// Grant a role
+$user->addRole('admin');
+
+// Revoke a role
+$user->removeRole('admin');
+
+// Grant a role scoped to a specific subsite
+$user->addRole('admin', $subsite_id);
+```
+
+Roles are stored in the `role` table and can also be assigned through the agent detail page in the administration panel via a role selector dropdown.
+
+***
+
+## Procuration (delegating permissions)
+
+A **procuration** allows one user (the grantor) to delegate a specific action to another user (the attorney), optionally with an expiry date. This is how Mapas Culturais implements agent-level delegation without changing roles.
+
+```php  theme={null}
+// Grant user $attorney the right to perform 'edit' on behalf of $user
+$attorney->makeAttorney('edit', validUntil: new \DateTime('+30 days'), user: $user);
+
+// Check if the current user is an attorney for a given action
+$isAttorney = $user->isAttorney('edit');
+```
+
+Procurations are stored in the `Procuration` entity. Expired procurations are automatically removed when encountered during an `isAttorney` check.

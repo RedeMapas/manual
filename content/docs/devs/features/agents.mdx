@@ -1,0 +1,158 @@
+---
+title: Agents
+---
+> Agents represent cultural individuals, collectives, and organizations in the Mapas Culturais ecosystem.
+
+An **Agent** is the core profile entity in Mapas Culturais. Every user who registers on the platform gets an agent profile automatically. Agents can own spaces, create events, run projects, and apply to opportunities.
+
+<CardGroup cols={3}>
+  <Card title="Individuals" icon="user">
+    Natural persons involved in cultural activities — artists, producers, curators, researchers.
+  </Card>
+
+  <Card title="Collectives" icon="users">
+    Informal groups and cultural collectives that act together without a formal legal structure.
+  </Card>
+
+  <Card title="Organizations" icon="building">
+    Legal entities such as NGOs, foundations, companies, and public institutions.
+  </Card>
+</CardGroup>
+
+## Agent types
+
+The entity uses a numeric type field (`_type`). The exact type labels and IDs are configured per installation through the taxonomy and entity-type system. Administrators can define type names and restrict which users may change an agent's type.
+
+<Note>
+  Only administrators can change an agent's type after creation. Regular users are assigned type `2` (collective/organization) when they attempt to set a type they are not allowed to.
+</Note>
+
+## Key fields
+
+| Field              | Description                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `name`             | Display name of the agent. Required.                                                       |
+| `shortDescription` | Brief summary, up to 400 characters. Required.                                             |
+| `longDescription`  | Full description, supports rich text.                                                      |
+| `type`             | Numeric type identifier (individual, collective, organization).                            |
+| `location`         | PostGIS geographic point. Hidden from the public unless `publicLocation` is set to `true`. |
+| `publicLocation`   | Whether the agent's location is visible to non-owners.                                     |
+| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash.             |
+| `createTimestamp`  | When the agent was created. Read-only.                                                     |
+| `updateTimestamp`  | When the agent was last modified. Read-only.                                               |
+
+Additional fields (email, phone, site, document, area of activity) are stored as **metadata** and can vary by installation configuration.
+
+## Geolocation
+
+Agents support optional geolocation via PostGIS. The location is stored both as a `point` column and a `geography` column for spatial queries. The `publicLocation` flag controls visibility: if `false`, the coordinates are returned as `(0,0)` to users without private-data access.
+
+```php  theme={null}
+// Location is only exposed if the agent has publicLocation = true
+// or if the viewer has permission to see private data
+function getLocation() {
+    if ($this->publicLocation || $this->canUser('viewPrivateData')) {
+        return $this->location;
+    } else {
+        return new \MapasCulturais\Types\GeoPoint(0, 0);
+    }
+}
+```
+
+## Multiple agents per user
+
+A single user account can manage multiple agent profiles. One of them is designated the **user profile** — the primary identity for that account.
+
+<AccordionGroup>
+  <Accordion title="User profile agent">
+    The user profile agent is created automatically when a new user registers. It is marked with `isUserProfile = true` and cannot be deleted or archived independently — it is only removed when the user account itself is deleted.
+
+    Administrators can change which agent is the user profile via the `setAsUserProfile` action.
+  </Accordion>
+
+  <Accordion title="Child agents">
+    Additional agents are created as children of the user profile agent, forming a hierarchical tree (`parent` / `_children`). Ownership of child agents can be transferred between users, subject to permission checks.
+  </Accordion>
+</AccordionGroup>
+
+## Relations to other entities
+
+Agents are the central connective entity in the platform. They own or participate in all other entity types:
+
+<CardGroup cols={2}>
+  <Card title="Spaces" icon="map-pin">
+    An agent owns zero or more spaces. Spaces reference their owner agent via `agent_id`.
+  </Card>
+
+  <Card title="Events" icon="calendar">
+    An agent owns zero or more events. Events reference their owner via `agent_id`.
+  </Card>
+
+  <Card title="Projects" icon="folder">
+    An agent owns zero or more projects. Projects reference their owner via `agent_id`.
+  </Card>
+
+  <Card title="Opportunities" icon="megaphone">
+    An agent can own opportunities and can be related to other opportunities as a collaborator or evaluator.
+  </Card>
+</CardGroup>
+
+Beyond ownership, agents participate in **agent relations** (`AgentAgentRelation`). These are many-to-many links between agents that represent roles such as collaborator, partner, or institutional affiliation.
+
+## Profile completeness
+
+The ProfileCompletion module tracks how much of an agent's profile has been filled in. It calculates a completeness percentage based on the presence of key fields (name, short description, long description, avatar image, location, tags, etc.). A completeness meter is displayed in the UI to encourage users to fill in more information.
+
+## Seals and verification
+
+Agents can receive **seals** (selos) from administrators or opportunity owners. Seals are used to certify or verify agents — for example, confirming identity, institutional affiliation, or participation in a program.
+
+Seal relations are stored in `AgentSealRelation`. Certain seals can **lock fields**, preventing the agent from modifying data that was verified. The list of locked fields is computed from active seal relations.
+
+```php  theme={null}
+// Seals can lock agent fields from being modified
+function getLockedFields() {
+    $locked_field_seals = (array) $this->lockedFieldSeals;
+    return !empty($locked_field_seals) ? array_keys($locked_field_seals) : [];
+}
+```
+
+## Tags and taxonomies
+
+Agents support taxonomical classification through term relations (`AgentTermRelation`). Tags, areas of activity, and other vocabulary terms are linked via this system.
+
+## Creating an agent
+
+<Steps>
+  <Step title="Log in">
+    Access the platform and sign in with your account. If you do not have an account, register first — a user profile agent is created automatically.
+  </Step>
+
+  <Step title="Navigate to agents">
+    Go to your dashboard and select **My Agents** from the navigation menu.
+  </Step>
+
+  <Step title="Create a new agent">
+    Click **New Agent**, choose the agent type (individual, collective, or organization), and fill in the required fields: name and short description.
+  </Step>
+
+  <Step title="Complete the profile">
+    Add a long description, avatar image, tags, contact information, and geographic location. The profile completeness indicator shows your progress.
+  </Step>
+
+  <Step title="Publish">
+    Change the status from **Draft** to **Published** to make the agent visible in the public catalog.
+  </Step>
+</Steps>
+
+## Status lifecycle
+
+```text  theme={null}
+Draft (0) → Published (1) → Archived (-2)
+                           → Disabled (-9)
+                           → Trash (-10)
+```
+
+<Warning>
+  The user profile agent cannot be archived or destroyed independently. Attempting to do so returns a permission error unless the user account itself is being deleted.
+</Warning>

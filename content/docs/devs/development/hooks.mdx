@@ -1,0 +1,271 @@
+---
+title: Hook system
+---
+> Event-driven extensibility in Mapas Culturais: hook naming, registration, context binding, priorities, and common patterns.
+
+The hook system is the primary way to extend Mapas Culturais without modifying core files. A hook is a named event to which any number of PHP callbacks can be attached. When the application fires a hook, all registered callbacks for that name are invoked in priority order.
+
+## Registering a hook
+
+```php  theme={null}
+$app = MapasCulturais\App::i();
+
+$app->hook('hook.name', function() {
+    // callback body
+});
+
+// With a priority (lower number = higher priority; default is 10)
+$app->hook('hook.name', function() {
+    // runs earlier
+}, 5);
+```
+
+Register hooks inside a module's `_init()` method or a theme's `_init()` method so that they are set up before the first request is processed.
+
+## Hook naming syntax
+
+Hook names follow a structured pattern that allows both broad and targeted subscriptions.
+
+### Entity hooks
+
+```
+entity.{action}:{timing}
+entity({EntityClass}).{action}:{timing}
+```
+
+| Pattern                      | Fires when                                         |
+| ---------------------------- | -------------------------------------------------- |
+| `entity.save:before`         | Any entity is about to be saved (insert or update) |
+| `entity.save:after`          | Any entity was saved                               |
+| `entity(Agent).save:before`  | An `Agent` entity is about to be saved             |
+| `entity(Agent).save:after`   | An `Agent` entity was saved                        |
+| `entity.insert:before`       | Any entity is about to be inserted (first save)    |
+| `entity.insert:after`        | Any entity was inserted                            |
+| `entity(Space).insert:after` | A `Space` entity was inserted                      |
+| `entity.update:before`       | Any entity is about to be updated                  |
+| `entity.update:after`        | Any entity was updated                             |
+| `entity.remove:before`       | Any entity is about to be deleted                  |
+| `entity.remove:after`        | Any entity was deleted                             |
+
+Inside entity hook callbacks, `$this` is bound to the entity instance:
+
+```php  theme={null}
+$app->hook('entity(Agent).save:before', function() {
+    // $this is the Agent being saved
+    if (empty($this->shortDescription)) {
+        $this->shortDescription = 'No description provided.';
+    }
+});
+```
+
+### Controller hooks
+
+```
+{Method}({controllerId}.{actionName}):before
+{Method}({controllerId}.{actionName}):after
+ALL({controllerId}.{actionName}):before
+```
+
+| Pattern                          | Fires when                                       |
+| -------------------------------- | ------------------------------------------------ |
+| `GET(agent.index):before`        | Before GET /agent/index                          |
+| `POST(opportunity.create):after` | After POST /opportunity/create                   |
+| `ALL(registration.*):before`     | Before any action on the registration controller |
+
+### View hooks
+
+```
+view.render:before
+view.render({templateName}):before
+view.partial:before
+view.partial({templateName}):after
+```
+
+| Pattern                            | Fires when                                    |
+| ---------------------------------- | --------------------------------------------- |
+| `view.render:before`               | Before any template is rendered with a layout |
+| `view.render(agent/single):before` | Before `agent/single` is rendered             |
+| `view.partial:after`               | After any partial template is rendered        |
+
+### API hooks
+
+```
+API({EntityClass}).params
+```
+
+Use API hooks to modify query parameters before the API executes a search:
+
+```php  theme={null}
+$app->hook('API(Agent).params', function(&$params) {
+    // Restrict API results to enabled agents only
+    $params['status'] = 1;
+});
+```
+
+### Template hooks
+
+```
+template({controllerId}/{actionName})
+```
+
+Template hooks let you inject HTML into specific points in a rendered page:
+
+```php  theme={null}
+$app->hook('template(agent/single)', function() {
+    echo '<div class="my-widget">Custom content</div>';
+});
+```
+
+### Module lifecycle hooks
+
+```
+module({ClassName}).init:before
+module({ClassName}).init:after
+mapasculturais.init
+```
+
+## The `$this` context
+
+When a hook fires from within an entity operation, the callback can be bound to the entity using `applyHookBoundTo`. This is handled automatically for entity hooks, so `$this` inside the callback refers to the triggering entity:
+
+```php  theme={null}
+$app->hook('entity(Opportunity).insert:after', function() {
+    // $this = the newly inserted Opportunity
+    $this->log->info("New opportunity created: {$this->name}");
+});
+```
+
+For hooks fired without binding, `$this` is not available unless you use `use` in the closure:
+
+```php  theme={null}
+$myService = new MyService();
+
+$app->hook('mapasculturais.init', function() use ($myService) {
+    $myService->initialize();
+});
+```
+
+## Passing arguments
+
+Hooks can pass additional arguments to callbacks. The `applyHook` and `applyHookBoundTo` methods accept an array of arguments:
+
+```php  theme={null}
+// Hook fired with extra arguments
+$app->applyHook('my.hook', [$entityId, $extraData]);
+
+// Callback receives them as parameters
+$app->hook('my.hook', function($entityId, $extraData) {
+    // use $entityId and $extraData
+});
+```
+
+## Priorities
+
+The default priority is `10`. Lower numbers run first. When two callbacks share the same numeric priority, they run in registration order.
+
+```php  theme={null}
+// Runs first
+$app->hook('entity.save:before', function() {
+    // high priority
+}, 1);
+
+// Runs after
+$app->hook('entity.save:before', function() {
+    // lower priority
+}, 20);
+```
+
+## Removing hooks
+
+To remove all callbacks from a hook:
+
+```php  theme={null}
+$app->hooks->clear('entity(Agent).save:before');
+
+// Remove all hooks
+$app->hooks->clear();
+```
+
+## Comma-separated hook registration
+
+Register a single callback on multiple hooks at once by separating names with commas:
+
+```php  theme={null}
+$app->hook('entity.insert:after, entity.update:after', function() {
+    // fires after both insert and update
+});
+```
+
+## Negated hooks (exclusion)
+
+Prefix a hook name with `-` to remove a previously registered callback from that hook:
+
+```php  theme={null}
+$app->hook('-entity(Agent).save:before', $callbackToExclude);
+```
+
+## Using hooks in themes vs. modules
+
+<CardGroup cols={2}>
+  <Card title="In a module" icon="puzzle-piece">
+    Register hooks inside `_init()`. The module config array is available as `$this->_config`. Prefer modules for hooks that add backend behavior independent of the visual layer.
+
+    ```php  theme={null}
+    class Module extends \MapasCulturais\Module
+    {
+        function _init(): void
+        {
+            $app = App::i();
+            $app->hook('entity(Registration).insert:after', function() {
+                // send a notification
+            });
+        }
+    }
+    ```
+  </Card>
+
+  <Card title="In a theme" icon="palette">
+    Register hooks inside the theme's `_init()`. Use theme hooks for view injection, asset enqueueing, and UI-level customization.
+
+    ```php  theme={null}
+    class Theme extends \MapasCulturais\Themes\BaseV2\Theme
+    {
+        protected function _init(): void
+        {
+            parent::_init();
+            $app = \MapasCulturais\App::i();
+            $app->hook('view.render(site/index):before', function() {
+                $this->enqueueScript('app', 'home', 'js/home.js');
+            });
+        }
+    }
+    ```
+  </Card>
+</CardGroup>
+
+## Complete list of entity hook events
+
+| Hook                   | Timing                                   |
+| ---------------------- | ---------------------------------------- |
+| `entity.new`           | After `__construct` of any entity        |
+| `entity({Class}).new`  | After `__construct` of a specific entity |
+| `entity.load`          | After any entity is loaded from DB       |
+| `entity({Class}).load` | After a specific entity class is loaded  |
+| `entity.save:before`   | Before insert or update                  |
+| `entity.save:after`    | After insert or update                   |
+| `entity.insert:before` | Before first-time save                   |
+| `entity.insert:after`  | After first-time save                    |
+| `entity.update:before` | Before update of existing entity         |
+| `entity.update:after`  | After update of existing entity          |
+| `entity.remove:before` | Before soft or hard delete               |
+| `entity.remove:after`  | After soft or hard delete                |
+
+<Tip>
+  To discover which hooks fire during a specific operation, enable hook logging in your development configuration:
+
+  ```php  theme={null}
+  'app.log.hook' => true,
+  ```
+
+  Hook names will be written to `var/logs/app.log` as requests are processed.
+</Tip>

@@ -35,7 +35,7 @@ const roles = [
     alt: 'Equipe trabalhando com tecnologia e engrenagens',
     description:
       'Pessoa responsável por manter a infraestrutura e dar manutenção nas tecnologias digitais utilizadas pela Rede das Artes.',
-    link: '/docs/devs',
+    link: '/docs/devs/introduction',
     linkText: 'Saiba mais',
     bgColor: 'bg-blue-900',
     textColor: 'text-white',

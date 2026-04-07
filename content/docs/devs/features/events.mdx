@@ -1,0 +1,149 @@
+---
+title: Events
+---
+> Events represent cultural activities with scheduling support, including one-time and recurring occurrences.
+
+An **Event** is a cultural activity that takes place at a specific time and place. Events range from single-day performances to long-running exhibitions with complex recurring schedules. They are owned by agents, scheduled at spaces, and can be grouped under projects.
+
+<CardGroup cols={3}>
+  <Card title="Performances" icon="music">
+    Concerts, theater plays, dance shows, and live performances.
+  </Card>
+
+  <Card title="Exhibitions" icon="image">
+    Art exhibitions, fairs, and shows that run over extended periods.
+  </Card>
+
+  <Card title="Workshops & talks" icon="presentation">
+    Workshops, lectures, seminars, and educational activities.
+  </Card>
+</CardGroup>
+
+## Key fields
+
+| Field              | Description                                                                    |
+| ------------------ | ------------------------------------------------------------------------------ |
+| `name`             | Event name. Required.                                                          |
+| `shortDescription` | Brief summary, up to 400 characters. Required.                                 |
+| `longDescription`  | Full description with rich text support.                                       |
+| `type`             | Numeric type identifier. Configured per installation.                          |
+| `rules`            | Additional rules or conditions for the event.                                  |
+| `project`          | Optional link to the project this event belongs to.                            |
+| `status`           | `1` = published, `0` = draft, `-2` = archived, `-9` = disabled, `-10` = trash. |
+| `createTimestamp`  | When the event was created. Read-only.                                         |
+| `updateTimestamp`  | When the event was last modified. Read-only.                                   |
+
+Additional fields such as price, accessibility information, classification rating, and languages are stored as **metadata** and vary by installation.
+
+## Occurrences and recurrence
+
+An event itself is a descriptor — it defines what the event is. When and where it happens is captured through **EventOccurrence** records. A single event can have multiple occurrences across different spaces and dates.
+
+### EventOccurrence fields
+
+| Field         | Description                                    |
+| ------------- | ---------------------------------------------- |
+| `space`       | The space where this occurrence takes place.   |
+| `_startsOn`   | Start date.                                    |
+| `_endsOn`     | End date (for multi-day events).               |
+| `_startsAt`   | Start time.                                    |
+| `_endsAt`     | End time.                                      |
+| `frequency`   | Recurrence frequency (daily, weekly, monthly). |
+| `count`       | Number of recurrences.                         |
+| `_until`      | End date for recurrence.                       |
+| `rule`        | Full recurrence rule in iCal RRULE format.     |
+| `description` | Occurrence-specific notes.                     |
+
+### Recurring events
+
+The platform uses a PostgreSQL stored function (`recurring_event_occurrence_for`) to expand recurrence rules into concrete occurrence instances for a given date range. This means recurrence is computed on the fly from the stored rule, avoiding storing each individual occurrence date in the database.
+
+```sql  theme={null}
+-- Used internally to expand recurring events into occurrences
+SELECT *
+FROM recurring_event_occurrence_for(
+    :date_from,
+    :date_to,
+    'Etc/UTC',
+    NULL
+)
+WHERE event_id = :event_id;
+```
+
+<Note>
+  Event occurrence queries accept `date_from` and `date_to` parameters. When not provided, both default to the current date, returning only today's occurrences.
+</Note>
+
+## Relation to spaces
+
+An event occurrence is always tied to a specific space. You can query occurrences filtered by space and date range using `findOccurrencesBySpace()`:
+
+```php  theme={null}
+// Find all occurrences of an event at a specific space between two dates
+$occurrences = $event->findOccurrencesBySpace(
+    $space,
+    '2024-03-01',
+    '2024-03-31'
+);
+```
+
+## Relation to projects
+
+Events can optionally belong to a **project**. When an event is linked to a project, the project's managers gain control over the event. Creating an event inside a project requires either ownership of the project or explicit permission granted by the project's owner.
+
+If a workflow system is enabled, linking an event to a project can trigger an approval workflow (`RequestEventProject`).
+
+```php  theme={null}
+// Assigning a project to an event triggers permission checks
+$event->setProject($project);
+$event->save();
+```
+
+## Permissions
+
+| Action     | Who can perform it                                                                      |
+| ---------- | --------------------------------------------------------------------------------------- |
+| Create     | Any authenticated user (or guest, depending on configuration).                          |
+| View draft | Owner agent or agents with `@control` permission on the event or its project.           |
+| Publish    | Owner, admins, or agents with `@control` permission.                                    |
+| Modify     | Owner or agents with `@control`. If the project changed, also requires project control. |
+
+## Status lifecycle
+
+```text  theme={null}
+Draft (0) → Published (1) → Archived (-2)
+                           → Disabled (-9)
+                           → Trash (-10)
+```
+
+## Creating an event
+
+<Steps>
+  <Step title="Navigate to events">
+    From your dashboard, select **My Events**.
+  </Step>
+
+  <Step title="Create a new event">
+    Click **New Event** and fill in the required fields: name and short description.
+  </Step>
+
+  <Step title="Add occurrences">
+    Select the space where the event takes place, then set the date, time, and — if the event repeats — the recurrence rule.
+  </Step>
+
+  <Step title="Link to a project (optional)">
+    If the event is part of a cultural project, link it to the project. This requires permission from the project owner.
+  </Step>
+
+  <Step title="Complete the details">
+    Add a long description, pricing, accessibility information, and classification tags.
+  </Step>
+
+  <Step title="Publish">
+    Change the status from **Draft** to **Published** to make the event visible in the public calendar.
+  </Step>
+</Steps>
+
+## Revision history
+
+Every change to an event is tracked in the revision system. Revision data includes a snapshot of all occurrences (with space name, location, address, and scheduling details) and the linked project at the time of each save.

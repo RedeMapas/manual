@@ -1,0 +1,457 @@
+---
+title: Consultando a API
+---
+> Comprehensive guide to the Mapas Culturais API query system — field selection, filter operators, logical combinators, pagination, ordering, and special parameters.
+
+## Overview
+
+`find` and `findOne` requests accept a set of query string parameters that control field selection, filtering, ordering, and pagination. Parameters prefixed with `@` are special directives; all other parameters are interpreted as field filters.
+
+```bash  theme={null}
+GET /api/{entity}/find?@select=id,name&@order=name ASC&@limit=20&@page=1&status=EQ(1)
+```
+
+***
+
+## Field Selection — `@select`
+
+<ParamField query="@select" type="string">
+  Comma-separated list of fields to return. Omit this parameter to return all available fields. Supports nested relation fields using dot notation, and sub-entity selection using curly brace syntax.
+</ParamField>
+
+### Scalar fields
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?@select=id,name,email"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name, email',
+  'email': 'like(*gmail.com)'
+}, function(response) { console.log(response); });
+```
+
+### Related entity fields (dot notation)
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/space/find?@select=id,name,owner.name"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/space/find', {
+  '@select': 'id, name, owner.name'
+}, function(response) { console.log(response); });
+```
+
+### Sub-entity with field subset (curly brace syntax)
+
+Select specific fields from a nested collection — for example, event occurrences with their space name and scheduling rule:
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/event/find', {
+  '@select': 'id, name, occurrences.{id,space.{name},rule}',
+  'id': 'BET(100,200)'
+}, function(response) { console.log(response); });
+```
+
+### All fields
+
+Omit `@select` entirely to receive every field the entity exposes (properties, metadata, relations, terms, etc.).
+
+***
+
+## Filter Operators
+
+Filter parameters have the form `fieldName=OPERATOR(value)`. All operators are parsed case-insensitively.
+
+### Comparison operators
+
+<ParamField query="fieldName" type="string">
+  Name of the entity property or metadata field to filter on. Apply one of the operators below as the value.
+</ParamField>
+
+| Operator        | Description                      | Example                |
+| --------------- | -------------------------------- | ---------------------- |
+| `EQ(value)`     | Equal to                         | `status=EQ(1)`         |
+| `!EQ(value)`    | Not equal to                     | `status=!EQ(0)`        |
+| `GT(value)`     | Greater than                     | `id=GT(100)`           |
+| `GTE(value)`    | Greater than or equal            | `id=GTE(100)`          |
+| `LT(value)`     | Less than                        | `id=LT(200)`           |
+| `LTE(value)`    | Less than or equal               | `id=LTE(200)`          |
+| `NULL()`        | Field is null / not set          | `email=NULL()`         |
+| `!NULL()`       | Field is not null                | `email=!NULL()`        |
+| `IN(v1,v2,v3)`  | Value is in the list             | `id=IN(10,18,33)`      |
+| `!IN(v1,v2,v3)` | Value is not in the list         | `id=!IN(10,18,33)`     |
+| `BET(min,max)`  | Between two values (inclusive)   | `id=BET(100,200)`      |
+| `!BET(min,max)` | Not between two values           | `id=!BET(100,200)`     |
+| `LIKE(value)`   | SQL `LIKE` — use `*` as wildcard | `name=LIKE(*teatro*)`  |
+| `!LIKE(value)`  | SQL `NOT LIKE`                   | `name=!LIKE(*teatro*)` |
+| `ILIKE(value)`  | Case-insensitive `LIKE`          | `name=ILIKE(rafael*)`  |
+| `!ILIKE(value)` | Case-insensitive `NOT LIKE`      | `name=!ILIKE(rafael*)` |
+
+<Note>
+  In `LIKE` and `ILIKE`, the wildcard character is `*` (not `%`). The server translates `*` to the SQL `%` wildcard internally.
+</Note>
+
+### Logical combinators — `AND` and `OR`
+
+Combine multiple operators on the **same field** using `AND()` or `OR()`:
+
+| Combinator             | Description                       | Example                                              |
+| ---------------------- | --------------------------------- | ---------------------------------------------------- |
+| `AND(expr1,expr2,...)` | All conditions must match         | `id=AND(BET(100,200),!EQ(150))`                      |
+| `OR(expr1,expr2,...)`  | At least one condition must match | `emailPublico=OR(LIKE(*gmail.com),LIKE(*yahoo.com))` |
+
+**Agents with id between 100 and 200, excluding id 150:**
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?\
+@select=id,name&id=AND(BET(100,200),!EQ(150))"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  'id': 'AND(BET(100,200), !EQ(150))'
+}, function(response) { console.log(response); });
+```
+
+**Agents with a Gmail or Yahoo email address:**
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?\
+@select=id,name&emailPublico=OR(like(*gmail.com),like(*yahoo.com))"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  'emailPublico': 'OR(like(*gmail.com), like(*yahoo.com))'
+}, function(response) { console.log(response); });
+```
+
+### Cross-field OR — `@or`
+
+<ParamField query="@or" type="integer">
+  When set to `1`, the API joins **all** filter conditions with `OR` instead of `AND`. Useful when you need to match records that satisfy any one of several independent field filters.
+</ParamField>
+
+**Agents with id in range OR a Gmail/Yahoo email (ordered by name descending):**
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  '@order': 'name DESC',
+  '@or': 1,
+  'id': 'AND(BET(100,200), !EQ(150))',
+  'emailPublico': 'OR(like(*gmail.com), like(*yahoo.com))'
+}, function(response) { console.log(response); });
+```
+
+***
+
+## Pagination
+
+<ParamField query="@limit" type="integer">
+  Maximum number of results to return per page. When used together with `@page`, the server also returns an `API-Metadata` response header with the total count and number of pages.
+</ParamField>
+
+<ParamField query="@page" type="integer">
+  Page number (1-indexed). Requires `@limit` to be set.
+</ParamField>
+
+<ParamField query="@offset" type="integer">
+  Alternative to `@page` — sets the raw row offset for the query.
+</ParamField>
+
+**Second page of 10 agents ordered by name:**
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?\
+@select=id,name&@order=name ASC&@limit=10&@page=2"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name, files',
+  '@order': 'name ASC',
+  '@limit': 10,
+  '@page': 2
+}, function(response) { console.log(response); });
+```
+
+The response includes a header:
+
+```json  theme={null}
+{
+  "count": 240,
+  "page": 2,
+  "limit": 10,
+  "numPages": 24,
+  "keyword": "",
+  "order": "name ASC"
+}
+```
+
+***
+
+## Ordering — `@order`
+
+<ParamField query="@order" type="string">
+  Comma-separated list of fields with optional `ASC` or `DESC` direction. String fields are automatically unaccented and lowercased for sorting. Metadata fields can also be used for ordering.
+</ParamField>
+
+```bash  theme={null}
+# Ascending by name
+curl "https://your-instance.example.com/api/event/find?@select=id,name&@order=name ASC"
+
+# Descending by creation date
+curl "https://your-instance.example.com/api/agent/find?@select=id,name&@order=createTimestamp DESC"
+```
+
+**Combined filter and sort example** — agents with id between 100 and 200 (excluding 150) or with a webmail address, ordered by creation date ascending:
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  '@order': 'createTimestamp ASC',
+  'id': 'AND(BET(100,200), !EQ(150))',
+  'emailPublico': 'OR(like(*gmail.com), like(*yahoo.com))'
+}, function(response) { console.log(response); });
+```
+
+***
+
+## Keyword Search — `@keyword`
+
+<ParamField query="@keyword" type="string">
+  Full-text keyword search across the entity's searchable fields. Separate multiple terms with `;` to require all of them.
+</ParamField>
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/event/find?@select=id,name&@keyword=teatro"
+```
+
+```javascript  theme={null}
+fetch('https://your-instance.example.com/api/event/find?@select=id,name&@keyword=teatro')
+  .then(res => res.json())
+  .then(data => console.log(data));
+```
+
+***
+
+## Geospatial Search — `_geoLocation`
+
+Filter entities by proximity to a geographic point using the `GEONEAR` operator on the `_geoLocation` pseudo-field.
+
+**Syntax:** `_geoLocation=GEONEAR(longitude,latitude,radiusInMeters)`
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?\
+@select=id,name,location&_geoLocation=GEONEAR(-46.6475415229797,-23.5413271705055,700)"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name, location',
+  '@order': 'name ASC',
+  '_geoLocation': 'GEONEAR(-46.6475415229797,-23.5413271705055,700)'
+}, function(response) { console.log(response); });
+```
+
+The example above returns all agents within 700 metres of latitude `-23.5413271705055`, longitude `-46.6475415229797`.
+
+***
+
+## Relationship Filtering
+
+### Filter by a related entity's field (dot notation)
+
+Any field from a related entity can be used as a filter using `relation.field=OPERATOR(value)` syntax:
+
+```bash  theme={null}
+# Spaces whose owner's name contains "silva"
+curl "https://your-instance.example.com/api/space/find?@select=id,name&owner.name=ILIKE(*silva*)"
+```
+
+### Filter by a specific related entity instance
+
+Use `EQ(@EntityType:id)` to filter records that belong to a particular related entity:
+
+**All spaces owned by agent id 1:**
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name, location',
+  '@order': 'name ASC',
+  'owner': 'EQ(@Agent:1)'
+}, function(response) { console.log(response); });
+```
+
+**All events belonging to project id 4:**
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/event/find', {
+  '@select': 'id, name, location',
+  '@order': 'name ASC',
+  'project': 'EQ(@Project:4)'
+}, function(response) { console.log(response); });
+```
+
+***
+
+## Taxonomy / Term Filtering
+
+Entities that support taxonomies can be filtered on their terms using `term:taxonomySlug=OPERATOR(value)`:
+
+```bash  theme={null}
+# Events with "Cinema" in the "linguagem" taxonomy
+curl "https://your-instance.example.com/api/event/find?\
+@select=id,name,terms&term:linguagem=LIKE(Cinema)&id=BET(100,200)"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/event/find', {
+  '@select': 'id, name, terms',
+  'term:linguagem': 'LIKE(Cinema)',
+  'id': 'BET(100,200)'
+}, function(response) { console.log(response); });
+```
+
+***
+
+## File Attachments — `@files`
+
+<ParamField query="@files" type="string">
+  Request file URLs alongside entity data. Format: `@files=group.transformation:property1,property2`. Use `url` to receive the direct file URL.
+</ParamField>
+
+**Avatar URL and thumbnail for agents on page 2:**
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  '@order': 'name ASC',
+  '@limit': 10,
+  '@page': 2,
+  '@files': '(avatar,avatar.avatarSmall,downloads):url'
+}, function(response) { console.log(response); });
+```
+
+**Header and large avatar for events with id between 100 and 200:**
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/event/find', {
+  '@files': 'header.header, avatar.avatarBig',
+  '@select': 'id, name, shortDescription',
+  'id': 'BET(100,200)'
+}, function(response) { console.log(response); });
+```
+
+***
+
+## Access and Permissions — `@permissions`
+
+<ParamField query="@permissions" type="string">
+  Filter results based on the authenticated user's permissions. Use `view` to return entities the user can see, or `@control` to return entities the user can edit.
+</ParamField>
+
+```bash  theme={null}
+curl -H "authorization: <jwt>" -H "MapasSDK-REQUEST: true" \
+  "https://your-instance.example.com/api/agent/find?@permissions=view&@select=id,name"
+```
+
+***
+
+## Seal Filtering — `@seals`
+
+<ParamField query="@seals" type="string">
+  Filter entities that have one or more specific seals (verification badges) applied. Accepts a comma-separated list of seal IDs.
+</ParamField>
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/agent/find?@seals=1,10,25&@select=id,name"
+```
+
+***
+
+## Special Parameters Summary
+
+| Parameter      | Type    | Description                                                |
+| -------------- | ------- | ---------------------------------------------------------- |
+| `@select`      | string  | Comma-separated field list to return                       |
+| `@order`       | string  | Sort expression, e.g. `name ASC` or `createTimestamp DESC` |
+| `@limit`       | integer | Maximum results per page                                   |
+| `@page`        | integer | Page number (1-indexed), used with `@limit`                |
+| `@offset`      | integer | Raw row offset, alternative to `@page`                     |
+| `@keyword`     | string  | Full-text search term(s), semicolon-separated              |
+| `@or`          | integer | Set to `1` to join all field filters with OR               |
+| `@files`       | string  | Request file URLs (group/transformation/property syntax)   |
+| `@seals`       | string  | Filter by seal IDs (comma-separated)                       |
+| `@permissions` | string  | Filter by user permission: `view` or `@control`            |
+
+***
+
+## Complete Examples
+
+### Find a space by exact id
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/space/find?@select=name&id=eq(10)"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/space/find', {
+  '@select': 'name',
+  'id': 'eq(10)'
+}, function(response) { console.log(response); });
+```
+
+### Events with occurrences, filtered by id range
+
+```bash  theme={null}
+curl "https://your-instance.example.com/api/event/find?\
+@select=id,name,occurrences.{id,space.{name},rule}&id=BET(100,200)"
+```
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/event/find', {
+  '@select': 'id, name, occurrences.{id,space.{name},rule}',
+  'id': 'BET(100,200)'
+}, function(response) { console.log(response); });
+```
+
+### Agents with complex id and email filter, ordered by creation date
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/agent/find', {
+  '@select': 'id, name',
+  '@order': 'createTimestamp ASC',
+  'id': 'AND(BET(100,200), !EQ(150))',
+  'emailPublico': 'OR(like(*gmail.com), like(*yahoo.com))'
+}, function(response) { console.log(response); });
+```
+
+### Equivalent with JavaScript Fetch
+
+```javascript  theme={null}
+const params = new URLSearchParams({
+  '@select': 'id,name',
+  '@order': 'createTimestamp ASC',
+  'id': 'AND(BET(100,200),!EQ(150))',
+  'emailPublico': 'OR(like(*gmail.com),like(*yahoo.com))'
+});
+
+fetch(`https://your-instance.example.com/api/agent/find?${params}`)
+  .then(res => res.json())
+  .then(data => console.log(data));
+```
+
+### Check the API/platform version
+
+```javascript  theme={null}
+$.getJSON('http://mapasculturais.local/api/site/version', function(response) {
+  console.log(response);
+});
+```
