@@ -1,0 +1,257 @@
+---
+title: Seu Primeiro Módulo
+---
+> Aprenda a estender o Mapas Culturais criando um módulo do zero. Ao final, você terá um módulo funcional que adiciona um campo personalizado ao perfil de agentes.
+
+## O que você vai construir
+
+Neste tutorial, você vai criar um módulo chamado **`Biography`** que adiciona um campo de "Mini Biografia" ao perfil de agentes culturais. O campo aparecerá na página de edição do agente e será salvo como metadado.
+
+Ao final, você terá:
+- Um diretório de módulo com a estrutura correta
+- Uma classe PHP que estende `MapasCulturais\Module`
+- Um hook que injeta o campo no formulário de edição
+- Um hook que salva o valor como metadado
+- O módulo registrado e funcionando na sua instalação local
+
+## Pré-requisitos
+
+- [Ambiente local rodando](/docs/devs/tutorials/quickstart) com Docker Compose
+- Familiaridade básica com PHP
+- Um editor de código
+
+## Passo 1: Crie a estrutura de diretórios
+
+Dentro do contêiner ou no host (o diretório `src/modules/` é montado como volume), crie a estrutura:
+
+```bash
+mkdir -p src/modules/Biography
+```
+
+A estrutura final será:
+
+```
+src/modules/Biography/
+  Module.php
+```
+
+Apenas um arquivo por enquanto — módulos simples podem ser uma única classe.
+
+## Passo 2: Escreva a classe do módulo
+
+Crie `src/modules/Biography/Module.php`:
+
+```php
+<?php
+namespace MapasCulturais\Modules\Biography;
+
+use MapasCulturais\App;
+
+class Module extends \MapasCulturais\Module
+{
+    function _init(): void
+    {
+        $app = App::i();
+
+        // Hook: injeta o campo no formulário de edição do agente
+        $app->hook('template(agent.single):after', function() {
+            $this->part('biography-field');
+        });
+    }
+}
+```
+
+O que este código faz:
+1. Declara o namespace `MapasCulturais\Modules\Biography`
+2. Estende a classe base `MapasCulturais\Module`
+3. No método `_init()`, registra um hook que será executado após a renderização da página de perfil do agente
+4. O hook chama `$this->part('biography-field')` para incluir um template parcial
+
+<Note>
+  O método `_init()` é chamado automaticamente pelo framework durante o boot. Você nunca chama `_init()` manualmente.
+</Note>
+
+## Passo 3: Registre o módulo
+
+Para que o framework carregue seu módulo, adicione-o à configuração. Edite `dev/config.d/0.main.php` (ou crie um arquivo dedicado `dev/config.d/1.biography.php`):
+
+```php
+<?php
+return [
+    'plugins' => [
+        'Biography' => [
+            'namespace' => 'MapasCulturais\Modules\Biography',
+        ],
+    ],
+];
+```
+
+| Chave | Significado |
+|---|---|
+| `'Biography'` | Identificador arbitrário do módulo |
+| `'namespace'` | Namespace PHP da sua classe Module |
+
+## Passo 4: Crie o template do campo
+
+Módulos podem ter seus próprios templates. Crie o diretório e o arquivo:
+
+```bash
+mkdir -p src/modules/Biography/views
+```
+
+Crie `src/modules/Biography/views/biography-field.php`:
+
+```php
+<?php
+// Obtém o agente que está sendo visualizado
+$entity = $this->controller->requestedEntity;
+
+// Só mostra o campo se for um agente e o usuário tiver permissão de edição
+if (!($entity instanceof \MapasCulturais\Entities\Agent)) return;
+if (!$entity->canUser('modify')) return;
+
+// Lê o valor atual do metadado (se existir)
+$biography = $entity->getMetadata('biography') ?? '';
+
+// URL para salvar (usa o controller do módulo que criaremos no próximo passo)
+$saveUrl = $app->createUrl('biography', 'save', ['id' => $entity->id]);
+?>
+
+<div class="widget">
+    <h3>Mini Biografia</h3>
+    <form id="biography-form" method="POST" action="<?php echo $saveUrl; ?>">
+        <textarea name="biography"
+                  rows="5"
+                  placeholder="Conte um pouco sobre sua trajetória artística..."
+                  style="width:100%"><?php echo htmlspecialchars($biography); ?></textarea>
+        <button type="submit" class="btn btn-primary">Salvar biografia</button>
+    </form>
+</div>
+```
+
+O que este template faz:
+1. Verifica se a entidade atual é um `Agent` e se o usuário pode editá-la
+2. Lê o valor atual do metadado `biography` (retorna `null` se nunca foi salvo)
+3. Renderiza um `<textarea>` com o valor atual
+4. Cria um formulário que envia para o controller `biography/save`
+
+## Passo 5: Crie o controller para salvar
+
+Agora precisamos de um controller que receba o POST e salve o metadado. Crie `src/modules/Biography/Controllers/Save.php`:
+
+```bash
+mkdir -p src/modules/Biography/Controllers
+```
+
+```php
+<?php
+namespace MapasCulturais\Modules\Biography\Controllers;
+
+use MapasCulturais\App;
+
+class Save extends \MapasCulturais\Controller
+{
+    public function POST_save(): void
+    {
+        $app = App::i();
+
+        // Requer autenticação
+        $this->requireAuthentication();
+
+        // Obtém o agente pelo ID
+        $agent = $app->repo('Agent')->find($this->data['id']);
+
+        if (!$agent) {
+            $app->halt(404, 'Agent not found');
+        }
+
+        // Verifica permissão
+        $agent->checkPermission('modify');
+
+        // Salva a biografia como metadado
+        $biography = trim($this->postData['biography'] ?? '');
+        $agent->setMetadata('biography', $biography);
+        $agent->save(true);
+
+        // Redireciona de volta para a página do agente
+        $app->redirect($app->createUrl('agent', 'single', ['id' => $agent->id]));
+    }
+}
+```
+
+Agora registre o controller no módulo. Adicione esta linha ao método `_init()` em `Module.php`, **antes** do hook:
+
+```php
+// Registra o controller
+$app->registerController('biography', Controllers\Save::class);
+```
+
+<Note>
+  O nome do controller (`'biography'`) define as URLs. Com esse registro, a ação `POST_save` do controller responde a `POST /biography/save`.
+</Note>
+
+## Passo 6: Atualize a classe completa do módulo
+
+Seu `Module.php` completo deve ficar assim:
+
+```php
+<?php
+namespace MapasCulturais\Modules\Biography;
+
+use MapasCulturais\App;
+
+class Module extends \MapasCulturais\Module
+{
+    function _init(): void
+    {
+        $app = App::i();
+
+        // Registra o controller para salvar a biografia
+        $app->registerController('biography', Controllers\Save::class);
+
+        // Hook: injeta o campo no formulário de edição do agente
+        $app->hook('template(agent.single):after', function() {
+            $this->part('biography-field');
+        });
+    }
+}
+```
+
+## Passo 7: Teste seu módulo
+
+Reinicie os contêineres para que o framework carregue o novo módulo:
+
+```bash
+docker compose restart
+```
+
+Agora:
+
+1. Acesse `http://localhost:8080` e faça login
+2. Vá até o perfil de um agente que você gerencia
+3. Você deve ver o campo **"Mini Biografia"** abaixo do conteúdo principal
+4. Preencha o campo e clique em **Salvar biografia**
+5. Recarregue a página — o texto deve persistir
+
+<Note>
+  Se o campo não aparecer, verifique os logs em `var/logs/app.log`. Habilite logs de hook com `'app.log.hook' => true` no arquivo de configuração de desenvolvimento para ver quais hooks estão disparando.
+</Note>
+
+## O que você aprendeu
+
+| Conceito | Como foi usado |
+|---|---|
+| **Estrutura de módulo** | Namespace + classe que estende `Module` + método `_init()` |
+| **Registro de módulo** | Entrada no array `plugins` da configuração |
+| **Hook de template** | `template(agent.single):after` para injetar HTML na página |
+| **Controller** | Classe com método `POST_save` registrada via `registerController` |
+| **Metadados** | `getMetadata()` e `setMetadata()` para armazenar dados sem alterar o schema |
+| **Permissões** | `checkPermission('modify')` e `requireAuthentication()` para controle de acesso |
+| **Templates de módulo** | Arquivos PHP em `views/` acessíveis via `$this->part()` |
+
+## Próximos passos
+
+- [Criar um módulo (guia completo)](/docs/devs/how-to/criar-modulo) — referência detalhada com ciclo de vida, jobs e entidades
+- [Sistema de hooks](/docs/devs/explanation/sistema-de-hooks) — entenda a filosofia por trás dos hooks
+- [Referência de hooks](/docs/devs/reference/hooks) — catálogo completo de hooks disponíveis
+- [API de temas](/docs/devs/reference/themes-api) — se quiser estender a parte visual em vez do backend

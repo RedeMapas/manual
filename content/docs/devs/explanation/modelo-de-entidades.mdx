@@ -1,0 +1,131 @@
+---
+title: Modelo de Entidades
+---
+> Por que o Mapas Culturais organiza seu domínio em seis entidades, como elas se relacionam e como implementam a Jornada Completa do Fomento Cultural.
+
+## O problema que o modelo resolve
+
+A gestão cultural pública envolve muitos atores: artistas, produtores, espaços, editais, comissões de avaliação, prestação de contas. Sem um modelo unificado, cada política cultural implementa seu próprio cadastro, seu próprio formulário de inscrição, seu próprio sistema de avaliação. O resultado é fragmentação: um mesmo artista precisa se recadastrar em cada edital, e o poder público perde a visão agregada do ecossistema.
+
+O Mapas Culturais resolve isso com **seis entidades** que modelam o ciclo completo do fomento cultural — do cadastro inicial até a prestação de contas final — em um único grafo conectado.
+
+## As seis entidades
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│                         AGENT                                    │
+│  Indivíduos, coletivos e organizações                            │
+│  É a entidade-raiz: tudo pertence a um agente                    │
+└────────────┬──────────────┬──────────────┬──────────────────────┘
+             │              │              │
+    ┌────────▼────┐  ┌──────▼──────┐  ┌───▼──────────┐
+    │   ESPAÇO    │  │   EVENTO    │  │   PROJETO    │
+    │  Onde       │  │  Quando     │  │  Agrupamento │
+    │  acontece   │  │  acontece   │  │  de ações    │
+    └─────────────┘  └─────────────┘  └──────────────┘
+                                               │
+                                      ┌────────▼────────┐
+                                      │  OPORTUNIDADE   │
+                                      │  Edital /       │
+                                      │  Chamada pública│
+                                      └────────┬────────┘
+                                               │
+                                      ┌────────▼────────┐
+                                      │   INSCRIÇÃO     │
+                                      │  Candidatura    │
+                                      │  de um agente   │
+                                      └─────────────────┘
+```
+
+### Agente — a raiz do grafo
+
+Toda entidade no Mapas pertence a um agente. Não existe espaço sem proprietário, nem evento sem organizador. Isso é intencional: o modelo reflete a realidade de que a cultura é feita por *pessoas e organizações*, e a plataforma existe para servi-las.
+
+Um mesmo usuário pode gerenciar múltiplos agentes (ex: um perfil pessoal como artista e um perfil institucional como produtor). A hierarquia `parent`/`_children` permite modelar vínculos como "este coletivo contém estes indivíduos".
+
+### Espaço e Evento — onde e quando
+
+Espaços respondem à pergunta "onde a cultura acontece". Eventos respondem "quando". Juntos, formam a camada de **programação cultural** da plataforma. Um espaço pode conter subespaços (ex: centro cultural com múltiplas salas). Um evento pode ter múltiplas ocorrências (ex: festival de 5 dias com programação em vários horários).
+
+### Projeto — o agrupador
+
+Projetos agrupam entidades sob um propósito comum. Um edital de fomento pode exigir que o artista inscreva um *projeto* (não apenas um perfil). Projetos conectam agentes, eventos e espaços em uma iniciativa coerente, e são a unidade básica para acompanhamento e prestação de contas.
+
+### Oportunidade — o motor do fomento
+
+Oportunidades são a entidade mais complexa do sistema — e por um bom motivo. Elas implementam o ciclo de vida completo de um processo seletivo:
+
+1. **Publicação** — o edital vai ao ar com regras, datas e critérios
+2. **Inscrições** — agentes se candidatam preenchendo formulários configuráveis
+3. **Avaliação** — uma comissão avalia as candidaturas usando um dos 5 métodos disponíveis
+4. **Resultado** — os selecionados são publicados, com possibilidade de recurso
+5. **Acompanhamento** — planos de trabalho e prestação de contas
+
+Oportunidades suportam **múltiplas fases** (ex: habilitação documental → avaliação técnica → recurso), cada uma sendo tecnicamente uma sub-oportunidade com suas próprias regras.
+
+### Inscrição — o vínculo entre agente e oportunidade
+
+A inscrição é o registro que conecta um agente a uma oportunidade. Ela carrega os dados preenchidos no formulário, os arquivos enviados, e o histórico completo de avaliações. Uma inscrição transita por estados: rascunho → enviada → em avaliação → selecionada/suplente/rejeitada.
+
+## A Jornada Completa do Fomento Cultural
+
+O modelo de entidades foi desenhado para que uma mesma instalação acompanhe o ciclo inteiro:
+
+```
+Cadastro do agente
+  → Criação de espaços e eventos (visibilidade)
+    → Inscrição em oportunidades (acesso a recursos)
+      → Avaliação (mérito)
+        → Seleção (resultado)
+          → Execução do projeto (plano de trabalho)
+            → Prestação de contas (accountability)
+```
+
+Cada etapa produz dados que enriquecem o perfil do agente. Um artista que participa de 3 editais ao longo de 2 anos acumula um histórico visível de projetos, eventos e selos de participação. Isso beneficia tanto o artista (portfólio comprovado) quanto o gestor público (dados agregados para política cultural).
+
+## Padrões compartilhados entre entidades
+
+### Status e ciclo de vida
+
+Todas as entidades seguem o mesmo modelo de estados:
+
+```
+Rascunho (0) → Publicado (1) → Arquivado (-2)
+                              → Desabilitado (-9)
+                              → Lixeira (-10)
+```
+
+Isso permite que o conteúdo seja criado, revisado e publicado de forma controlada, com soft-delete para recuperação.
+
+### Metadados extensíveis
+
+Campos como "área de atuação", "acessibilidade", "documento" não são colunas fixas — são **metadados**. Cada instalação pode definir seu próprio conjunto de campos sem alterar o schema do banco. Isso é essencial para que a mesma plataforma atenda um município pequeno e o governo federal com necessidades completamente diferentes.
+
+### Taxonomias configuráveis
+
+Tags, áreas de atuação, linguagens artísticas — tudo é modelado como termos de uma taxonomia configurável por instalação. Um tema pode definir as taxonomias que fazem sentido para seu contexto (ex: "linguagens artísticas" para a Funarte, "tipos de ponto de cultura" para o Cultura Viva).
+
+### Selos e verificação
+
+Qualquer entidade pode receber selos que certificam ou verificam informações. Um selo pode "travar" campos — por exemplo, um selo de "CNPJ verificado" impede que o agente altere seu documento fiscal. Esse mecanismo é usado tanto para verificação de identidade quanto para certificação de participação em editais.
+
+### Geolocalização nativa
+
+Agentes, espaços e eventos têm suporte a PostGIS. Isso permite buscas como "todos os espaços culturais em até 5 km desta coordenada" diretamente no banco, sem processamento externo.
+
+## Quando usar cada entidade
+
+| Se você precisa... | Use |
+|---|---|
+| Cadastrar uma pessoa, coletivo ou organização | **Agente** |
+| Registrar um local físico ou virtual | **Espaço** |
+| Divulgar uma atividade com data e hora | **Evento** |
+| Agrupar ações sob um propósito comum | **Projeto** |
+| Criar um edital ou chamada pública | **Oportunidade** |
+| Candidatar um agente a uma oportunidade | **Inscrição** |
+
+## Leitura complementar
+
+- [Arquitetura](/docs/devs/explanation/arquitetura) — como as entidades são implementadas no código
+- [Referência de entidades](/docs/devs/reference/entities/agents) — campos, tipos e API de cada entidade
+- [Hooks](/docs/devs/reference/hooks) — como estender o comportamento das entidades sem modificar o core

@@ -1,0 +1,5 @@
+{
+  "title": "Guias Práticos",
+  "description": "Resolva problemas concretos: deploy, autenticação, temas, módulos e testes",
+  "pages": ["deploy-docker", "deploy-kubernetes", "configurar-provedor-auth", "criar-tema", "criar-modulo", "rodar-testes"]
+}

@@ -1,0 +1,106 @@
+---
+title: Sistema de Hooks
+---
+> Por que o Mapas Culturais usa hooks como mecanismo principal de extensão, como o sistema foi projetado e quando usá-lo.
+
+## O problema: estender sem modificar o core
+
+O Mapas Culturais é um software livre usado por dezenas de instalações — municípios, estados, governo federal — cada uma com necessidades específicas. Um município quer adicionar validação de CPF no cadastro. O governo federal precisa de integração com o Login Cidadão. A Funarte quer um campo extra de "linguagem artística" no formulário de inscrição.
+
+Se cada customização exigisse modificar o código-fonte do core, o projeto seria ingerenciável: forks divergiriam, atualizações de segurança não seriam aplicadas, e contribuições upstream seriam impossíveis.
+
+O sistema de hooks resolve isso com um princípio simples: **o core dispara eventos; módulos e temas escutam e reagem**.
+
+## O padrão: Observer aplicado a um monólito PHP
+
+Tecnicamente, hooks são uma implementação do padrão [Observer](https://en.wikipedia.org/wiki/Observer_pattern). O framework mantém um registro central de hooks (`$app->hooks`) onde qualquer código pode inscrever callbacks. Quando o core executa uma operação — salvar uma entidade, renderizar uma view, processar uma requisição — ele dispara o hook correspondente, e todos os callbacks inscritos são executados.
+
+```
+┌──────────────┐     dispara      ┌───────────────────┐
+│  Core        │ ──────────────→  │  Hook Registry    │
+│  (Entity,    │                  │  ┌─────────────┐  │
+│   Controller,│                  │  │ callback 1  │  │
+│   View)      │                  │  │ callback 2  │  │
+└──────────────┘                  │  │ callback 3  │  │
+                                  │  └─────────────┘  │
+                                  └───────────────────┘
+                                         │
+                          ┌──────────────┼──────────────┐
+                          ▼              ▼              ▼
+                    ┌──────────┐  ┌──────────┐  ┌──────────┐
+                    │ Módulo A │  │ Módulo B │  │ Tema C   │
+                    └──────────┘  └──────────┘  └──────────┘
+```
+
+Isso é particularmente poderoso em um **monólito PHP** como o Mapas, onde não há microserviços ou message brokers. Os hooks cumprem o papel que um barramento de eventos cumpriria em uma arquitetura distribuída, mas com zero latência de rede e zero complexidade operacional adicional.
+
+## A diferença entre hooks e herança
+
+O Mapas também suporta herança de temas (`RedeMapas → BaseV2 → BaseV1`) e herança de entidades. Quando usar cada um?
+
+| Mecanismo | Use quando |
+|---|---|
+| **Hook** | Quer reagir a um evento específico sem substituir o comportamento padrão |
+| **Herança de tema** | Quer substituir completamente um template, layout ou asset visual |
+| **Herança de entidade** | Quer criar um novo tipo de entidade que compartilha a estrutura base |
+| **Módulo** | Quer empacotar um conjunto de hooks + controllers + entidades como unidade reutilizável |
+
+Na prática, a maioria das customizações usa hooks. A herança de templates é reservada para casos em que o hook `view.render` não é suficiente (ex: mudar a estrutura HTML completa de uma página).
+
+## Filosofia de nomenclatura
+
+Os nomes dos hooks não são strings arbitrárias — eles seguem uma **gramática**:
+
+```
+entidade(ação):momento
+controller(ação):momento
+view.render(template):momento
+```
+
+Essa gramática permite **curingas implícitos**:
+
+- `entity.save:before` → dispara para *qualquer* entidade
+- `entity(Agent).save:before` → dispara apenas para Agent
+
+O desenvolvedor escolhe o nível de especificidade: quer reagir a todo save? Use o hook genérico. Quer reagir apenas a saves de Agent? Use o hook específico.
+
+## O contexto de `$this`
+
+Uma decisão de design importante: dentro de hooks de entidade, `$this` é vinculado à instância da entidade que disparou o hook. Isso significa que o callback pode acessar e modificar a entidade diretamente, sem recebê-la como parâmetro:
+
+```php
+// Dentro de um hook entity(Agent).save:before
+// $this é o Agent sendo salvo
+$this->name = mb_strtoupper($this->name); // normaliza o nome
+```
+
+Essa escolha torna o código de hooks muito mais limpo, mas exige disciplina: o callback deve documentar claramente quais campos ele modifica, para evitar efeitos colaterais surpreendentes.
+
+## Prioridades e ordem de execução
+
+Hooks executam em ordem de prioridade (menor = primeiro). A prioridade padrão é 10. Isso é importante quando múltiplos módulos reagem ao mesmo hook e a ordem importa:
+
+```php
+// Módulo A: valida CPF (prioridade 1 — precisa rodar primeiro)
+$app->hook('entity(Agent).save:before', $validateCpf, 1);
+
+// Módulo B: formata nome (prioridade 10)
+$app->hook('entity(Agent).save:before', $formatName, 10);
+```
+
+Se dois callbacks têm a mesma prioridade, executam na ordem de registro. Essa previsibilidade é essencial para debugging.
+
+## Hooks vs. eventos de domínio
+
+Os hooks do Mapas são mais próximos de **eventos de framework** do que de **eventos de domínio** no sentido DDD. Eles expõem o ciclo de vida interno da aplicação (persistência, renderização, roteamento), não apenas eventos de negócio. Isso é uma faca de dois gumes:
+
+- **Vantagem**: máxima flexibilidade — você pode interceptar qualquer ponto da execução
+- **Desvantagem**: acoplamento à implementação interna — um hook `entity.save:before` depende de como o Doctrine persiste entidades
+
+A recomendação é: sempre que possível, modele seu módulo em termos de eventos de negócio (ex: "quando uma inscrição for selecionada") e use os hooks de entidade apenas como mecanismo de disparo.
+
+## Leitura complementar
+
+- [Referência de hooks](/docs/devs/reference/hooks) — catálogo completo de hooks, assinaturas e parâmetros
+- [Criar um módulo](/docs/devs/how-to/criar-modulo) — como empacotar hooks em um módulo reutilizável
+- [Arquitetura](/docs/devs/explanation/arquitetura) — onde os hooks se encaixam no fluxo de execução

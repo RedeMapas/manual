@@ -1,0 +1,5 @@
+{
+  "title": "Entidades",
+  "description": "Referência das entidades do Mapas Culturais: agentes, espaços, eventos, projetos, oportunidades e inscrições",
+  "pages": ["agents", "spaces", "events", "projects", "opportunities", "registrations"]
+}

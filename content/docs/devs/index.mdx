@@ -1,0 +1,87 @@
+---
+title: Documentação para Desenvolvedoras
+---
+> Documentação técnica da plataforma Mapas Culturais, organizada em quatro seções complementares. Escolha abaixo conforme sua necessidade.
+
+## O que você precisa?
+
+<CardGroup cols={2}>
+  <Card title="📖 Tutoriais" icon="book-open" href="/docs/devs/tutorials/quickstart">
+    **Está começando?** Tutoriais são lições passo a passo que ensinam conceitos fundamentais enquanto você constrói algo concreto. Ideal para o primeiro contato com a plataforma.
+  </Card>
+
+  <Card title="🔧 Guias Práticos" icon="wrench" href="/docs/devs/how-to/deploy-docker">
+    **Quer resolver um problema?** Guias práticos mostram como executar tarefas específicas: fazer deploy, configurar autenticação, criar um tema. Presumem que você já sabe o básico.
+  </Card>
+
+  <Card title="📋 Referência" icon="book" href="/docs/devs/reference/api/overview">
+    **Precisa de dados precisos?** Documentação de referência descreve a API REST, hooks disponíveis, opções de configuração e a matriz de permissões. Neutra, factual, sem tutoriais.
+  </Card>
+
+  <Card title="💡 Explicações" icon="lightbulb" href="/docs/devs/explanation/arquitetura">
+    **Quer entender o porquê?** Explicações oferecem contexto e fundamentos: a arquitetura da plataforma, o modelo de entidades, o sistema de hooks. Para estudo e compreensão profunda.
+  </Card>
+</CardGroup>
+
+---
+
+## Sobre o Mapas Culturais
+
+O Mapas Culturais é uma plataforma livre de mapeamento e gestão cultural, mantida por uma rede comunitária de desenvolvedores e gestores públicos. Ela reúne agentes culturais, espaços, eventos e projetos em um único ambiente colaborativo, apoiando a jornada completa do fomento cultural — do cadastro à prestação de contas.
+
+### Stack
+
+| Layer          | Technology                          |
+| -------------- | ----------------------------------- |
+| Language       | PHP 8.3 (`declare(strict_types=1)`) |
+| HTTP framework | Slim 4                              |
+| ORM            | Doctrine ORM 2.16                   |
+| Database       | PostgreSQL + PostGIS                |
+| Cache          | Redis (configurable)                |
+| Frontend build | pnpm workspaces                     |
+
+### Estrutura do repositório
+
+```
+src/
+  core/        → MapasCulturais\      (framework base classes)
+  modules/     → MapasCulturais\Modules\ (modular features)
+  themes/      → MapasCulturais\Themes\  (installation themes)
+  conf/        → configuration loader
+  tools/       → CLI tools
+config/        → base configuration (PHP arrays)
+public/        → web root
+tests/         → PHPUnit test suite
+helm/          → Helm chart for Kubernetes
+docker/        → Docker configuration and entrypoint
+```
+
+### Branches
+
+| Branch         | Sincronizada com                | Finalidade                                           |
+| -------------- | ------------------------------- | ---------------------------------------------------- |
+| `main`         | —                               | Branch de produção do RedeMapas                      |
+| `develop`      | `mapasculturais/mapasculturais` | Linha comunitária, que integra contribuições livres  |
+| `develop-minc` | `culturagovbr/mapasculturais`   | Linha MinC, que integra funcionalidades do ministério |
+
+### Modelo de contribuição
+
+Ao iniciar uma alteração, responda primeiro:
+
+1. Isso é uma mudança de **framework/core** que deve subir para o upstream?
+2. Isso é uma preocupação da **instalação RedeMapas** e deve ficar no tema local ou na configuração?
+3. Isso é específico da **linha comunitária** (`develop`) ou da **linha MinC** (`develop-minc`)?
+
+Como regra prática: melhorias de framework reaproveitáveis devem mirar a linha upstream adequada. Comportamento de UI e integrações específicos da instalação devem permanecer no tema do RedeMapas ou na configuração de deploy. O nome da branch deve deixar o alvo explícito.
+
+## Instalações ativas
+
+O Mapas Culturais está implantado em dezenas de instalações brasileiras e internacionais.
+
+**Federal / internacional:** [SNIIC](https://mapa.cultura.gov.br/), [Cultura Viva](https://culturaviva.cultura.gov.br/), [Rede das Artes](https://rededasartes.cultura.gov.br/), [IberculturaViva](https://mapa.iberculturaviva.org/), [Mapa Uruguai](https://culturaenlinea.uy/)
+
+**Estaduais (seleção):** Amapá, Ceará, Espírito Santo, Goiás, Maranhão, Mato Grosso, Pará, Pernambuco, Paraíba, Piauí, Tocantins e mais de vinte outras.
+
+## Licença
+
+O Mapas Culturais é distribuído sob a licença [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html). O código-fonte está disponível em [github.com/redemapas/mapas](https://github.com/redemapas/mapas).

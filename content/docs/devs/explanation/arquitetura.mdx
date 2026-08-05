@@ -142,7 +142,7 @@ $app->hook('entity(Agent).save:before', function() {
 });
 ```
 
-See the [hooks reference](/docs/devs/development/hooks) for the full naming syntax and available events.
+See the [hooks reference](/docs/devs/reference/hooks) for the full naming syntax and available events.
 
 ## Database migrations
 
@@ -285,3 +285,10 @@ Workspace packages: `src/modules/*`, `src/plugins/*`, `src/themes/*`, `src/node_
 <Note>
   Frontend builds must run inside the Docker container or via the `dev/pnpm.sh` wrapper, which proxies commands into the container where Node.js and pnpm are available.
 </Note>
+
+## Leitura complementar
+
+- [Modelo de entidades](/docs/devs/explanation/modelo-de-entidades) — como as entidades se relacionam na stack
+- [Sistema de hooks](/docs/devs/explanation/sistema-de-hooks) — mecanismo de extensão que roda sobre a arquitetura
+- [Configuração](/docs/devs/reference/configuration) — referência de todas as opções de configuração
+- [Hooks](/docs/devs/reference/hooks) — catálogo completo de hooks disponíveis

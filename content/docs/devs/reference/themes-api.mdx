@@ -1,0 +1,156 @@
+---
+title: API de Temas
+---
+> Referência técnica da API de temas do Mapas Culturais: classe base, métodos, assets, variáveis de view e estrutura de diretórios.
+
+## Classe base
+
+Temas estendem `MapasCulturais\Theme`. A classe base fornece métodos para publicar assets, enfileirar estilos/scripts, incluir template parts e renderizar views.
+
+```php
+namespace MapasCulturais\Themes\MyTheme;
+
+class Theme extends \MapasCulturais\Themes\BaseV2\Theme
+{
+    static function getThemeFolder(): string { return __DIR__; }
+    protected function _init(): void { /* hooks e assets */ }
+    protected function _publishAssets(): void { /* enqueue */ }
+}
+```
+
+## Métodos da classe Theme
+
+### `static getThemeFolder(): string`
+
+Retorna o caminho absoluto do diretório do tema. Obrigatório.
+
+### `_init(): void`
+
+Chamado durante o boot. Registre hooks, controllers e configuração aqui. Deve chamar `parent::_init()`.
+
+### `_publishAssets(): void`
+
+Chamado após a inicialização. Use `enqueueStyle()` e `enqueueScript()` aqui.
+
+### `enqueueStyle(string $group, string $name, string $path, array $deps = []): void`
+
+Enfileira uma folha de estilo. `$path` é relativo a `assets/`. `$deps` são nomes de outros assets que devem carregar antes.
+
+### `enqueueScript(string $group, string $name, string $path, array $deps = []): void`
+
+Enfileira um script. `$path` é relativo a `assets/`.
+
+### `asset(string $path, bool $print = true): ?string`
+
+Retorna a URL pública de um asset. Se `$print = false`, retorna a URL sem imprimir.
+
+### `part(string $name, array $vars = []): void`
+
+Inclui um template partial de `layouts/parts/{$name}.php`. Variáveis passadas em `$vars` ficam disponíveis no escopo do partial.
+
+## Temas disponíveis
+
+| Tema              | Namespace                               | Descrição                                        |
+| ----------------- | --------------------------------------- | ------------------------------------------------ |
+| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | Tema base de primeira geração                    |
+| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Tema base de segunda geração, padrão atual       |
+| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Instalação de referência do RedeMapas            |
+| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Instalação do Ministério da Cultura              |
+| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Instalação da Funarte                            |
+| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Instalação Periferia Viva                        |
+| `Pnab`            | `MapasCulturais\Themes\Pnab`            | Instalação PNAB                                  |
+| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Tema de subsite em ambiente multi-tenant         |
+
+Cadeia de herança do RedeMapas: `RedeMapas → BaseV2 → BaseV1`
+
+## Grupos de assets e ordem de saída
+
+| Grupo    | Tipo | Ordem |
+| -------- | ---- | ----- |
+| `vendor` | CSS  | 1º    |
+| `fonts`  | CSS  | 2º    |
+| `app`    | CSS  | 3º    |
+| `vendor` | JS   | 4º    |
+| `app`    | JS   | 5º    |
+
+## Variáveis disponíveis nas views
+
+| Variável                    | Tipo          | Descrição                                           |
+| --------------------------- | ------------- | --------------------------------------------------- |
+| `$this`                     | `Theme`       | Instância do tema ativo                             |
+| `$this->controller`         | `Controller`  | Controller que disparou o render                    |
+| `$this->controller->action` | `string`      | Nome da ação                                        |
+| `$this->baseUrl`            | `string`      | URL raiz da instalação                              |
+| `$this->assetUrl`           | `string`      | URL pública dos assets do tema                      |
+| `$this->jsObject`           | `ArrayObject` | Dados passados ao JavaScript do frontend            |
+| `$app`                      | `App`         | Singleton da aplicação                              |
+| `$app->user`                | `User`        | Usuário autenticado (ou guest)                      |
+| `$entity`                   | `Entity`      | Entidade em visualização (páginas single/edit/create) |
+
+Verificar autenticação: `$app->user->is('guest')` retorna `true` para visitantes anônimos.
+
+## Estrutura de diretórios
+
+```
+src/themes/<ThemeName>/
+  Theme.php          → Classe principal do tema
+  conf-base.php      → Configurações padrão do tema
+  assets/            → Arquivos compilados (servidos publicamente)
+    css/
+    fonts/
+    img/
+  assets-src/        → Código-fonte JS/CSS (compilado via pnpm)
+  views/             → Templates PHP, organizados por controller
+    agent/
+    space/
+    event/
+    ...
+  layouts/           → Wrappers de página
+    default.php
+    search.php
+    panel.php
+    parts/           → Fragmentos reutilizáveis
+  pages/             → Páginas Markdown estáticas
+```
+
+## Estrutura mínima de layout
+
+```php
+<html>
+<head>
+    <title><?php echo $this->getTitle(); ?></title>
+    <?php mapasculturais_head(); ?>
+</head>
+<body>
+    <?php body_header(); ?>
+    <?php echo $TEMPLATE_CONTENT; ?>
+    <?php body_footer(); ?>
+</body>
+</html>
+```
+
+Layout padrão: `default`. Sobrescrever por view: `$this->layout = 'panel';`
+
+## URLs de páginas Markdown
+
+| Arquivo              | URL                        |
+| -------------------- | -------------------------- |
+| `pages/about.md`     | `/page/site/about/`        |
+| `pages/how-to-use.md`| `/page/site/how-to-use/`   |
+
+O primeiro `h1` do arquivo torna-se o título da aba do navegador.
+
+## Configuração do tema ativo
+
+```php
+// dev/config.d/0.main.php
+return [
+    'themes.active' => 'redemapas',
+];
+```
+
+## Leitura complementar
+
+- [Criar um tema](/docs/devs/how-to/criar-tema) — guia prático passo a passo
+- [Sistema de hooks](/docs/devs/reference/hooks) — hooks de view e template disponíveis
+- [Arquitetura](/docs/devs/explanation/arquitetura) — hierarquia de temas na stack

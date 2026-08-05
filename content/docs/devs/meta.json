@@ -1,14 +1,13 @@
 {
-  "title": "Desenvolvedores",
+  "title": "Desenvolvedoras",
   "description": "Documentação técnica da plataforma Mapas Culturais",
   "root": true,
   "pages": [
-    "introduction",
-    "quickstart",
-    "features",
-    "api",
-    "auth",
-    "deploy",
-    "development"
+    "index",
+    "tutorials",
+    "how-to",
+    "reference",
+    "explanation",
+    "legacy"
   ]
 }

@@ -1,4 +1,5 @@
 {
   "title": "API",
+  "description": "Referência completa da API REST: endpoints, métodos HTTP, autenticação, filtros e paginação",
   "pages": ["overview", "querying", "agents", "spaces", "events", "projects", "opportunities", "registrations"]
 }

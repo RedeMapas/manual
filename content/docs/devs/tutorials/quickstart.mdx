@@ -65,9 +65,9 @@ Este guia mostra como clonar o repositório do RedeMapas e subir todos os servi�
 
 Depois que os contêineres estiverem rodando, estes são os próximos guias de que você normalmente vai precisar:
 
-* [Docker Compose](/docs/devs/deploy/docker) para HTTPS com Caddy, shell dentro do contêiner, PsySH, acesso ao PostgreSQL, restauração e rebuild de assets
-* [Testes](/docs/devs/development/testing) para uso do PHPUnit, estrutura de testes, builders e directors
-* [Arquitetura](/docs/devs/development/architecture) para stack, fluxo de execução e organização do workspace
+* [Docker Compose](/docs/devs/how-to/deploy-docker) para HTTPS com Caddy, shell dentro do contêiner, PsySH, acesso ao PostgreSQL, restauração e rebuild de assets
+* [Testes](/docs/devs/how-to/rodar-testes) para uso do PHPUnit, estrutura de testes, builders e directors
+* [Arquitetura](/docs/devs/explanation/arquitetura) para stack, fluxo de execução e organização do workspace
 
 Se você estiver alterando o frontend, este costuma ser o próximo comando mais usado:
 
@@ -89,19 +89,19 @@ Depois de subir a stack ou mexer em infraestrutura, valide estes pontos antes de
 ## Próximos passos
 
 <CardGroup cols={2}>
-  <Card title="Funcionalidades" icon="map" href="/docs/devs/features/agents">
+  <Card title="Funcionalidades" icon="map" href="/docs/devs/reference/entities/agents">
     Entenda agentes, espaços, eventos, projetos e oportunidades.
   </Card>
 
-  <Card title="Arquitetura" icon="diagram-project" href="/docs/devs/development/architecture">
+  <Card title="Arquitetura" icon="diagram-project" href="/docs/devs/explanation/arquitetura">
     Entenda o framework PHP, o ORM, o sistema de hooks e a hierarquia de temas.
   </Card>
 
-  <Card title="Temas e módulos" icon="palette" href="/docs/devs/development/themes">
+  <Card title="Temas e módulos" icon="palette" href="/docs/devs/how-to/criar-tema">
     Personalize a plataforma criando temas e módulos de funcionalidade.
   </Card>
 
-  <Card title="Deploy em produção" icon="server" href="/docs/devs/deploy/docker">
+  <Card title="Deploy em produção" icon="server" href="/docs/devs/how-to/deploy-docker">
     Faça deploy com Docker Compose ou Kubernetes usando o Helm chart incluído.
   </Card>
 </CardGroup>

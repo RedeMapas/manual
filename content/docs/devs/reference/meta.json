@@ -1,0 +1,5 @@
+{
+  "title": "Referência",
+  "description": "Descrição técnica precisa: API, configuração, hooks, permissões, temas e entidades",
+  "pages": ["api", "entities", "configuration", "hooks", "permissions", "themes-api"]
+}

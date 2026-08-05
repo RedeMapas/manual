@@ -1,0 +1,5 @@
+{
+  "title": "Explicações",
+  "description": "Contexto e fundamentos: arquitetura, modelo de entidades, sistema de hooks e mais",
+  "pages": ["arquitetura", "modelo-de-entidades", "sistema-de-hooks"]
+}
