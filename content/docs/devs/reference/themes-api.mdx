@@ -50,18 +50,25 @@ Inclui um template partial de `layouts/parts/{$name}.php`. Variáveis passadas e
 
 ## Temas disponíveis
 
-| Tema              | Namespace                               | Descrição                                        |
-| ----------------- | --------------------------------------- | ------------------------------------------------ |
-| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | Tema base de primeira geração                    |
-| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Tema base de segunda geração, padrão atual       |
-| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Instalação de referência do RedeMapas            |
-| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Instalação do Ministério da Cultura              |
-| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Instalação da Funarte                            |
-| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Instalação Periferia Viva                        |
-| `Pnab`            | `MapasCulturais\Themes\Pnab`            | Instalação PNAB                                  |
-| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Tema de subsite em ambiente multi-tenant         |
+### Temas do upstream (`mapasculturais/mapasculturais`)
 
-Cadeia de herança do RedeMapas: `RedeMapas → BaseV2 → BaseV1`
+| Tema     | Namespace                          | Descrição                                  |
+| -------- | ---------------------------------- | ------------------------------------------ |
+| `BaseV1` | `MapasCulturais\Themes\BaseV1`     | Tema base de primeira geração              |
+| `BaseV2` | `MapasCulturais\Themes\BaseV2`     | Tema base de segunda geração, padrão atual |
+| `Subsite`| `MapasCulturais\Themes\Subsite`    | Tema de subsite em ambiente multi-tenant   |
+
+### Temas de instalação (forks)
+
+| Tema              | Namespace                               | Instalação                     |
+| ----------------- | --------------------------------------- | ------------------------------ |
+| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Rede das Artes / RedeMapas     |
+| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Ministério da Cultura          |
+| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Funarte                        |
+| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Periferia Viva                 |
+| `Pnab`            | `MapasCulturais\Themes\Pnab`            | PNAB                           |
+
+Cadeia de herança típica: `TemaInstalação → BaseV2 → BaseV1`
 
 ## Grupos de assets e ordem de saída
 

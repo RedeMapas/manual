@@ -22,10 +22,11 @@ Este guia mostra como clonar o repositório do RedeMapas e subir todos os servi�
 
   <Step title="Inicie os contêineres">
     ```bash  theme={null}
+    cd dev
     docker compose up -d
     ```
 
-    Isso inicia três serviços: a aplicação PHP, o PostgreSQL com PostGIS e o MailPit para captura de e-mails. As migrações do banco são executadas automaticamente na primeira inicialização pelo entrypoint do contêiner.
+    Isso inicia três serviços: a aplicação PHP, o PostgreSQL com PostGIS e o MailHog para captura de e-mails. As migrações do banco são executadas automaticamente na primeira inicialização pelo entrypoint do contêiner.
 
     <Note>
       O contêiner da aplicação espera o PostgreSQL passar no health check antes de iniciar. Na primeira execução, o download das imagens e a execução das migrações podem levar um ou dois minutos.
@@ -37,7 +38,7 @@ Este guia mostra como clonar o repositório do RedeMapas e subir todos os servi�
   </Step>
 
   <Step title="Confira os e-mails (opcional)">
-    O MailPit captura todos os e-mails enviados pela aplicação. Abra [http://localhost:8025](http://localhost:8025) para ver as mensagens capturadas. Isso é útil para testar fluxos de cadastro, redefinição de senha e notificações.
+    O MailHog captura todos os e-mails enviados pela aplicação. Abra [http://localhost:8025](http://localhost:8025) para ver as mensagens capturadas. Isso é útil para testar fluxos de cadastro, redefinição de senha e notificações.
   </Step>
 
   <Step title="Conecte ao PostgreSQL (opcional)">
@@ -58,7 +59,7 @@ Este guia mostra como clonar o repositório do RedeMapas e subir todos os servi�
 | Serviço    | URL                                            | Descrição                                  |
 | ---------- | ---------------------------------------------- | ------------------------------------------ |
 | Aplicação  | [http://localhost:8080](http://localhost:8080) | Interface web principal                    |
-| MailPit    | [http://localhost:8025](http://localhost:8025) | Interface de captura de e-mails            |
+| MailHog    | [http://localhost:8025](http://localhost:8025) | Interface de captura de e-mails            |
 | PostgreSQL | `localhost:5432`                               | Banco de dados (`mapas` / `mapas-dev`)     |
 
 ## Depois que a stack subir
@@ -81,7 +82,7 @@ Depois de subir a stack ou mexer em infraestrutura, valide estes pontos antes de
 
 * `http://localhost:8080` carrega a aplicação
 * `https://mapas.localhost:8443` funciona se você estiver testando PWA ou Web Push
-* o MailPit recebe mensagens em `http://localhost:8025`
+* o MailHog recebe mensagens em `http://localhost:8025`
 * `dev/psql.sh` conecta com sucesso e o banco `mapas` existe
 * a suíte de testes inicia sem erros de ambiente
 * os assets de frontend recompilam normalmente com `dev/pnpm.sh -C src run watch`

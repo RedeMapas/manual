@@ -16,21 +16,32 @@ return [
 
 ## Temas disponíveis
 
-| Tema              | Namespace                               | Descrição                                        |
-| ----------------- | --------------------------------------- | ------------------------------------------------ |
-| `BaseV1`          | `MapasCulturais\Themes\BaseV1`          | Tema base de primeira geração                    |
-| `BaseV2`          | `MapasCulturais\Themes\BaseV2`          | Tema base de segunda geração, padrão atual       |
-| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Instalação de referência do RedeMapas; estende BaseV2 |
-| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Instalação do Ministério da Cultura              |
-| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Instalação da Funarte                            |
-| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Instalação Periferia Viva                        |
-| `Pnab`            | `MapasCulturais\Themes\Pnab`            | Instalação PNAB                                  |
-| `Subsite`         | `MapasCulturais\Themes\Subsite`         | Tema de subsite em ambiente multi-tenant         |
+### Temas do upstream (`mapasculturais/mapasculturais`)
 
-A cadeia de herança do tema ativo do RedeMapas é:
+Estes temas fazem parte da distribuição base do Mapas Culturais:
+
+| Tema     | Namespace                          | Descrição                                  |
+| -------- | ---------------------------------- | ------------------------------------------ |
+| `BaseV1` | `MapasCulturais\Themes\BaseV1`     | Tema base de primeira geração              |
+| `BaseV2` | `MapasCulturais\Themes\BaseV2`     | Tema base de segunda geração, padrão atual |
+| `Subsite`| `MapasCulturais\Themes\Subsite`    | Tema de subsite em ambiente multi-tenant   |
+
+### Temas de instalação
+
+Estes temas vivem em forks e instalações específicas, não no repositório upstream:
+
+| Tema              | Namespace                               | Instalação                                |
+| ----------------- | --------------------------------------- | ----------------------------------------- |
+| `RedeMapas`       | `MapasCulturais\Themes\RedeMapas`       | Rede das Artes / RedeMapas                |
+| `MapaMinC`        | `MapasCulturais\Themes\MapaMinC`        | Ministério da Cultura                     |
+| `Funarte`         | `MapasCulturais\Themes\Funarte`         | Funarte                                   |
+| `PeriferiaViva25` | `MapasCulturais\Themes\PeriferiaViva25` | Periferia Viva                            |
+| `Pnab`            | `MapasCulturais\Themes\Pnab`            | PNAB                                      |
+
+A cadeia de herança típica de um tema de instalação é:
 
 ```
-RedeMapas → BaseV2 → BaseV1
+TemaInstalação → BaseV2 → BaseV1
 ```
 
 Arquivos em um tema filho sobrescrevem o arquivo correspondente de qualquer tema pai. A busca sobe pela cadeia até encontrar uma correspondência.

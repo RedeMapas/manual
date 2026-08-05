@@ -67,7 +67,7 @@ As variáveis abaixo controlam o comportamento da aplicação em runtime:
 
 Defina o provedor de autenticação no arquivo de configuração:
 
-```php config/config.php theme={null}
+```php config/0.main.php theme={null}
 return [
     'auth.provider' => 'OpauthLoginCidadao',
     'auth.config' => [
@@ -87,7 +87,7 @@ Veja [Provedores de autenticação](/docs/devs/how-to/configurar-provedor-auth) 
 
 Registre os módulos no arquivo de configuração:
 
-```php config/config.php theme={null}
+```php config/0.main.php theme={null}
 return [
     'plugins' => [
         'Opportunities'            => ['namespace' => 'Opportunities'],

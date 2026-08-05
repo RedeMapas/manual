@@ -99,12 +99,12 @@ Convenience wrapper around `$entity->canUser($action, $user)`. Useful when you h
 $canEdit = $user->can('edit', $space);
 ```
 
-### `$app->getAuth()->getAuthenticatedUser()`
+### `$app->auth->getAuthenticatedUser()`
 
 Retorna a entidade `User` autenticada ou uma instância de `GuestUser` se ninguém estiver logado.
 
 ```php  theme={null}
-$user = $app->getAuth()->getAuthenticatedUser();
+$user = $app->auth->getAuthenticatedUser();
 ```
 
 ### `$controller->requireAuthentication()`
